@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ES2020", // Modern JS output
+        "module": "NodeNext",
+        "rootDir": "src", // Source folder
+        "outDir": "dist", // Build output
+        "moduleResolution": "nodenext",
+        "declaration": true, // Emit .d.ts files
+        "strict": true, // Enable all strict type checks
+        "esModuleInterop": true, // Allow import/export compatibility
+        "skipLibCheck": true, // Faster builds
+        "types": [
+            "node"
+        ], // Add Node.js types
+        "forceConsistentCasingInFileNames": true // Case-sensitive path enforcement
+    },
+    "include": [
+        "src"
+    ]
+}

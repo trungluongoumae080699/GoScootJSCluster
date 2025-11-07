@@ -1,0 +1,37 @@
+{
+  "name": "@trungthao/mobile_app_dto",
+  "version": "1.0.0",
+  "description": "Shared types and business logic for the mobile app and the main server.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "domain",
+    "shared",
+    "typescript",
+    "monorepo"
+  ],
+  "author": "TrungLuong",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.18.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  }
+}

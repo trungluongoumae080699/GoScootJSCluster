@@ -1,0 +1,23 @@
+{
+  "name": "js_cluster",
+  "version": "1.0.0",
+  "description": "",
+    "workspaces": [
+    "Apps/*",
+    "Packages/*"
+  ],
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TrungThaoAutomobile/TrungThaoNextJSAndServer.git"
+  },
+  "dependencies": {
+    "@trungthao/mobile_app_dto": "*",
+    "@trungthao/admin_dashboard_dto": "*"},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
