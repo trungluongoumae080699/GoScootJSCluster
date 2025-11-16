@@ -21,11 +21,14 @@ import com.example.goscootandroid.Presentation.ViewModel.GlobalViewModel
 import com.example.goscootandroid.ui.theme.GoScootAndroidTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.goscootandroid.Presentation.Screens.CameraScreen
 import com.example.goscootandroid.Presentation.Screens.EntryScreen
 import com.example.goscootandroid.Presentation.Screens.ForgetPasswordScreen
 import com.example.goscootandroid.Presentation.Screens.LogInScreen
 import com.example.goscootandroid.Presentation.Screens.MapScreen
+import com.example.goscootandroid.Presentation.Screens.MyTrips
 import com.example.goscootandroid.Presentation.Screens.SignUpScreen
+import com.example.goscootandroid.Presentation.Screens.TripDetailScreen
 import com.example.goscootandroid.Presentation.ViewModel.AppScreen
 import com.example.goscootandroid.Presentation.ViewModel.NavEvent
 
@@ -63,10 +66,7 @@ fun RootView() {
                 .fillMaxSize()
                 .background(Color.White)) {
                 // Navigation host (like NavigationStack in SwiftUI)
-                AppNavHost(
-                    nav = nav,
-                    snackbarHostState = snackbarHostState
-                )
+                TripDetailScreen()
 
                 // If you want an always-on overlay (bottom tabs, sheets, etc.), add here
                 // e.g. BottomBar(), NotificationSheet(), etc.
@@ -108,6 +108,15 @@ fun AppNavHost(
                 }
                 composable(AppScreen.MAP.name) {
                     MapScreen()
+                }
+                composable(AppScreen.CAMERA.name){
+                    CameraScreen()
+                }
+                composable(AppScreen.TRIP_DETAIL.name){
+                    TripDetailScreen()
+                }
+                composable(AppScreen.MY_TRIPS.name){
+                    MyTrips()
                 }
             }
         }

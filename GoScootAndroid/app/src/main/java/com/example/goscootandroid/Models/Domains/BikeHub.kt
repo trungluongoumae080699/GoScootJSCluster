@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BikeHub(
     val id: String,
-    val longitude: String,
-    val latitude: String
+    val address: String,
+    val longitude: Double,
+    val latitude: Double
 )

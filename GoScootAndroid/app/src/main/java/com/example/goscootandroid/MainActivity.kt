@@ -19,7 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.goscootandroid.Presentation.Components.Layouts.RootView
+import com.example.goscootandroid.Presentation.Components.Modules.MapModule
+import com.example.goscootandroid.Presentation.Screens.CameraScreen
+
 import com.example.goscootandroid.Presentation.Screens.MapScreen
+import com.example.goscootandroid.Presentation.Screens.MyTrips
+import com.example.goscootandroid.Presentation.Screens.TripDetailScreen
 import com.example.goscootandroid.Presentation.ViewModel.GlobalViewModel
 import com.example.goscootandroid.ui.theme.GoScootAndroidTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -46,7 +51,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
-        setContent { RootView() }
+        setContent { CameraScreen() }
     }
 }
 

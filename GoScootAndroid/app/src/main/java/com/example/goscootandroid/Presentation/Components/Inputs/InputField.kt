@@ -41,7 +41,6 @@ fun InputField(
     var isSecureVisible by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-
         // Label + required star
         if (label != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {

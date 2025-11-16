@@ -22,10 +22,17 @@ val BeVietnamPro = FontFamily(
     Font(R.font.be_vietnam_pro_black, FontWeight.Black)
 )
 
+val RobotoMono = FontFamily(
+    Font(
+        resId = R.font.roboto_mono_variable_font_wght,
+        weight = FontWeight.Normal // Compose will interpolate weights automatically
+    )
+)
+
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = BeVietnamPro,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 22.sp,   // ~1.46× font size → comfortable for paragraphs
         letterSpacing = 0.3.sp
@@ -49,7 +56,7 @@ val Typography = Typography(
 
     titleLarge = TextStyle(
         fontFamily = BeVietnamPro,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 24.sp,
         lineHeight = 32.sp,   // ~1.33× → crisp headline
         letterSpacing = 0.sp

@@ -130,7 +130,7 @@ fun LogInScreen(
 
                 Spacer(Modifier.height(15.dp))
 
-                // Login button
+                // Login but
                 BrandButton(
                     label = "Đăng Nhập",
                     onClick = {
@@ -144,7 +144,7 @@ fun LogInScreen(
                         )
                               },
 
-                    enabled = vm.isFormValid() && !sendRequest,
+                    enabled = vm.isFormValid() && !sendRequest
 
                 )
 

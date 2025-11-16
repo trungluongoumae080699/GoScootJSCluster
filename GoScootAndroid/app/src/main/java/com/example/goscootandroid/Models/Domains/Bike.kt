@@ -15,7 +15,7 @@ enum class BikeType {
 data class Bike(
     val id: String,
     val name: String,
-    val battery_status: Int,
+    val battery_status: Int?,
     val maximum_speed: Int,
     val maximum_functional_distance: Int
 )

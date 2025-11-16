@@ -1,11 +1,9 @@
-package com.example.goscootandroid.Presentation.Components.Modules
+package com.example.goscootandroid.Presentation.Components.Modules.Cards
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,31 +18,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.goscootandroid.Models.Domains.Bike
 import com.example.goscootandroid.Presentation.Components.Inputs.BrandButton
 import com.example.goscootandroid.R
 import com.example.goscootandroid.ui.theme.RobotoMono
-import com.mapbox.maps.extension.style.expressions.dsl.generated.mod
-import kotlinx.coroutines.launch
 
 @Composable
 fun BatteryGauge(
@@ -61,13 +50,13 @@ fun BatteryGauge(
     }
 
     Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically){
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(0.92f).fillMaxHeight().background(Color.White).padding(horizontal = 1.dp)){
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(0.92f).fillMaxHeight().background(Color.White).border(0.5.dp, Color.White)){
             Row(
                 modifier = Modifier
-                    .fillMaxHeight(0.85f)
+                    .fillMaxHeight()
                     .fillMaxWidth(fillFraction) // changed here
                     .background(fillColor)      // and here
-                    .border(0.5.dp, Color(0xFF303030))
+
             ) {
                 // still empty as you had it
             }

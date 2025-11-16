@@ -17,6 +17,7 @@ import com.example.goscootandroid.EnvironmentObjects.SessionKeys
 import com.example.goscootandroid.EnvironmentObjects.dataStore
 import com.example.goscootandroid.Models.DTOs.Responses.ResponseLogInDTO
 import com.example.goscootandroid.Models.Domains.Customer
+import com.example.goscootandroid.Models.Domains.Destination
 import com.example.goscootandroid.Repository.AuthenticationRepository
 import com.example.goscootandroid.Repository.IgnorableError
 import dagger.hilt.android.internal.Contexts.getApplication
@@ -36,7 +37,10 @@ enum class AppScreen {
     LOGIN,
     SIGNUP,
     FORGET_PASSWORD,
-    MAP
+    MAP,
+    MY_TRIPS,
+    CAMERA,
+    TRIP_DETAIL
 }
 
 /* ---------- Snackbar Type Enum ---------- */
@@ -92,6 +96,8 @@ class GlobalViewModel @Inject constructor(
     fun updateSessionId(sessionId: String?) {
         _sessionId.value = sessionId
     }
+
+
 
     // For simplicity, you can store a Trip model later here
     private val _reservedTrip = MutableStateFlow<Any?>(null)

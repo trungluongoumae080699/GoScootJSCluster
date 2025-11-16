@@ -31,11 +31,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
     buildFeatures {
         compose = true
@@ -52,6 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,9 +79,31 @@ dependencies {
     // Hilt integration with Jetpack Compose
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("com.mapbox.maps:android-ndk27:11.16.2")
-    implementation("com.mapbox.extension:maps-compose-ndk27:11.16.2")
+
+    implementation("com.mapbox.maps:android-ndk27:11.14.4")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.14.4")
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    implementation("com.mapbox.navigationcore:android-ndk27:3.11.6")
+
+    implementation("com.mapbox.search:mapbox-search-android-ndk27:2.14.3")
+    implementation("com.mapbox.search:place-autocomplete-ndk27:2.14.3")
+    implementation("com.mapbox.search:offline-ndk27:2.14.3")
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    implementation("androidx.camera:camera-video:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+
 
 
 }

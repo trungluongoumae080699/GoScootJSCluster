@@ -1,4 +1,6 @@
 package com.example.goscootandroid.Models.Domains
 
-class Routes {
-}
+data class Destination (
+    val longitude: Double,
+    val latitude: Double
+)
