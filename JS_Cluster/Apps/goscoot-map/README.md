@@ -85,41 +85,6 @@ Build the application for production:
 npm run build
 ```
 
-The optimized files will be in the `dist` folder.
-
-### Preview Production Build
-
-Preview the production build locally:
-
-```bash
-npm run preview
-```
-
-## 📁 Project Structure
-
-```
-goscoot-map/
-├── public/
-│   └── scooter_type.png          # Scooter marker icon
-├── src/
-│   ├── Map.tsx                    # Main map component (UI & map setup)
-│   ├── scooterAnimation.ts        # Scooter animation logic (50 scooters)
-│   ├── main.tsx                   # React entry point
-│   └── index.css                  # All application styles
-├── .env                           # Environment variables (create this)
-├── package.json                   # Project dependencies
-├── tsconfig.json                  # TypeScript configuration
-├── vite.config.ts                 # Vite build configuration
-└── README.md                      # This file
-```
-
-**Optimized Structure:**
-- ✅ Only 4 source files (minimal and clean)
-- ✅ Single CSS file (no duplication)
-- ✅ Separation of concerns (UI vs Animation logic)
-- ✅ TypeScript for type safety
-- ✅ Descriptive naming (Map.tsx instead of App.tsx)
-
 ## ⚙️ Configuration
 
 You can customize the scooter animation by editing `src/scooterAnimation.ts`:
@@ -220,30 +185,3 @@ npm run dev -- --port 3000
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `VITE_MAPBOX_TOKEN` | Your Mapbox access token | Yes |
-
-## 🌐 Browser Support
-
-- Chrome/Edge (latest 2 versions) ✅
-- Firefox (latest 2 versions) ✅
-- Safari (latest 2 versions) ✅
-
-**Note**: Requires WebGL support for Mapbox GL JS.
-
-## 📄 License
-
-This project is private and not licensed for public use.
-
-## 🤝 Contributing
-
-This is a private project. Contact the repository owner for contribution guidelines.
-
-## 📧 Support
-
-For issues or questions:
-1. Check the Troubleshooting section above
-2. Review [Mapbox GL JS Documentation](https://docs.mapbox.com/mapbox-gl-js/)
-3. Contact the development team
-
----
-
-**Happy Mapping! 🗺️🛴**
