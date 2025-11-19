@@ -25,7 +25,7 @@ Before you begin, ensure you have the following installed:
 
 ```bash
 git clone <your-repository-url>
-cd GoScootJSCluster/JS_Cluster/Apps/goscoot-map
+cd GoScootJSCluster/JS_Cluster/Apps/GoScootAdminDashboard
 ```
 
 ### 2. Install Dependencies
@@ -175,6 +175,7 @@ goscoot-map/
 
 3. **Locate Yourself**:
    - Click the location button to center on your position
+
 
 
 
