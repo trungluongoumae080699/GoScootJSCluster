@@ -7,7 +7,6 @@ An interactive map application built with React, TypeScript, and Mapbox GL JS th
 - **Interactive Mapbox Map**: Full-featured map with zoom, pan, and navigation controls
 - **50 Animated Scooters**: Realistic scooter traffic simulation across HCM City
 - **Smart Routing**: Scooters follow actual roads using Mapbox Directions API
-- **Collision Avoidance**: Intelligent system prevents scooters from overlapping
 - **Smooth Animation**: 60 FPS animation using requestAnimationFrame
 - **Responsive Design**: Works on desktop and tablet devices
 
@@ -93,7 +92,6 @@ You can customize the scooter animation by editing `src/scooterAnimation.ts`:
 // Configuration
 const NUM_SCOOTERS = 50;           // Number of scooters (1-100)
 const SCOOTER_SPEED = 0.00001;     // Movement speed
-const COLLISION_DISTANCE = 0.002;  // Minimum distance between scooters
 ```
 
 ### Adjusting Scooter Count:
@@ -175,6 +173,7 @@ goscoot-map/
 
 3. **Locate Yourself**:
    - Click the location button to center on your position
+
 
 
 
