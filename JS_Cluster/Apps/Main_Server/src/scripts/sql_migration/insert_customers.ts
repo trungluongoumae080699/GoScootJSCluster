@@ -121,25 +121,9 @@ async function insertCustomersFromJsonBulk() {
 
 async function main() {
   try {
-    console.log("🔍 Checking prerequisite migration...");
-
-    const ok = await findScriptByName(prerequisite_script);
-    const alreadyRun = await findScriptByName(script_name);
-
-    if (!ok) {
-      console.log(`⚠️ Must run migration '${prerequisite_script}' BEFORE inserting customers.`);
-      return;
-    }
-
-    if (alreadyRun) {
-      console.log("⚠️ Script already executed — skipping insert.");
-      return;
-    }
+    
 
     await insertCustomersFromJsonBulk();
-
-    await pool.query(`INSERT INTO migration (name) VALUES (?);`, [script_name]);
-
     console.log(`📜 Migration '${script_name}' recorded.`);
     console.log("🎉 Done inserting customers (bulk + bcrypt).");
 

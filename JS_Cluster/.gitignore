@@ -1,1 +1,3 @@
 node_modules
+/Apps/Main_Server/.env
+/Apps/Main_Server/.env.admin

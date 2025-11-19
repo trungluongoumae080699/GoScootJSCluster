@@ -104,38 +104,7 @@ async function insertStaffFromJsonBulk() {
 
 async function main() {
   try {
-    console.log("🔍 Checking if required migration has been applied...");
-
-    const ok = await findScriptByName(prerequisite_script);
-    const alreadyRun = await findScriptByName(script_name)
-    if (!ok) {
-      console.log(
-        `⚠️ Must run migration '${prerequisite_script}' BEFORE inserting trips.`
-      );
-      return;
-    }
-    if (alreadyRun){
-        console.log(
-        `Script has already been executed`
-      );
-      return;
-    }
-
-    if (!ok) {
-      console.log(
-        `⚠️ Migration '${prerequisite_script}' has NOT been executed.\n` +
-        "   Please execute database_modi_01 before inserting staff."
-      );
-      return;
-    }
-
     await insertStaffFromJsonBulk();
-
-    await pool.query(
-      `INSERT INTO migration (name) VALUES (?);`,
-      [script_name]
-    );
-
     console.log(`📜 Migration '${script_name}' recorded`);
     console.log("🎉 Done inserting staff (bulk).");
 

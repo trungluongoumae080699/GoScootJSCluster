@@ -147,25 +147,7 @@ async function insertTripsFromJsonBulk() {
 
 async function main() {
   try {
-    console.log("🔍 Checking prerequisite migration...");
-
-    const ok = await findScriptByName(prerequisite_script);
-    const alreadyRun = await findScriptByName(script_name)
-    if (!ok) {
-      console.log(
-        `⚠️ Must run migration '${prerequisite_script}' BEFORE inserting trips.`
-      );
-      return;
-    }
- 
-
     await insertTripsFromJsonBulk();
-
-    await pool.query(
-      `INSERT INTO migration (name) VALUES (?);`,
-      [script_name]
-    );
-
     console.log(`📜 Migration '${script_name}' recorded`);
     console.log("🎉 Trip insertion complete!");
 
