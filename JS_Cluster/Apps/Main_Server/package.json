@@ -11,22 +11,13 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "node --test",
-    "db:init": "ts-node --esm -r dotenv/config src/scripts/sql_migration/initDatabase.ts dotenv_config_path=.env.admin",
-    "db:modi_01": "ts-node --esm src/scripts/sql_migration/database_modi_01.ts",
-    "db:modi_02": "ts-node --esm src/scripts/sql_migration/database_modi_02.ts",
-    "db:insert_hubs": "ts-node --esm src/scripts/sql_migration/insert_hubs.ts",
-    "db:insert_bikes": "ts-node --esm src/scripts/sql_migration/insert_bikes.ts",
-    "db:insert_staff": "ts-node --esm src/scripts/sql_migration/insert_staff.ts",
-    "db:insert_customers": "ts-node --esm src/scripts/sql_migration/insert_customers.ts",
-    "db:insert_trips": "ts-node --esm src/scripts/sql_migration/insert_trips.ts",
-    "db:update_bikes_names": "ts-node --esm src/scripts/sql_migration/update_bike_names.ts",
-    "hub:gen": "ts-node --esm src/scripts/json_sample_data_gen/create_hubs_json.ts",
-    "bike:gen": "ts-node --esm src/scripts/json_sample_data_gen/create_bikes_json.ts",
-    "staff:gen": "ts-node --esm src/scripts/json_sample_data_gen/create_staff_json.ts",
-    "customer:gen": "ts-node --esm src/scripts/json_sample_data_gen/create_customers_json.ts",
-    "trip:gen": "ts-node --esm src/scripts/json_sample_data_gen/create_trips_json.ts",
-    "db:all": "npm run hub:gen && npm run bike:gen && npm run staff:gen && npm run customer:gen && npm run trip:gen && npm run db:init && npm run db:modi_01 && npm run db:modi_02 && npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips"
-
+    "db:insert_hubs": "node --loader ts-node/esm ./src/scripts/sql_migration/insert_hubs.ts",
+    "db:insert_bikes": "node --loader ts-node/esm src/scripts/sql_migration/insert_bikes.ts",
+    "db:insert_staff": "node --loader ts-node/esm src/scripts/sql_migration/insert_staff.ts",
+    "db:insert_customers": "node --loader ts-node/esm src/scripts/sql_migration/insert_customers.ts",
+    "db:insert_trips": "node --loader ts-node/esm src/scripts/sql_migration/insert_trips.ts",
+    "db:update_bikes_names": "node --loader ts-node/esm src/scripts/sql_migration/update_bike_names.ts",
+    "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -47,11 +38,11 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^22.8.1",
+    "@types/node": "^22.19.1",
     "@types/redis": "^4.0.10",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.6.3"
+    "typescript": "^5.9.3"
   }
 }

@@ -114,26 +114,9 @@ async function findScriptByName(name: string): Promise<boolean> {
 // ------------------- MAIN EXECUTION -------------------
 async function main() {
   try {
-    const ok = await findScriptByName(prerequisite_script);
-    const alreadyRun = await findScriptByName(script_name)
-    if (!ok) {
-      console.log(
-        `⚠️ Must run migration '${prerequisite_script}' BEFORE inserting trips.`
-      );
-      return;
-    }
-    if (alreadyRun) {
-      console.log(
-        `Script has already been executed`
-      );
-      return;
-    }
+
     await insertBikesFromJsonBulk();
     console.log("🎉 Done inserting bikes (bulk).");
-    await pool.query(
-      `INSERT INTO migration (name) VALUES (?);`,
-      [script_name]
-    );
     console.log(`📜 Migration '${script_name}' recorded`);
 
   } catch (err) {
