@@ -1,0 +1,172 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  z-index: 1000;
+  text-align: center;
+}
+
+.logo-text {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: 0.15em;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  font-family: 'Arial Black', 'Arial Bold', sans-serif;
+  transition: transform 0.3s ease, letter-spacing 0.3s ease;
+  cursor: default;
+}
+
+.logo-text:hover {
+  transform: scale(1.02);
+  letter-spacing: 0.18em;
+}
+
+/* Map Container */
+.map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+  color: #ff6b35;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Error Overlay */
+.error-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  border-left: 4px solid #ff6b35;
+}
+
+.error-overlay p {
+  color: #d32f2f;
+  font-size: 1rem;
+}
+
+.error-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-container h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.error-container p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+/* Mapbox Controls Styling */
+.mapboxgl-ctrl-group {
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2) !important;
+}
+
+.mapboxgl-ctrl-group button {
+  border-color: #ff6b35 !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background-color: #fff5f2 !important;
+}
+
+.mapboxgl-ctrl-group button.mapboxgl-ctrl-geolocate-active {
+  background-color: #ff6b35 !important;
+}
+
+.mapboxgl-ctrl-group button.mapboxgl-ctrl-geolocate-active .mapboxgl-ctrl-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .logo-text {
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+  }
+}
