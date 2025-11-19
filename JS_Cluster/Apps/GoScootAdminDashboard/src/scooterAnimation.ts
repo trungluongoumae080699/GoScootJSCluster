@@ -2,8 +2,7 @@ import mapboxgl from 'mapbox-gl';
 
 // Configuration
 const NUM_SCOOTERS = 50; // Optimized number for performance and visual density
-const SCOOTER_SPEED = 0.00001; // Much slower, more realistic
-const COLLISION_DISTANCE = 0.002; // Minimum distance between scooters
+const SCOOTER_SPEED = 0.00002; // Slightly faster for better movement
 
 // HCM City bounds
 const HCM_BOUNDS = {
@@ -20,13 +19,37 @@ export interface Scooter {
   route: [number, number][];
   routeIndex: number;
   marker: mapboxgl.Marker | null;
+  isWaitingForRoute: boolean;
 }
 
-// Generate random position within HCM bounds
-const randomPosition = (): [number, number] => [
-  HCM_BOUNDS.minLng + Math.random() * (HCM_BOUNDS.maxLng - HCM_BOUNDS.minLng),
-  HCM_BOUNDS.minLat + Math.random() * (HCM_BOUNDS.maxLat - HCM_BOUNDS.minLat),
+// Areas to avoid (water/rivers in HCM City - approximate)
+const AVOID_ZONES = [
+  // Saigon River area
+  { minLng: 106.68, maxLng: 106.72, minLat: 10.76, maxLat: 10.80 },
 ];
+
+// Check if position is in water/avoid zone
+const isInAvoidZone = (lng: number, lat: number): boolean => {
+  return AVOID_ZONES.some(zone => 
+    lng >= zone.minLng && lng <= zone.maxLng && 
+    lat >= zone.minLat && lat <= zone.maxLat
+  );
+};
+
+// Generate random position within HCM bounds, avoiding water
+const randomPosition = (): [number, number] => {
+  let lng, lat;
+  let attempts = 0;
+  const maxAttempts = 20;
+  
+  do {
+    lng = HCM_BOUNDS.minLng + Math.random() * (HCM_BOUNDS.maxLng - HCM_BOUNDS.minLng);
+    lat = HCM_BOUNDS.minLat + Math.random() * (HCM_BOUNDS.maxLat - HCM_BOUNDS.minLat);
+    attempts++;
+  } while (isInAvoidZone(lng, lat) && attempts < maxAttempts);
+  
+  return [lng, lat];
+};
 
 // Get route between two points using Mapbox Directions API
 const getRoute = async (
@@ -49,25 +72,6 @@ const getRoute = async (
 
   // Fallback: direct line
   return [start, end];
-};
-
-// Check if two scooters are too close (collision detection)
-const isTooClose = (pos1: [number, number], pos2: [number, number]): boolean => {
-  const dx = pos1[0] - pos2[0];
-  const dy = pos1[1] - pos2[1];
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < COLLISION_DISTANCE;
-};
-
-// Check if position would collide with any other scooter
-const wouldCollide = (
-  position: [number, number],
-  scooters: Scooter[],
-  currentId: number
-): boolean => {
-  return scooters.some(
-    (scooter) => scooter.id !== currentId && scooter.marker && isTooClose(position, scooter.position)
-  );
 };
 
 // Initialize scooters on the map
@@ -101,31 +105,52 @@ export const initializeScooters = async (
       route,
       routeIndex: 0,
       marker,
+      isWaitingForRoute: false,
     });
   }
 
   return scooters;
 };
 
-// Animate scooters along their routes with collision avoidance
+// Animate scooters along their routes
 export const animateScooters = (
   scooters: Scooter[],
   token: string,
   animationRef: { current: number | undefined }
 ) => {
   const animate = () => {
-    scooters.forEach(async (scooter) => {
+    scooters.forEach((scooter) => {
+      // Skip if waiting for new route
+      if (scooter.isWaitingForRoute) return;
+
+      // Check if route needs updating
       if (scooter.routeIndex >= scooter.route.length - 1) {
-        // Reached end of route, get new route
-        const newEnd = randomPosition();
-        const newRoute = await getRoute(scooter.position, newEnd, token);
-        scooter.route = newRoute;
-        scooter.routeIndex = 0;
+        // Reached end of route, get new route asynchronously
+        if (!scooter.isWaitingForRoute) {
+          scooter.isWaitingForRoute = true;
+          const newEnd = randomPosition();
+          getRoute(scooter.position, newEnd, token).then((newRoute) => {
+            scooter.route = newRoute;
+            scooter.routeIndex = 0;
+            scooter.isWaitingForRoute = false;
+          }).catch(() => {
+            // On error, create simple fallback route
+            scooter.route = [scooter.position, newEnd];
+            scooter.routeIndex = 0;
+            scooter.isWaitingForRoute = false;
+          });
+        }
         return;
       }
 
       // Get next point on route
       const nextPoint = scooter.route[scooter.routeIndex + 1];
+      if (!nextPoint) {
+        // Force route update if no next point
+        scooter.routeIndex = scooter.route.length - 1;
+        return;
+      }
+      
       const [lng, lat] = scooter.position;
       const [nextLng, nextLat] = nextPoint;
 
@@ -139,17 +164,11 @@ export const animateScooters = (
         scooter.position = nextPoint;
         scooter.routeIndex++;
       } else {
-        // Calculate new position
-        const newPosition: [number, number] = [
+        // Calculate new position and move (no collision detection)
+        scooter.position = [
           lng + (dx / distance) * SCOOTER_SPEED,
           lat + (dy / distance) * SCOOTER_SPEED,
         ];
-
-        // Check for collision before moving
-        if (!wouldCollide(newPosition, scooters, scooter.id)) {
-          scooter.position = newPosition;
-        }
-        // If collision detected, scooter stays in place (waits)
       }
 
       scooter.marker?.setLngLat(scooter.position);
