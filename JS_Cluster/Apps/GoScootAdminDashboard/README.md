@@ -132,20 +132,6 @@ const COLLISION_DISTANCE = 0.002;  // Minimum distance between scooters
 - Try a different browser (Chrome recommended)
 - Check your internet speed
 
-### Port Already in Use
-
-**Problem**: Error: Port 5173 is already in use
-
-**Solution**:
-```bash
-# Kill the process using the port (Windows)
-netstat -ano | findstr :5173
-taskkill /PID <process_id> /F
-
-# Or just use a different port
-npm run dev -- --port 3000
-```
-
 ## 🔧 Development
 
 ### Available Scripts
@@ -185,22 +171,10 @@ goscoot-map/
 ├── tsconfig.json                  # TypeScript configuration
 ├── vite.config.ts                 # Vite build configuration
 └── README.md                      # This file
-```
-## 🎮 Usage
 
-Once the application is running:
-
-1. **Navigate the Map**: 
-   - Drag to pan
-   - Scroll to zoom
-   - Use navigation controls in the top-right
-
-2. **Watch Scooters**: 
-   - Scooters automatically move along routes
-   - They avoid colliding with each other
-   - Routes update every 30 seconds
 
 3. **Locate Yourself**:
    - Click the location button to center on your position
+
 
 
