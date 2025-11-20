@@ -17,7 +17,7 @@
     "db:insert_customers": "node --loader ts-node/esm src/scripts/sql_migration/insert_customers.ts",
     "db:insert_trips": "node --loader ts-node/esm src/scripts/sql_migration/insert_trips.ts",
     "db:update_bikes_names": "node --loader ts-node/esm src/scripts/sql_migration/update_bike_names.ts",
-    "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:"
+    "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:update_bikes_names"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
