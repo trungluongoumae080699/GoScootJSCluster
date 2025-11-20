@@ -35,25 +35,35 @@ async function fetchBikeHubCoords() {
     `;
 
     const [rows] = await pool.query(query);
+    return rows as any[];
+}
 
-    // rows is RowDataPacket[], but we'll just treat it as any[]
-    const mapped = (rows as any[]).map((row) => ({
-        id: row.bike_id as string,
-        long: row.hub_longitude as number,
-        lat: row.hub_latitude as number,
-    }));
+/* -------------------------------------------------------------------------- */
+/*                        CONVERT TO MAP STRUCTURE                             */
+/* -------------------------------------------------------------------------- */
 
-    return mapped;
+function convertToMap(rows: any[]) {
+    const map: Record<string, [number, number]> = {};
+
+    for (const row of rows) {
+        const id = row.bike_id;
+        const lat = row.hub_latitude;
+        const long = row.hub_longitude;
+
+        map[id] = [lat, long];
+    }
+
+    return map;
 }
 
 /* -------------------------------------------------------------------------- */
 /*                                WRITE JSON                                  */
 /* -------------------------------------------------------------------------- */
 
-async function writeJsonFile(data: Array<{ id: string; long: number; lat: number }>) {
+async function writeJsonFile(data: any) {
     const jsonString = JSON.stringify(data, null, 2);
     await fs.writeFile(OUTPUT_PATH, jsonString, "utf8");
-    console.log(`📝 Wrote ${data.length} records to ${OUTPUT_PATH}`);
+    console.log(`📝 Wrote map with ${Object.keys(data).length} entries to ${OUTPUT_PATH}`);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -65,10 +75,13 @@ async function main() {
 
     try {
         console.log("🚀 Fetching bike–hub coordinates…");
-        const coords = await fetchBikeHubCoords();
+        const rows = await fetchBikeHubCoords();
 
-        console.log(`✅ Fetched ${coords.length} rows from database.`);
-        await writeJsonFile(coords);
+        console.log(`✅ Retrieved ${rows.length} rows.`);
+
+        const map = convertToMap(rows);
+
+        await writeJsonFile(map);
 
         console.log("🎉 Export completed.");
     } catch (err) {
