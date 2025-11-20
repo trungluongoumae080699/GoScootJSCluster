@@ -10,16 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "mapbox-gl": "^2.15.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "mapbox-gl": "^2.15.0"
+    "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/mapbox-gl": "^2.7.19",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "@types/mapbox-gl": "^2.7.19",
     "@vitejs/plugin-react": "^5.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
