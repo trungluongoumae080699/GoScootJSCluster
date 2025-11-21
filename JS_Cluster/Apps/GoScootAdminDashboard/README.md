@@ -2,33 +2,46 @@
 
 Admin dashboard for GoScoot bike/scooter rental service with real-time vehicle tracking.
 
-## 🚀 How to Run
+## 🚀 Getting Started
 
-### 1. Install Dependencies
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- Mapbox Access Token ([Get free token](https://account.mapbox.com/))
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+2. **Install dependencies**
 
 ```bash
 npm install
 ```
 
-### 2. Configure Environment
+3. **Configure environment variables**
 
-Create `.env` file:
+Create a `.env` file in the root directory:
 
 ```env
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
-Get token: [Mapbox Account](https://account.mapbox.com/)
-
-### 3. Start Development Server
+4. **Run the development server**
 
 ```bash
 npm run dev
 ```
 
-Opens at `http://localhost:5173`
+The app will open at `http://localhost:5173`
 
-### 4. Build for Production
+### Build for Production
 
 ```bash
 npm run build
@@ -51,7 +64,7 @@ src/
 └── main.tsx                    # Entry point
 ```
 
-## 🔧 Tech Stack
+## 🛠️ Tech Stack
 
 - React 19 + TypeScript
 - Vite
