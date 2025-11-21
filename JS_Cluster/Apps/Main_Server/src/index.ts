@@ -15,7 +15,7 @@ import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
 
 
 const app: Application = express();
-const PORT = 80;
+const PORT = 4000;
 
 
 //app.use(requestPreProcession());

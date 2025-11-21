@@ -11,13 +11,14 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "node --test",
+    "db:bike_loc_json_gen": "node --loader ts-node/esm ./src/scripts/json_sample_data_gen/create_idling_bikes_loc_json.ts",
     "db:insert_hubs": "node --loader ts-node/esm ./src/scripts/sql_migration/insert_hubs.ts",
     "db:insert_bikes": "node --loader ts-node/esm src/scripts/sql_migration/insert_bikes.ts",
     "db:insert_staff": "node --loader ts-node/esm src/scripts/sql_migration/insert_staff.ts",
     "db:insert_customers": "node --loader ts-node/esm src/scripts/sql_migration/insert_customers.ts",
     "db:insert_trips": "node --loader ts-node/esm src/scripts/sql_migration/insert_trips.ts",
     "db:update_bikes_names": "node --loader ts-node/esm src/scripts/sql_migration/update_bike_names.ts",
-    "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:"
+    "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:update_bikes_names"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
