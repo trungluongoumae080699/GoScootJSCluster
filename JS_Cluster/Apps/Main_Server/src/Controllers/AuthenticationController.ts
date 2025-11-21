@@ -6,10 +6,10 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { getSession, LogInType, saveSession, SessionObject } from "../Repositories/RedisRepo/SessionRepo.js";
 import { LogInRequestDTOSchema, RegistrationRequestDTOSchema, Request_MobileAppLogInDTO, Request_MobileAppRegistrationDTO, Response_MobileAppLogInDTO } from "@trungthao/mobile_app_dto";
-
 import { getStaffByEmail } from "../Repositories/MySqlRepo/StaffRepo.js";
 import { Customer } from "../Models/Customer.js";
 import { AdminLogInRequestDTOSchema, Request_DashboardLogInDTO, Response_DashboardLogInDTO } from "@trungthao/admin_dashboard_dto";
+import { createTempUser } from "../Repositories/mqttRepo/mqttDynamicSecurity.js";
 
 export const authenticateCustomer = async (request: CustomRequest<{}, {}, Request_MobileAppLogInDTO>, response: Response, next: NextFunction) => {
     const parsed = LogInRequestDTOSchema.safeParse(request.body)
@@ -120,43 +120,69 @@ export const registerCustomer = async (request: CustomRequest<{}, {}, Request_Mo
     }
 }
 
-export const authenticateAdmin = async (request: CustomRequest<{}, {}, Request_DashboardLogInDTO>, response: Response, next: NextFunction) => {
-    const parsed = AdminLogInRequestDTOSchema.safeParse(request.body)
-    if (!parsed.success) {
-        return response.status(400).json({
-            message: "Dữ kiệu không chính xác, xin vui lòng thử lại"
-        });
-    }
-    const { email, password } = parsed.data
-    const user = await getStaffByEmail(email)
-    if (!user) {
-        return response.status(401).json({
-            message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại"
-        })
-    }
-    const passwordMatch = await bcrypt.compare(password, user.password)
-    if (!passwordMatch) {
-        return response.status(401).json({
-            message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại..."
-        })
-    }
-    const sessionObject: SessionObject = {
-        _id: crypto.randomUUID(),
-        userId: user.id,
-        validPeriod: 3600000,
-        createdAt: new Date(),
-        logInType: LogInType.ADMIN
-    }
+export const authenticateAdmin = async (
+  request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
+  response: Response,
+  next: NextFunction
+) => {
+  const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({
+      message: "Dữ kiệu không chính xác, xin vui lòng thử lại",
+    });
+  }
 
-    await saveSession(sessionObject)
-    const responseObject: Response_DashboardLogInDTO = {
-        staffProfile: {
-            id: user.id,
-            full_name: user.full_name,
-            email: user.password
-        },
-        sessionId: sessionObject._id
+  const { email, password } = parsed.data;
+  const user = await getStaffByEmail(email);
 
-    }
-    response.status(200).json(responseObject)
-} 
+  if (!user) {
+    return response.status(401).json({
+      message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại",
+    });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
+    return response.status(401).json({
+      message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại...",
+    });
+  }
+
+  // 1️⃣ Create session
+  const sessionObject: SessionObject = {
+    _id: crypto.randomUUID(),
+    userId: user.id,
+    validPeriod: 3600000,
+    createdAt: new Date(),
+    logInType: LogInType.ADMIN,
+  };
+
+  await saveSession(sessionObject);
+
+  // 2️⃣ Create temporary MQTT user based on session ID
+  const mqttUsername = sessionObject._id;       // username = sessionId
+  const mqttPassword = crypto.randomBytes(16).toString("base64");  // strong random pass
+
+  try {
+    await createTempUser(mqttUsername, mqttPassword);
+    console.log(`[MQTT] Temporary user created: ${mqttUsername}`);
+  } catch (err) {
+    console.error("[MQTT] Failed to create temporary MQTT user", err);
+    return response.status(500).json({
+      message: "Đăng nhập thất bại. Không thể tạo MQTT session.",
+    });
+  }
+
+  // 3️⃣ Prepare response
+  const responseObject: Response_DashboardLogInDTO = {
+    staffProfile: {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+    },
+    sessionId: sessionObject._id,
+    mqtt_password: mqttPassword
+  };
+
+  response.status(200).json(responseObject);
+};

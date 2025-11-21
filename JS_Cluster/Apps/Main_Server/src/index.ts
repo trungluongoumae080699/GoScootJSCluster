@@ -12,6 +12,7 @@ import { requestPreProcession } from "./Middlewares/RequestPreProcession.js";
 import { mobileAppNonAuthRouter } from "./Routes/MobileAppRouters/MobileAppNonAuthRouter.js";
 import { authorize } from "./Middlewares/Authorization.js";
 import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
+import { initMqtt } from "./MqttConfig.js";
 
 
 const app: Application = express();
@@ -32,6 +33,7 @@ async function startServer() {
   try {
     await initRedis()
     await checkMySQL();
+    await initMqtt()
 
     const server = http.createServer(app);
     app.use(requestPreProcession())
