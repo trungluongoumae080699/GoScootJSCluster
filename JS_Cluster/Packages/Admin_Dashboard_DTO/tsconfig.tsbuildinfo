@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/models/dashboardstaff.ts","./src/requests/request_dashboardlogindto.ts","./src/responses/response_dashboardlogindto.ts"],"version":"5.9.3"}
+{"root":["./src/index.ts","./src/models/biketelemetry.ts","./src/models/dashboardstaff.ts","./src/requests/request_dashboardlogindto.ts","./src/responses/response_dashboardlogindto.ts"],"version":"5.9.3"}

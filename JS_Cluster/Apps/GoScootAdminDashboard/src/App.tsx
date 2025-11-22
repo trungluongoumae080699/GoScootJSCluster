@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Map from './Map';
 import BikeDetails from './BikeDetails';
+import VehicleTelemetryPage from './MqttTestPage';
 
 /**
  * Main App component
@@ -29,13 +30,9 @@ function App() {
 
   return (
     <>
-      {/* Render Map page */}
-      {currentPage === 'map' && <Map onNavigate={handleNavigate} centerOnLocation={selectedBikeLocation} />}
+
+      <VehicleTelemetryPage/>
       
-      {/* Render Bike Details page */}
-      {currentPage === 'bike-detail' && <BikeDetails onNavigate={handleNavigate} />}
-      
-      {/* Add other pages here as needed (Trips, Alerts, etc.) */}
     </>
   );
 }
