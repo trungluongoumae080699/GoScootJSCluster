@@ -1,14 +1,15 @@
-import { useEffect, useRef } from "react";
-import mqtt from "mqtt";
+import { useEffect, useState } from "react";
+import mqtt, { MqttClient } from "mqtt";
 
 export function useMqttClient(
   mqttUsername: string,
   mqttPassword: string
-): mqtt.MqttClient | null {
-  const clientRef = useRef<mqtt.MqttClient | null>(null);
+): MqttClient | null {
+  const [client, setClient] = useState<MqttClient | null>(null);
 
   useEffect(() => {
-    const client = mqtt.connect("ws://localhost:8083", {
+    // Tạo client
+    const c = mqtt.connect("ws://still-simply-katydid.ngrok.app/GoScoot/Dashboard/mqtt", {
       username: mqttUsername,
       password: mqttPassword,
       clean: true,
@@ -16,17 +17,18 @@ export function useMqttClient(
       keepalive: 30,
     });
 
-    clientRef.current = client;
+    setClient(c); // 👉 Triggger re-render với client mới
 
-    client.on("connect", () => console.log("MQTT connected"));
-    client.on("error", (err) => console.error("MQTT error:", err));
-    client.on("close", () => console.warn("MQTT disconnected"));
+    c.on("connect", () => console.log("MQTT connected"));
+    c.on("error", (err) => console.error("MQTT error:", err));
+    c.on("close", () => console.warn("MQTT disconnected"));
 
     return () => {
-      client.end(true);
       console.log("MQTT connection closed");
+      c.end(true);
+      setClient(null);
     };
   }, [mqttUsername, mqttPassword]);
 
-  return clientRef.current;
+  return client;
 }

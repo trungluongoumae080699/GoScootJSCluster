@@ -5,11 +5,15 @@ import { decodeTelemetry } from "./utlities/BindaryDecoder";
 
 export default function VehicleTelemetryPage() {
   const client = useMqttClient(
-    "a6fd6b53-51ee-4ad2-9bd6-7f0e553c3249", 
-    "A3T8jBd91k6z1Imjf94PdQ==");
+    "0dbd0886-f5c9-4916-8f0b-ef7195158503", 
+    "SGGvuz8O5ZaMBQ2EPbhS2A==");
 
   useEffect(() => {
-    if (!client) return;
+    console.log("Subscribing to topic")
+    if (!client) {
+      console.log("Subscription failed")
+      return
+    }
 
     const topic = `/telemetry/${"BIK-A4IOLKJR"}`;
 

@@ -34,19 +34,44 @@ export const config: MqttConfig = {
 
 export let adminMqttClient: MqttClient | null = null;
 
-/** Connect once at startup */
-export async function initMqtt() {
-    adminMqttClient = mqtt.connect(config.brokerUrl, {
-        username: config.username,
-        password: config.password,
-        clean: config.options.clean,
-        reconnectPeriod: config.options.reconnectPeriod,
-        keepalive: config.options.keepalive,
-        clientId: config.options.clientId,
-    });
+export async function initMqtt(): Promise<void> {
+  if (adminMqttClient && adminMqttClient.connected) {
+    console.log("[MQTT ADMIN] Already connected");
+    return;
+  }
 
-    adminMqttClient.on("connect", () => console.log("[MQTT ADMIN] Connected"));
-    adminMqttClient.on("reconnect", () => console.log("[MQTT ADMIN] Reconnecting…"));
-    adminMqttClient.on("error", (err) => console.error("[MQTT ADMIN] Error:", err));
-    adminMqttClient.on("close", () => console.warn("[MQTT ADMIN] Connection closed"));
+  adminMqttClient = mqtt.connect(config.brokerUrl, {
+    username: config.username,
+    password: config.password,
+    clean: config.options.clean,
+    reconnectPeriod: config.options.reconnectPeriod,
+    keepalive: config.options.keepalive,
+    clientId: config.options.clientId,
+  });
+
+  adminMqttClient.on("reconnect", () => console.log("[MQTT ADMIN] Reconnecting…"));
+  adminMqttClient.on("close", () => console.warn("[MQTT ADMIN] Connection closed"));
+
+  // ✨ PHẦN QUAN TRỌNG: ĐỢI CHO ĐẾN KHI 'connect' HOẶC 'error'
+  await new Promise<void>((resolve, reject) => {
+    const onConnect = () => {
+      console.log("[MQTT ADMIN] Connected");
+      cleanup();
+      resolve();
+    };
+
+    const onError = (err: Error) => {
+      console.error("[MQTT ADMIN] Error on initial connect:", err);
+      cleanup();
+      reject(err);
+    };
+
+    const cleanup = () => {
+      adminMqttClient?.off("connect", onConnect);
+      adminMqttClient?.off("error", onError);
+    };
+
+    adminMqttClient!.once("connect", onConnect);
+    adminMqttClient!.once("error", onError);
+  });
 }
