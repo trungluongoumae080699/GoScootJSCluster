@@ -12,10 +12,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route 
-          path="/dashboard" 
-          element={isAuthenticated ? <Map /> : <Navigate to="/login" />} 
-        />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
