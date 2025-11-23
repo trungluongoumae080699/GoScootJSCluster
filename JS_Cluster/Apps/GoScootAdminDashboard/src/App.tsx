@@ -1,41 +1,21 @@
-
-
-import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './Login';
+import SignUp from './SignUp';
 import Map from './Map';
-import BikeDetails from './BikeDetails';
-import VehicleTelemetryPage from './MqttTestPage';
 
-/**
- * Main App component
- * Manages application state and page routing
- */
 function App() {
-  // Track current page (simple client-side routing)
-  const [currentPage, setCurrentPage] = useState<string>('bike-detail');
-  
-  // Store bike location when navigating from BikeDetails to Map
-  const [selectedBikeLocation, setSelectedBikeLocation] = useState<[number, number] | null>(null);
-
-  /**
-   * Handle navigation between pages
-   * @param page - Page identifier to navigate to
-   * @param bikeLocation - Optional bike location to center map on
-   */
-  const handleNavigate = (page: string, bikeLocation?: [number, number]) => {
-    setCurrentPage(page);
-    if (bikeLocation) {
-      setSelectedBikeLocation(bikeLocation);
-    }
-  };
+  // TODO: Add proper authentication state management
+  const isAuthenticated = false;
 
   return (
-    <>
-
-      <VehicleTelemetryPage/>
-      
-    </>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
-
