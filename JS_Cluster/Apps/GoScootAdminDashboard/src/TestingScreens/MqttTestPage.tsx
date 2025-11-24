@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useMqttClient } from "./hooks/useMqttClient";
-import { decodeTelemetry } from "./utlities/BindaryDecoder";
+import { useMqttClient } from "../hooks/useMqttClient";
+import { decodeTelemetry } from "../utlities/BindaryDecoder";
 
 
 export default function VehicleTelemetryPage() {
