@@ -1,11 +1,12 @@
 // WebSocketTest.tsx
 import React, { useEffect, useRef } from "react";
+import { decodeBikeUpdates } from "../utlities/BindaryDecoder";
 
 
 const SESSION_ID = "944fe988-b76d-4f6e-b812-c8802cfe6c0a"; // lấy từ login API
 
 // Tạm thời hardcode server, sau bạn sửa lại theo IP / domain thật
-const WS_BASE_URL = "ws:still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws"; 
+const WS_BASE_URL = "ws:still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws";
 
 
 export default function WebSocketTest() {
@@ -41,8 +42,32 @@ export default function WebSocketTest() {
     };
 
     socket.onmessage = (event) => {
-      // event.data có thể là string hoặc binary (tuỳ server)
       console.log("📥 Message from server:", typeof event.data, event.data);
+
+      // Case 1: Binary data (Blob or ArrayBuffer)
+      if (event.data instanceof ArrayBuffer) {
+        const bytes = new Uint8Array(event.data);
+        const updates = decodeBikeUpdates(bytes);
+        console.log("🔄 Decoded Bike Updates:", updates);
+        return;
+      }
+
+      if (event.data instanceof Blob) {
+        event.data.arrayBuffer().then((buf) => {
+          const bytes = new Uint8Array(buf);
+          const updates = decodeBikeUpdates(bytes);
+          console.log("🔄 Decoded Bike Updates:", updates);
+        });
+        return;
+      }
+
+      // Case 2: Text message (JSON or string)
+      if (typeof event.data === "string") {
+        console.log("📄 Text message:", event.data);
+        return;
+      }
+
+      console.warn("⚠️ Unknown message type:", event.data);
     };
 
     socket.onerror = (error) => {
