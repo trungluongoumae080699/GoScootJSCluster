@@ -13,28 +13,9 @@ dashboardAuthenticationRouter.post("/signIn", (request: Request, response: Respo
     authenticateAdmin(customerRequest, response, next)
 });
 
-dashboardAuthenticationRouter.get("/formless/signIn", (request: Request, response: Response, next: NextFunction) => {
+dashboardAuthenticationRouter.get("/signIn/session", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
     formlessAuthenticateDashboard(customerRequest, response)
 });
 
-dashboardAuthenticationRouter.post("/debug/dynsec/create-test-client", async (req, res) => {
-  const username = "node_test_client_3";
-  const password = "test123";
-
-  try {
-    await createTempUser(username, password);
-    return res.json({
-      message: "OK",
-      username,
-      password,
-    });
-  } catch (err: any) {
-    console.error("[DEBUG][DynSec] Failed to create test client:", err);
-    return res.status(500).json({
-      message: "Failed to create test client",
-      error: err?.message ?? String(err),
-    });
-  }
-});
 
