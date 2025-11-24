@@ -5,6 +5,7 @@
  */
 
 import { MdAccountCircle } from 'react-icons/md';
+import './Header.css';
 
 /** Props for the Header component */
 interface HeaderProps {

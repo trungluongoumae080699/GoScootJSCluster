@@ -1,20 +1,21 @@
+// // src/App.tsx
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
+import Dashboard from "./Dashboard";
+import Bikes from "./Bikes";
+import BikeDetails from "./BikeDetails";
+import Header from "./components/Header";
+import { useState } from "react";
 
-
-import { useState } from 'react';
-import Map from './Map';
-import BikeDetails from './BikeDetails';
-import VehicleTelemetryPage from './MqttTestPage';
-
-/**
- * Main App component
- * Manages application state and page routing
- */
 function App() {
+  const [pageTitle, setPageTitle] = useState("");
   // Track current page (simple client-side routing)
-  const [currentPage, setCurrentPage] = useState<string>('bike-detail');
-  
+  const [currentPage, setCurrentPage] = useState<string>("bike-detail");
+
   // Store bike location when navigating from BikeDetails to Map
-  const [selectedBikeLocation, setSelectedBikeLocation] = useState<[number, number] | null>(null);
+  const [selectedBikeLocation, setSelectedBikeLocation] = useState<
+    [number, number] | null
+  >(null);
 
   /**
    * Handle navigation between pages
@@ -29,13 +30,24 @@ function App() {
   };
 
   return (
-    <>
-
-      <VehicleTelemetryPage/>
-      
-    </>
+    <Router>
+      <Header title={pageTitle} />
+      <div className="app-ctn">
+        <Sidebar onNavigate={setPageTitle} />
+        <div className="page-ctn">
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/bikes" element={<Bikes />} />
+            <Route
+              path="/bike-detail"
+              element={<BikeDetails onNavigate={handleNavigate} />}
+            />
+            <Route path="/" element={<Dashboard />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
   );
 }
 
 export default App;
-
