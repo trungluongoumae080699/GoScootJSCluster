@@ -6,6 +6,8 @@ import Bikes from "./Bikes";
 import BikeDetails from "./BikeDetails";
 import Header from "./components/Header";
 import { useState } from "react";
+import Login from "./Login";
+import SignUp from "./SignUp";
 
 function App() {
   const [pageTitle, setPageTitle] = useState("");
@@ -31,23 +33,33 @@ function App() {
 
   return (
     <Router>
-      <Header title={pageTitle} />
-      <div className="app-ctn">
-        <Sidebar onNavigate={setPageTitle} />
-        <div className="page-ctn">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/bikes" element={<Bikes />} />
-            <Route
-              path="/bike-detail"
-              element={<BikeDetails onNavigate={handleNavigate} />}
-            />
-            <Route path="/" element={<Dashboard />} />
-          </Routes>
-        </div>
-      </div>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/bikes" element={<Bikes />} />
+        <Route
+          path="/bike-detail"
+          element={<BikeDetails onNavigate={handleNavigate} />}
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
     </Router>
   );
 }
 
 export default App;
+// import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// import Login from './Login';
+// import SignUp from './SignUp';
+// import Map from './Map';
+// import WebSocketTest from './TestingScreens/WebSocketTestPage';
+
+// function App() {
+//   // TODO: Add proper authentication state management
+//   const isAuthenticated = false;
+
+//   return (
+//     <WebSocketTest></WebSocketTest>
+
+//   );
+// }
