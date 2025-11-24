@@ -15,7 +15,6 @@ import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-
 /** Configuration for navigation menu items */
 const menuItems = [
   { id: "map", icon: MdDashboard, label: "Dashboard", route: "/" },
@@ -62,7 +61,11 @@ export default function Sidebar() {
     <aside className="sidebar">
       <nav className="nav-menu">
         {menuItems.map(({ id, icon: Icon, label, subItems, route }) => (
-          <div key={id}>
+          <div
+            key={id}
+            onMouseEnter={() => subItems && setOpenMenu(id)}
+            onMouseLeave={() => subItems && setOpenMenu(null)}
+          >
             <Link
               key={id}
               to={route}
@@ -70,7 +73,7 @@ export default function Sidebar() {
                 location.pathname === route ? "active" : ""
               }`}
               onClick={() => {
-                subItems ? setOpenMenu(id) : setOpenMenu(null);
+                if (!subItems) setOpenMenu(null);
               }}
             >
               <Icon className="nav-icon" size={24} />
@@ -103,7 +106,7 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-      <Link to='/login' className="nav-item logout">
+      <Link to="/login" className="nav-item logout">
         <MdLogout className="nav-icon" size={24} />
         <span>Logout</span>
       </Link>
