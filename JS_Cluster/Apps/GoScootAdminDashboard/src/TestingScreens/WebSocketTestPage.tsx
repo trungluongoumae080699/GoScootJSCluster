@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { decodeBikeUpdates } from "../utlities/BindaryDecoder";
 
 
-const SESSION_ID = "cb97121c-a770-46e7-96c4-1992218c9a5c"; // lấy từ login API
+const SESSION_ID = "47419f74-40be-4327-90db-cdfd4955b9ba"; // lấy từ login API
 
 // Tạm thời hardcode server, sau bạn sửa lại theo IP / domain thật
 const WS_BASE_URL = "ws:still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws";
