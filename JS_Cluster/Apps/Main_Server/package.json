@@ -22,6 +22,7 @@
     "db:all": "npm run db:insert_hubs && npm run db:insert_bikes && npm run db:insert_staff && npm run db:insert_customers && npm run db:insert_trips && npm run db:update_bikes_names"
   },
   "dependencies": {
+    "@clickhouse/client": "^1.14.0",
     "@faker-js/faker": "^10.1.0",
     "@trungthao/admin_dashboard_dto": "*",
     "@trungthao/mobile_app_dto": "*",

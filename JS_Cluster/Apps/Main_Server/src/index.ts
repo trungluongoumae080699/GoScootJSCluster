@@ -13,6 +13,7 @@ import { mobileAppNonAuthRouter } from "./Routes/MobileAppRouters/MobileAppNonAu
 import { authorize } from "./Middlewares/Authorization.js";
 import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
 import { initMqtt } from "./MqttConfig.js";
+import { dashboardNonAuthenticationRouter } from "./Routes/DashboardRouters/DashboardNonAuthenticationRoutes.js";
 
 
 const app: Application = express();
@@ -40,9 +41,10 @@ async function startServer() {
     app.use(express.json());
     app.use(express.static("Asset"));
 
-    app.use("/GoScoot/Server/app/auth", mobileAppAuthenticationRouter);
-    app.use("/GoScoot/Server/dashboard/auth", dashboardAuthenticationRouter)
-    app.use("/GoScoot/Server/app", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
+    app.use("/app/auth", mobileAppAuthenticationRouter);
+    app.use("/dashboard/auth", dashboardAuthenticationRouter)
+    app.use("/app", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
+    app.use("/dashboard", authorize([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
 
     /** 404 handler (no route matched) */
     app.use((req: Request, res: Response) => {

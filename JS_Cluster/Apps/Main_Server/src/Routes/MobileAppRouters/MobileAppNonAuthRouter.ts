@@ -12,7 +12,7 @@ mobileAppNonAuthRouter.get("/trips", (request: Request, response: Response, next
     fetchMyTrips(customerRequest, response)
 });
 
-mobileAppNonAuthRouter.get("/hub/bikes/{hubId}", (request: Request, response: Response, next: NextFunction) => {
+mobileAppNonAuthRouter.get("/hub/bikes/:hubId", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
     fetchBikesByHub(customerRequest, response)
 })

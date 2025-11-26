@@ -76,13 +76,9 @@ async function main() {
     try {
         console.log("🚀 Fetching bike–hub coordinates…");
         const rows = await fetchBikeHubCoords();
-
         console.log(`✅ Retrieved ${rows.length} rows.`);
-
         const map = convertToMap(rows);
-
         await writeJsonFile(map);
-
         console.log("🎉 Export completed.");
     } catch (err) {
         console.error("❌ Export script crashed:", err);

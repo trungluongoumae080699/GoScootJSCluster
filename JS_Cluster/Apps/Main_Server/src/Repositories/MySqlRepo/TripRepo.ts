@@ -1,10 +1,12 @@
 
-import { ResultSetHeader } from "mysql2/promise";
+import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import crypto from "crypto";
-import { Trip } from "../../Models/Trip.js";
+
 import { pool } from "../../MySqlConfig.js";
 import { Response_MyTripsListingDTO, Response_TripDTO } from "@trungthao/mobile_app_dto";
+import { Response_DashboardGetTripsByBikeDTO, Trip, TripStatus } from "@trungthao/admin_dashboard_dto";
+import { GetTripsOptions } from "../../Controllers/DashboardController.js";
 
 
 export async function getMyTrips(
@@ -139,60 +141,164 @@ export async function reserveBikeForCustomer(
 }
 
   
-export async function getTrips(customerId?: string): Promise<Trip[]> {
-  const [rows] = await pool.query<Trip[]>(
-    `
-    SELECT
-      id,
-      bike_id,
-      customer_id,
-      trip_status,
-      UNIX_TIMESTAMP(reservation_expiry) * 1000 AS reservation_expiry,
-      UNIX_TIMESTAMP(trip_start_date) * 1000 AS trip_start_date,
-      UNIX_TIMESTAMP(trip_end_date) * 1000 AS trip_end_date,
-      trip_start_long,
-      trip_start_lat,
-      trip_end_long,
-      trip_end_lat
-    FROM trips
-    WHERE (? IS NULL OR customer_id = ?)
-    ORDER BY trip_start_date DESC
-    `,
-    [customerId ?? null, customerId ?? null]
-  );
 
-  return rows;
+interface TripRow extends RowDataPacket {
+  id: string;
+  bike_id: string;
+  customer_id: string;
+  hub_id: string;
+  trip_status: TripStatus;
+  reservation_expiry: number;
+  reservation_date: number;
+  trip_start_date: number | null;
+  trip_end_date: number | null;
+  trip_end_long: number | null;
+  trip_end_lat: number | null;
+  trip_secret: string | null;
+  deleted: 0 | 1;
+  price: number | null;
+  isPaid: 0 | 1;
+  created_at: Date | string;
 }
 
-/**
- * Fetch the pending trip for a given customer (if any).
- *
- * @param customerId - The customer's UUID
- * @returns The Trip record or null if none pending
- */
-export async function getPendingTripByCustomerId(customerId: string): Promise<Trip | null> {
-  const [rows] = await pool.query<Trip[]>(
-    `
+
+function mapTripRow(row: TripRow): Trip {
+  return {
+    id: row.id,
+    bike_id: row.bike_id,
+    customer_id: row.customer_id,
+    hub_id: row.hub_id,
+    trip_status: row.trip_status,
+    reservation_expiry: Number(row.reservation_expiry),
+    reservation_date: Number(row.reservation_date),
+    trip_start_date: row.trip_start_date !== null ? Number(row.trip_start_date) : null,
+    trip_end_date: row.trip_end_date !== null ? Number(row.trip_end_date) : null,
+    trip_end_long: row.trip_end_long !== null ? Number(row.trip_end_long) : null,
+    trip_end_lat: row.trip_end_lat !== null ? Number(row.trip_end_lat) : null,
+    trip_secret: row.trip_secret,
+    deleted: row.deleted === 1 ,
+    price: row.price !== null ? Number(row.price) : null,
+    isPaid: row.isPaid === 1,
+    created_at: new Date(row.created_at),
+  };
+}
+
+
+
+
+
+export async function getTrips(
+  options: GetTripsOptions = {}
+): Promise<Response_DashboardGetTripsByBikeDTO> {
+  const {
+    bikeId,
+    status,
+    reservationFrom,
+    reservationTo,
+    sortBy = "reservation_date",
+    sortDirection = "desc",
+    page = 1,
+    pageSize = 10,
+  } = options;
+
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safePageSize = Math.max(Number(pageSize) || 20, 1);
+  const offset = (safePage - 1) * safePageSize;
+
+  const conditions: string[] = ["deleted = 0"];
+  const params: any[] = [];
+
+  // Optional bike filter
+  if (bikeId) {
+    conditions.push("bike_id = ?");
+    params.push(bikeId);
+  }
+
+  // Optional status filter
+  if (status) {
+    conditions.push("trip_status = ?");
+    params.push(status);
+  }
+
+  // Optional reservation date range
+  if (typeof reservationFrom === "number") {
+    conditions.push("reservation_date >= ?");
+    params.push(reservationFrom);
+  }
+  if (typeof reservationTo === "number") {
+    conditions.push("reservation_date <= ?");
+    params.push(reservationTo);
+  }
+
+  // Base WHERE clause
+  const whereClause =
+    conditions.length > 0 ? " WHERE " + conditions.join(" AND ") : "";
+
+  // --- 1) Count query ---
+  const countSql = `
+    SELECT COUNT(*) AS total
+    FROM trips
+    ${whereClause}
+  `;
+
+  interface CountRow extends RowDataPacket {
+    total: number;
+  }
+
+  const [countRows] = await pool.query<CountRow[]>(countSql, params);
+  const total = countRows[0]?.total ?? 0;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
+
+  // If no data, early return
+  if (total === 0) {
+    return {
+      trips: [],
+      page: safePage,
+      pageSize: safePageSize,
+      total,
+      totalPages,
+    };
+  }
+
+  // --- 2) Data query ---
+  const orderField = sortBy === "price" ? "price" : "reservation_date";
+  const dir = sortDirection.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+  let dataSql = `
     SELECT
       id,
       bike_id,
       customer_id,
+      hub_id,
       trip_status,
-      UNIX_TIMESTAMP(reservation_expiry) * 1000 AS reservation_expiry,
-      UNIX_TIMESTAMP(trip_start_date) * 1000 AS trip_start_date,
-      UNIX_TIMESTAMP(trip_end_date) * 1000 AS trip_end_date,
-      trip_start_long,
-      trip_start_lat,
+      reservation_expiry,
+      reservation_date,
+      trip_start_date,
+      trip_end_date,
       trip_end_long,
       trip_end_lat,
-      trip_secret
+      trip_secret,
+      deleted,
+      price,
+      isPaid,
+      created_at
     FROM trips
-    WHERE customer_id = ?
-      AND trip_status = 'pending'
-    LIMIT 1
-    `,
-    [customerId]
-  );
+    ${whereClause}
+    ORDER BY ${orderField} ${dir}, id ${dir}
+    LIMIT ? OFFSET ?
+  `;
 
-  return rows.length > 0 ? rows[0] : null;
+  const dataParams = [...params, safePageSize, offset];
+
+  const [rows] = await pool.query<TripRow[]>(dataSql, dataParams);
+
+  const trips = rows.map(mapTripRow);
+
+  return {
+    trips,
+    page: safePage,
+    pageSize: safePageSize,
+    total,
+    totalPages,
+  };
 }

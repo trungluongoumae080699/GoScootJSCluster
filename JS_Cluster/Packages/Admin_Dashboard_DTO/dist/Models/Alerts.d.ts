@@ -1,8 +1,9 @@
-export type BikeTelemetry = {
+export interface Alert {
     id: string;
     bike_id: string;
-    battery: number;
+    content: string;
+    type: string;
     longitude: number;
     latitude: number;
     time: number;
-};
+}
