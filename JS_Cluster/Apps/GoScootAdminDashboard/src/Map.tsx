@@ -1,20 +1,14 @@
-/**
- * Main Map Page
- * Displays full map view with all vehicles (50 scooters + 1 featured bike)
- * Shows live tracking and allows navigation to bike details
- */
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { getVehicleById } from './vehicleAnimation';
-import { useMapAnimation } from './hooks/useMapAnimation';
+import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
+import { useWebSocket } from './hooks/useWebSocket';
+import { useBikeMarkers } from './hooks/useBikeMarkers';
+import MapStatusIndicator from './components/map/MapStatusIndicator';
 
 /** Mapbox API access token from environment variables */
 const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
-
-/** Featured bike location (Saigon center) */
-const BIKE_LOCATION: [number, number] = [106.6297, 10.8231];
 
 /** Default map center (Saigon center) */
 const SAIGON_CENTER: [number, number] = [106.6297, 10.8231];
@@ -29,38 +23,34 @@ export interface MapProps {
 
 /**
  * Map component
- * Full-screen map showing all vehicles with live tracking
+ * Dashboard map showing real-time bike locations via WebSocket
  */
-function Map({ onNavigate, centerOnLocation }: MapProps) {
-  // References for map container and instance
+function DashboardMap({ onNavigate, centerOnLocation }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   
-  // Loading and error states
+  const [visibleBikeCount, setVisibleBikeCount] = useState(0);
+  const [totalBikeCount, setTotalBikeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
 
-  // Initialize map with all vehicles (bike + scooters)
-  const vehiclesRef = useMapAnimation(
-    mapContainerRef,
-    centerOnLocation || SAIGON_CENTER,
-    centerOnLocation ? 15 : 12, // Zoom in if centering on specific location
-    BIKE_LOCATION,
-    false // Show all vehicles, not just bike
-  );
+  const { updateMarkers, clearMarkers } = useBikeMarkers(onNavigate);
+  
 
+
+
+
+  // Initialize map
   useEffect(() => {
-    // Check for required dependencies
     if (!mapContainerRef.current || !MAPBOX_TOKEN) {
       setError('Mapbox token is missing');
       setIsLoading(false);
       return;
     }
 
-    // Set Mapbox access token
     mapboxgl.accessToken = MAPBOX_TOKEN;
-    
-    // Initialize map instance
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -78,21 +68,43 @@ function Map({ onNavigate, centerOnLocation }: MapProps) {
       setIsLoading(false);
     });
 
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }),
+      'top-right'
+    );
+
     mapRef.current = map;
 
-    // If centering on bike, fly to its current position after short delay
-    if (centerOnLocation) {
-      setTimeout(() => {
-        const bike = getVehicleById(vehiclesRef.current, 'bike-vin-123456');
-        if (bike && map) {
-          map.flyTo({ center: bike.position, zoom: 15, duration: 1500 });
-        }
-      }, 500);
+    return () => {
+      clearMarkers();
+      map.remove();
+    };
+  }, [centerOnLocation, clearMarkers]);
+
+  const handleBikeUpdate = useCallback((bikes: BikeUpdate[]) => {
+    if (!mapRef.current) {
+      console.warn('⚠️ Map not ready yet');
+      return;
     }
 
-    // Cleanup: remove map on unmount
-    return () => map.remove();
-  }, [centerOnLocation]);
+    setWsConnected(true);
+    console.log(`📍 Received ${bikes.length} bikes from WebSocket`);
+
+    const counts = updateMarkers(bikes, mapRef.current);
+    setTotalBikeCount(counts.totalCount);
+    setVisibleBikeCount(counts.visibleCount);
+    
+    console.log(`🗺️ Total bikes: ${counts.totalCount}, Visible: ${counts.visibleCount}`);
+  }, [updateMarkers]);
+
+  // Connect to WebSocket for real-time GPS updates
+  useWebSocket(handleBikeUpdate, mapRef.current);
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -108,7 +120,7 @@ function Map({ onNavigate, centerOnLocation }: MapProps) {
       {isLoading && (
         <div className="loading-overlay">
           <div className="loading-spinner" />
-          <p>Loading map...</p>
+          <p>Loading dashboard...</p>
         </div>
       )}
       
@@ -118,28 +130,15 @@ function Map({ onNavigate, centerOnLocation }: MapProps) {
         </div>
       )}
 
-      <button 
-        onClick={() => onNavigate('bike-detail')}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          zIndex: 1000,
-          padding: '10px 20px',
-          background: '#C85A28',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        View Bike Details
-      </button>
+      <MapStatusIndicator 
+        wsConnected={wsConnected}
+        totalBikeCount={totalBikeCount}
+        visibleBikeCount={visibleBikeCount}
+      />
 
       <div ref={mapContainerRef} className="map" />
     </div>
   );
 }
 
-export default Map;
+export default DashboardMap;
