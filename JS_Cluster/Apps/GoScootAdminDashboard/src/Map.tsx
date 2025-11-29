@@ -6,6 +6,7 @@ import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useBikeMarkers } from './hooks/useBikeMarkers';
 import MapStatusIndicator from './components/map/MapStatusIndicator';
+import BikeDetailPopup from './components/map/BikeDetailPopup';
 
 /** Mapbox API access token from environment variables */
 const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
@@ -16,7 +17,7 @@ const SAIGON_CENTER: [number, number] = [106.6297, 10.8231];
 /** Props for Map component */
 export interface MapProps {
   /** Callback to navigate to other pages */
-  onNavigate: (page: string, bikeLocation?: [number, number]) => void;
+  onNavigate: (page: string, bikeLocation?: [number, number], bikeId?: string) => void;
   /** Optional location to center map on (e.g., when navigating from bike details) */
   centerOnLocation: [number, number] | null;
 }
@@ -34,8 +35,17 @@ function DashboardMap({ onNavigate, centerOnLocation }: MapProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [selectedBike, setSelectedBike] = useState<BikeUpdate | null>(null);
 
-  const { updateMarkers, clearMarkers } = useBikeMarkers(onNavigate);
+  const handleBikeClick = useCallback((bike: BikeUpdate) => {
+    setSelectedBike(bike);
+  }, []);
+
+  const handleClosePopup = useCallback(() => {
+    setSelectedBike(null);
+  }, []);
+
+  const { updateMarkers, clearMarkers } = useBikeMarkers(handleBikeClick);
   
 
 
@@ -135,6 +145,13 @@ function DashboardMap({ onNavigate, centerOnLocation }: MapProps) {
         totalBikeCount={totalBikeCount}
         visibleBikeCount={visibleBikeCount}
       />
+
+      {selectedBike && (
+        <BikeDetailPopup
+          bike={selectedBike}
+          onClose={handleClosePopup}
+        />
+      )}
 
       <div ref={mapContainerRef} className="map" />
     </div>
