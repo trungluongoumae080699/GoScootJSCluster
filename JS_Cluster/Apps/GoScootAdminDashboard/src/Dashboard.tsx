@@ -1,16 +1,30 @@
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import "./BikeDetails";
+import Map from "./Map";
+import { useState } from "react";
 
 export default function Dashboard() {
+  const [selectedBikeLocation, setSelectedBikeLocation] = useState<[number, number] | null>(null);
+  const [selectedBikeId, setSelectedBikeId] = useState<string | undefined>(undefined);
+
+  const handleNavigate = (page: string, bikeLocation?: [number, number], bikeId?: string) => {
+    if (bikeLocation) {
+      setSelectedBikeLocation(bikeLocation);
+    }
+    if (bikeId) {
+      setSelectedBikeId(bikeId);
+    }
+  };
+
   return (
     <div className="bike-details-container">
-      <Header title="Dashboard" />
+      <Header title="Dashboard - Live Map" />
       <div className="main-content">
         <Sidebar />
-        <div>
-          <h1 style={{padding: 10}}>Dashboard Page</h1>
-        </div>
+        <Map 
+          onNavigate={handleNavigate}
+          centerOnLocation={selectedBikeLocation}
+        />
       </div>
     </div>
   );
