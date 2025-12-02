@@ -5,14 +5,17 @@
  */
 
 import type {
-  Request_DashboardLogInDTO,
-  Response_DashboardLogInDTO,
   Bike,
   BikeTelemetry,
   Trip,
   Response_DashboardGetAlertsDTO,
   // Alert, // Will be available after DTO package rebuild
 } from '@trungthao/admin_dashboard_dto';
+
+import { getSessionId, clearAuth, getApiBaseUrl } from './authService';
+
+// Re-export auth functions for backward compatibility
+export { getSessionId, clearAuth as clearSession } from './authService';
 
 // Temporary Alert type until DTO package is rebuilt
 interface Alert {
@@ -25,38 +28,24 @@ interface Alert {
   time: number;
 }
 
-/** Base API URL from environment variables */
-const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'https://still-simply-katydid.ngrok.app/GoScoot/Server';
-
-/** Session storage key for storing session ID */
-const SESSION_KEY = 'goscoot_session_id';
-
-/** Hardcoded session ID for testing (formless sign-in) */
-const TEST_SESSION_ID = '59a79823-b278-474d-9f58-ad3ef79723e5';
-
-/**
- * Get the current session ID from storage
- * Falls back to test session ID if not found
- */
-export function getSessionId(): string | null {
-  // Always use the latest test session ID (clear old cached value)
-  sessionStorage.setItem(SESSION_KEY, TEST_SESSION_ID);
-  return TEST_SESSION_ID;
+/** Bikes API Response */
+export interface BikesResponse {
+  bikes: Bike[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
-/**
- * Store session ID in session storage
- */
-export function setSessionId(sessionId: string): void {
-  sessionStorage.setItem(SESSION_KEY, sessionId);
+/** Bikes API Filter Options */
+export interface GetBikesOptions {
+  battery?: number;  // Max battery percentage
+  hub?: string;      // Hub ID filter
+  page?: number;     // Page number (default: 1)
 }
 
-/**
- * Clear session ID from storage
- */
-export function clearSession(): void {
-  sessionStorage.removeItem(SESSION_KEY);
-}
+/** Base API URL */
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Make an authenticated API request
@@ -69,6 +58,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
   };
 
   // Add authorization header for authenticated requests
@@ -92,7 +82,7 @@ async function apiRequest<T>(
 
   // Handle 401 Unauthorized - session expired
   if (response.status === 401) {
-    clearSession();
+    clearAuth();
     throw new Error('Session expired. Please log in again.');
   }
 
@@ -105,50 +95,39 @@ async function apiRequest<T>(
 }
 
 /**
- * Authentication API
- */
-export const authApi = {
-  /**
-   * Log in with email and password
-   * Returns session ID and staff profile
-   */
-  async login(credentials: Request_DashboardLogInDTO): Promise<Response_DashboardLogInDTO> {
-    const response = await apiRequest<Response_DashboardLogInDTO>(
-      '/dashboard/auth/signIn',
-      {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      },
-      false // Login doesn't require auth
-    );
-
-    // Store session ID for future requests
-    setSessionId(response.sessionId);
-
-    return response;
-  },
-
-  /**
-   * Log out and clear session
-   */
-  async logout(): Promise<void> {
-    try {
-      await apiRequest('/dashboard/auth/signIn/session', { method: 'DELETE' });
-    } finally {
-      clearSession();
-    }
-  },
-};
-
-/**
  * Bike API
  */
 export const bikeApi = {
   /**
-   * Get all bikes
+   * Get all bikes with optional filters and pagination
+   * Returns paginated response with bikes, total, totalPages
+   */
+  async getBikes(options: GetBikesOptions = {}): Promise<BikesResponse> {
+    const params = new URLSearchParams();
+    
+    if (options.page) {
+      params.append('page', options.page.toString());
+    }
+    if (options.battery !== undefined) {
+      params.append('battery', options.battery.toString());
+    }
+    if (options.hub) {
+      params.append('hub', options.hub);
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/dashboard/bikes?${queryString}` : '/dashboard/bikes';
+    
+    return apiRequest<BikesResponse>(endpoint);
+  },
+
+  /**
+   * Get all bikes (legacy - returns array directly)
+   * @deprecated Use getBikes() instead for pagination support
    */
   async getAllBikes(): Promise<Bike[]> {
-    return apiRequest<Bike[]>('/dashboard/bikes');
+    const response = await this.getBikes();
+    return response.bikes;
   },
 
   /**
