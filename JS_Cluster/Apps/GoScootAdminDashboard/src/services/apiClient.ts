@@ -1,12 +1,15 @@
 
 import type {
-  Request_DashboardLogInDTO,
-  Response_DashboardLogInDTO,
   Bike,
   BikeTelemetry,
   Trip,
   // Alert, // Will be available after DTO package rebuild
 } from '@trungthao/admin_dashboard_dto';
+
+import { getSessionId, clearAuth, getApiBaseUrl } from './authService';
+
+// Re-export auth functions for backward compatibility
+export { getSessionId, clearAuth as clearSession } from './authService';
 
 // Temporary Alert type until DTO package is rebuilt
 interface Alert {
@@ -92,6 +95,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
   };
 
   // Add authorization header for authenticated requests
@@ -115,7 +119,7 @@ async function apiRequest<T>(
 
   // Handle 401 Unauthorized - session expired
   if (response.status === 401) {
-    clearSession();
+    clearAuth();
     throw new Error('Session expired. Please log in again.');
   }
 
@@ -128,7 +132,7 @@ async function apiRequest<T>(
 }
 
 /**
- * Authentication API
+ * Bike API
  */
 export const authApi = {
   /**
@@ -156,26 +160,35 @@ export const authApi = {
   },
 
   /**
-   * Log out and clear session
+   * Get all bikes with optional filters and pagination
+   * Returns paginated response with bikes, total, totalPages
    */
-  async logout(): Promise<void> {
-    try {
-      await apiRequest('/dashboard/auth/signIn/session', { method: 'DELETE' });
-    } finally {
-      clearSession();
+  async getBikes(options: GetBikesOptions = {}): Promise<BikesResponse> {
+    const params = new URLSearchParams();
+    
+    if (options.page) {
+      params.append('page', options.page.toString());
     }
+    if (options.battery !== undefined) {
+      params.append('battery', options.battery.toString());
+    }
+    if (options.hub) {
+      params.append('hub', options.hub);
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/dashboard/bikes?${queryString}` : '/dashboard/bikes';
+    
+    return apiRequest<BikesResponse>(endpoint);
   },
-};
 
-/**
- * Bike API
- */
-export const bikeApi = {
   /**
-   * Get all bikes
+   * Get all bikes (legacy - returns array directly)
+   * @deprecated Use getBikes() instead for pagination support
    */
   async getAllBikes(): Promise<Bike[]> {
-    return apiRequest<Bike[]>('/dashboard/bikes');
+    const response = await this.getBikes();
+    return response.bikes;
   },
 
   /**

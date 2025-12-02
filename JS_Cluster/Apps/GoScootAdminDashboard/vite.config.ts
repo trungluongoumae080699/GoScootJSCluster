@@ -10,5 +10,18 @@ export default defineConfig({
     alias: {
       '@assets': path.resolve(__dirname, '../../Asset')
     }
+  },
+  server: {
+    proxy: {
+      // Proxy all requests to /GoScoot/Server to bypass CORS
+      '/GoScoot/Server': {
+        target: 'https://still-simply-katydid.ngrok.app',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      }
+    }
   }
 })
