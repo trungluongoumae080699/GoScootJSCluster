@@ -7,110 +7,11 @@ import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { alertApi } from "./services/apiClient";
 import { useEffect, useMemo, useState } from "react";
 
-// Mock alert data
-const alertDatas = {
-  alerts: [
-    {
-      id: "11560696d0be",
-      bike_id: "BIK-ZCVP3SYJ",
-      content: "Xe BIK-ZCVP3SYJ đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.29965204657522,
-      latitude: 10.825804273769128,
-      time: 1764467323179,
-    },
-    {
-      id: "a26bc8967675",
-      bike_id: "BIK-J02WNLRS",
-      content: "Xe BIK-J02WNLRS đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.6200579164958,
-      latitude: 10.499911226528637,
-      time: 1764467288175,
-    },
-    {
-      id: "2fb9a63afb36",
-      bike_id: "BIK-7PLPUKGK",
-      content: "Xe BIK-7PLPUKGK đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 107.10031083328936,
-      latitude: 10.800659145508511,
-      time: 1764467266202,
-    },
-    {
-      id: "1e763748b224",
-      bike_id: "BIK-U54O0UFE",
-      content: "Xe BIK-U54O0UFE đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.63438976296985,
-      latitude: 10.499569985771876,
-      time: 1764467266200,
-    },
-    {
-      id: "f7b228f01046",
-      bike_id: "BIK-6CDS2OD4",
-      content: "Xe BIK-6CDS2OD4 đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.60522635686858,
-      latitude: 10.499673010314206,
-      time: 1764467248181,
-    },
-    {
-      id: "46f84d7dc829",
-      bike_id: "BIK-YV5H28KN",
-      content: "Xe BIK-YV5H28KN đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.83530462302788,
-      latitude: 11.10014013729373,
-      time: 1764467248178,
-    },
-    {
-      id: "e3615eb7cea1",
-      bike_id: "BIK-L11WGOVG",
-      content: "Xe BIK-L11WGOVG đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.71953353903274,
-      latitude: 10.499847797590531,
-      time: 1764467246173,
-    },
-    {
-      id: "b021608903a4",
-      bike_id: "BIK-TZN9R53X",
-      content: "Xe BIK-TZN9R53X đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.6514000491958,
-      latitude: 10.49984789760691,
-      time: 1764467226202,
-    },
-    {
-      id: "74ec43613590",
-      bike_id: "BIK-X936C065",
-      content: "Xe BIK-X936C065 đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 107.10013022646052,
-      latitude: 10.835623543052131,
-      time: 1764467186178,
-    },
-    {
-      id: "a6e1b80bc714",
-      bike_id: "BIK-PGBZD414",
-      content: "Xe BIK-PGBZD414 đã đi qua phạm vi khu vực cho phép",
-      type: "boundary_cross",
-      longitude: 106.706196865477,
-      latitude: 11.100173242508532,
-      time: 1759294800000,
-    },
-  ],
-  page: 1,
-  pageSize: 10,
-  total: 89752,
-  totalPages: 8976,
-};
-
 // Main Alerts Page
 export default function Alerts() {
   const [loading, setLoading] = useState(false);
-  const [filteredAlerts, setFilteredAlerts] = useState<any>(alertDatas.alerts); // Replarce '[]' when integrating API
+  const [alerts, setAlerts] = useState<any>([]);
+  const [filteredAlerts, setFilteredAlerts] = useState<any>([]); 
   const [showFilter, setshowFilter] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -127,29 +28,30 @@ export default function Alerts() {
     return filteredAlerts.slice(start, end);
   }, [filteredAlerts, currentPage]);
 
+  const fetchAlertData = async () => {
+    try {
+      setLoading(true);
+
+      const alertData = await alertApi.getAllAlerts();
+
+      setAlerts(alertData.alerts);
+      setFilteredAlerts(alertData.alerts);
+      console.log("Fetched alert data:", alertData);
+    } catch (err) {
+      console.error("Failed to fetch alert data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAlertData = async () => {
-      try {
-        setLoading(true);
-
-        const alertData = await alertApi.getAllAlerts();
-
-        setFilteredAlerts(alertData.alerts);
-        console.log("Fetched alert data:", alertData);
-      } catch (err) {
-        console.error("Failed to fetch alert data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAlertData();
-  }, [setFilteredAlerts]);
+  }, []);
 
   // "asc" | "desc"
 
   const handleFilter = () => {
-    let filtered = [...alertDatas.alerts];
+    let filtered = [...filteredAlerts];
 
     // --- DATE FILTER ---
     if (startDate && endDate) {
@@ -186,12 +88,12 @@ export default function Alerts() {
 
   const clearFilter = () => {
     setshowFilter(false);
-    setFilteredAlerts(alertDatas.alerts);
     setStartDate("");
     setEndDate("");
     setSearchBikeId("");
     setSortOrder("");
     setCurrentPage(1);
+    setFilteredAlerts(alerts);
   };
 
   return (
@@ -207,7 +109,7 @@ export default function Alerts() {
             {/* Filter Buttons */}
             <div className="filter-row">
               <button className="filter-btn">
-                All Alert : {alertDatas.alerts.length}
+                All Alert : {alerts.length}
               </button>
               <button className="filter-btn">Collision & Crash Alert: 3</button>
               <button className="filter-btn">Out-of-Zone Bikes: 2</button>

@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import Login from "./Login";
 import SignUp from "./SignUp";
 import { formlessSignIn } from "./services/authService";
+import Alert from "./Alert";
 
 /**
  * Protected Route wrapper
@@ -138,6 +139,14 @@ function App() {
           element={
             <ProtectedRoute isAuth={isAuth}>
               <BikeDetailsWrapper onNavigate={handleNavigate} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/alert"
+          element={
+            <ProtectedRoute isAuth={isAuth}>
+              <Alert />
             </ProtectedRoute>
           }
         />
