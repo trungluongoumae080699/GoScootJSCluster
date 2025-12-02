@@ -3,6 +3,7 @@ import type {
   Bike,
   BikeTelemetry,
   Trip,
+  Response_DashboardGetAlertsDTO,
   // Alert, // Will be available after DTO package rebuild
 } from '@trungthao/admin_dashboard_dto';
 
@@ -250,12 +251,12 @@ export const alertApi = {
    * Get all alerts
    * Returns Response_DashboardGetAlertsDTO with pagination
    */
-  async getAllAlerts(page: number = 1, pageSize: number = 50): Promise<Alert[]> {
-    const response = await apiRequest<any>(
-      `/dashboard/alerts?page=${page}&pageSize=${pageSize}`
+  async getAllAlerts(): Promise<Response_DashboardGetAlertsDTO> {
+    const response = await apiRequest<Response_DashboardGetAlertsDTO>(
+      `/dashboard/alerts`
     );
-    // Extract alerts array from response
-    return response.alerts || response;
+
+    return response;
   },
 
   /**
