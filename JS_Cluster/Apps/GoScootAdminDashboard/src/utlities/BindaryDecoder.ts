@@ -53,32 +53,32 @@ export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
     let offset = 0;
 
     // Read bike count (uint16 BE)
-    const count = dv.getUint16(offset, false); // BE = false
+    const count = dv.getUint16(offset, false); // Big endian
     offset += 2;
 
     const bikes: BikeUpdate[] = [];
 
     for (let i = 0; i < count; i++) {
-        // 1. Read ID length
+        // 1) ID length
         const idLen = dv.getUint8(offset);
         offset += 1;
 
-        // 2. Read ID bytes
+        // 2) ID bytes
         const idBytes = bytes.slice(offset, offset + idLen);
         const id = new TextDecoder().decode(idBytes);
         offset += idLen;
 
-        // 3. Battery (int32 BE)
+        // 3) BatteryStatus (int32 BE)
         const battery_status = dv.getInt32(offset, false);
         offset += 4;
 
-        // 4. Longitude (float64 BE)
-        const longitude = dv.getFloat64(offset, false);
-        offset += 8;
+        // 4) Longitude (float32 BE)
+        const longitude = dv.getFloat32(offset, false);
+        offset += 4;
 
-        // 5. Latitude (float64 BE)
-        const latitude = dv.getFloat64(offset, false);
-        offset += 8;
+        // 5) Latitude (float32 BE)
+        const latitude = dv.getFloat32(offset, false);
+        offset += 4;
 
         bikes.push({
             id,
