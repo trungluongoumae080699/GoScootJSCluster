@@ -1,4 +1,3 @@
-import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Map from "./Map";
 import { useState } from "react";
@@ -18,7 +17,6 @@ export default function Dashboard() {
 
   return (
     <div className="bike-details-container">
-      <Header title="Dashboard - Live Map" />
       <div className="main-content">
         <Sidebar />
         <Map 
