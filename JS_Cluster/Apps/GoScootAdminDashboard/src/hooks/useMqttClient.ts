@@ -8,6 +8,12 @@ export function useMqttClient(
   const [client, setClient] = useState<MqttClient | null>(null);
 
   useEffect(() => {
+    // Don't connect if credentials are missing
+    if (!mqttUsername || !mqttPassword) {
+      console.log("⚠️ MQTT credentials not available, skipping connection");
+      return;
+    }
+
     // Tạo client
     const c = mqtt.connect("ws://still-simply-katydid.ngrok.app/GoScoot/Dashboard/mqtt", {
       username: mqttUsername,
@@ -17,11 +23,11 @@ export function useMqttClient(
       keepalive: 30,
     });
 
-    setClient(c); // 👉 Triggger re-render với client mới
+    setClient(c); // 👉 Trigger re-render với client mới
 
-    c.on("connect", () => console.log("MQTT connected"));
-    c.on("error", (err) => console.error("MQTT error:", err));
-    c.on("close", () => console.warn("MQTT disconnected"));
+    c.on("connect", () => console.log("✅ MQTT connected"));
+    c.on("error", (err) => console.warn("⚠️ MQTT error:", err.message));
+    c.on("close", () => console.log("MQTT disconnected"));
 
     return () => {
       console.log("MQTT connection closed");

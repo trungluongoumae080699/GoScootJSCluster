@@ -1,9 +1,10 @@
 /**
  * TelemetryTable Component
- * Displays bike telemetry/movement history with date filtering and CSV export
+ * Displays bike telemetry/movement history with date filtering, pagination, and Excel export
  */
 
 import { BikeTelemetry } from '@trungthao/admin_dashboard_dto';
+import { MdFileDownload, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
 interface TelemetryTableProps {
   telemetry: BikeTelemetry[];
@@ -11,8 +12,13 @@ interface TelemetryTableProps {
   endDate: string;
   onStartDateChange: (date: string) => void;
   onEndDateChange: (date: string) => void;
-  onExportCSV: () => void;
+  onExportExcel: () => void;
+  isExporting: boolean;
   formatDate: (timestamp: number) => string;
+  page: number;
+  totalPages: number;
+  total: number;
+  onPageChange: (page: number) => void;
 }
 
 function TelemetryTable({ 
@@ -21,13 +27,18 @@ function TelemetryTable({
   endDate, 
   onStartDateChange, 
   onEndDateChange, 
-  onExportCSV,
-  formatDate 
+  onExportExcel,
+  isExporting,
+  formatDate,
+  page,
+  totalPages,
+  total,
+  onPageChange,
 }: TelemetryTableProps) {
   return (
     <div className="movement-history-section">
       <div className="movement-history-header">
-        <h3>Movement History ({telemetry.length} records) 
+        <h3>Movement History ({total} records) 
           <span style={{ 
             fontSize: '12px', 
             color: '#4CAF50', 
@@ -55,8 +66,14 @@ function TelemetryTable({
               className="date-input"
             />
           </div>
-          <button onClick={onExportCSV} className="export-btn">
-            Export CSV
+          <button 
+            onClick={onExportExcel} 
+            className="export-btn"
+            disabled={isExporting}
+            title="Export to Excel"
+          >
+            <MdFileDownload size={18} style={{ marginRight: '4px' }} />
+            {isExporting ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
       </div>
@@ -71,9 +88,16 @@ function TelemetryTable({
         </thead>
         <tbody>
           {telemetry.length > 0 ? (
-            telemetry.slice(0, 50).map((t) => (
+            telemetry.map((t) => (
               <tr key={t.id}>
-                <td>{t.battery}%</td>
+                <td>
+                  <span style={{
+                    color: t.battery > 20 ? '#4CAF50' : '#F44336',
+                    fontWeight: 'bold'
+                  }}>
+                    {t.battery}%
+                  </span>
+                </td>
                 <td>{t.longitude.toFixed(6)}</td>
                 <td>{t.latitude.toFixed(6)}</td>
                 <td>{formatDate(t.time)}</td>
@@ -88,6 +112,29 @@ function TelemetryTable({
           )}
         </tbody>
       </table>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            className="pagination-btn"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+          >
+            <MdChevronLeft size={20} />
+          </button>
+          <span className="pagination-info">
+            Page {page} of {totalPages}
+          </span>
+          <button 
+            className="pagination-btn"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= totalPages}
+          >
+            <MdChevronRight size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
