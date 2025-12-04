@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -20,14 +20,59 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
+// Cache configuration
+const CACHE_KEY = "bikes_cache";
+const CACHE_TIMESTAMP_KEY = "bikes_cache_timestamp";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache validity
+
+// Helper functions for caching
+const getCachedBikes = (): Bike[] | null => {
+  try {
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (!timestamp) return null;
+    
+    const cacheAge = Date.now() - parseInt(timestamp, 10);
+    if (cacheAge > CACHE_TTL_MS) {
+      // Cache expired
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+      return null;
+    }
+    
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    
+    return JSON.parse(cached);
+  } catch {
+    return null;
+  }
+};
+
+const setCachedBikes = (bikes: Bike[]) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(bikes));
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+  } catch {
+    // localStorage might be full or unavailable
+    console.warn("Failed to cache bikes data");
+  }
+};
+
 export default function Bikes() {
   const navigate = useNavigate();
   
   // All bikes cache (fetched from server)
   const [allBikes, setAllBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState("");
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if we have initial data to show
+  const [hasInitialData, setHasInitialData] = useState(false);
+  
+  // Abort controller for cleanup
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Filter states
   const [searchVin, setSearchVin] = useState("");
@@ -39,33 +84,63 @@ export default function Bikes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState("");
 
-  // Fetch all bikes from server (no filters - get everything)
-  const fetchAllBikes = useCallback(async () => {
+  // Fetch all bikes from server with progressive loading
+  const fetchAllBikes = useCallback(async (forceRefresh = false) => {
+    // Cancel any ongoing fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    
     try {
-      setLoading(true);
-      setError(null);
-      setLoadingProgress("Fetching bikes...");
+      // Step 1: Check cache first (instant load)
+      if (!forceRefresh) {
+        const cached = getCachedBikes();
+        if (cached && cached.length > 0) {
+          setAllBikes(cached);
+          setHasInitialData(true);
+          setLoading(false);
+          // Still refresh in background
+          setIsBackgroundLoading(true);
+          setLoadingProgress("Updating in background...");
+        }
+      }
 
-      // First fetch to get total pages
+      // Step 2: Fetch first page immediately
       const firstResponse = await bikeApi.getBikes({ page: 1 });
+      
+      // Show first page data immediately if we don't have cache
+      if (!hasInitialData || forceRefresh) {
+        setAllBikes(firstResponse.bikes);
+        setHasInitialData(true);
+        setLoading(false);
+      }
 
       if (firstResponse.totalPages <= 1) {
+        setCachedBikes(firstResponse.bikes);
         setAllBikes(firstResponse.bikes);
+        setIsBackgroundLoading(false);
         setLoadingProgress("");
         return;
       }
 
-      // Fetch all remaining pages in parallel batches
+      // Step 3: Fetch remaining pages in background with larger batch size
+      setIsBackgroundLoading(true);
       let allBikesData = [...firstResponse.bikes];
       const totalPages = firstResponse.totalPages;
       const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
 
-      // Fetch in batches of 5 for better performance
-      const BATCH_SIZE = 5;
+      // Increase batch size for faster loading (10 concurrent requests)
+      const BATCH_SIZE = 10;
       for (let i = 0; i < remainingPages.length; i += BATCH_SIZE) {
+        // Check if aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+        
         const batch = remainingPages.slice(i, i + BATCH_SIZE);
         const progress = Math.round(((i + batch.length + 1) / totalPages) * 100);
-        setLoadingProgress(`Loading bikes... ${progress}%`);
+        setLoadingProgress(`Loading more bikes... ${progress}%`);
 
         const results = await Promise.all(
           batch.map((page) => bikeApi.getBikes({ page }))
@@ -74,20 +149,43 @@ export default function Bikes() {
         results.forEach((res) => {
           allBikesData = [...allBikesData, ...res.bikes];
         });
+        
+        // Update state progressively every batch for better UX
+        setAllBikes([...allBikesData]);
       }
 
+      // Cache the complete dataset
+      setCachedBikes(allBikesData);
       setAllBikes(allBikesData);
       setLoadingProgress("");
+      setIsBackgroundLoading(false);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return; // Ignore abort errors
+      }
       setError(err instanceof Error ? err.message : "Failed to fetch bikes");
-    } finally {
       setLoading(false);
+      setIsBackgroundLoading(false);
     }
-  }, []);
+  }, [hasInitialData]);
 
   // Initial fetch - only once
   useEffect(() => {
     fetchAllBikes();
+    
+    // Cleanup on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+  
+  // Manual refresh function
+  const handleRefresh = useCallback(() => {
+    setLoading(true);
+    setHasInitialData(false);
+    fetchAllBikes(true);
   }, [fetchAllBikes]);
 
   // Client-side filtering (VIN, type, status, AND battery)
@@ -206,6 +304,19 @@ export default function Bikes() {
           <div className="bikes-stats">
             <p>Total: {totalFilteredBikes}</p>
             <p>Available: {availableCount}</p>
+            <button 
+              className="refresh-btn" 
+              onClick={handleRefresh}
+              disabled={loading || isBackgroundLoading}
+              title="Refresh bike data"
+            >
+              🔄 Refresh
+            </button>
+            {isBackgroundLoading && (
+              <span className="background-loading-indicator">
+                {loadingProgress}
+              </span>
+            )}
           </div>
 
           {/* Filters Section */}
