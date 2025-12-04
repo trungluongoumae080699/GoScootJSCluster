@@ -6,12 +6,55 @@
 /* Stats Section */
 .bikes-stats {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .bikes-stats p {
   margin: 0.25rem 0;
   font-size: 1.1rem;
   font-weight: 500;
+}
+
+.refresh-btn {
+  padding: 0.5rem 1rem;
+  background: #C85A28;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #a64820;
+  transform: scale(1.02);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.background-loading-indicator {
+  font-size: 0.85rem;
+  color: #1976d2;
+  background: #e8f4fd;
+  padding: 0.35rem 0.75rem;
+  border-radius: 15px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* Filters Section */
