@@ -14,6 +14,7 @@ import { authorize } from "./Middlewares/Authorization.js";
 import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
 import { initMqtt } from "./MqttConfig.js";
 import { dashboardNonAuthenticationRouter } from "./Routes/DashboardRouters/DashboardNonAuthenticationRoutes.js";
+import { bikeRouter } from "./Routes/BikeRouters.js";
 
 
 const app: Application = express();
@@ -41,6 +42,7 @@ async function startServer() {
     app.use(express.json());
     app.use(express.static("Asset"));
 
+    app.use("/bike", bikeRouter);
     app.use("/app/auth", mobileAppAuthenticationRouter);
     app.use("/dashboard/auth", dashboardAuthenticationRouter)
     app.use("/app", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);

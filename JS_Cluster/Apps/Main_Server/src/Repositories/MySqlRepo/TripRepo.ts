@@ -7,6 +7,7 @@ import { pool } from "../../MySqlConfig.js";
 import { Response_MyTripsListingDTO, Response_TripDTO } from "@trungthao/mobile_app_dto";
 import { Response_DashboardGetTripsByBikeDTO, Trip, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { GetTripsOptions } from "../../Controllers/DashboardController.js";
+import { TripRervationPayload } from "../../Controllers/BkeController.js";
 
 
 export async function getMyTrips(
@@ -301,4 +302,52 @@ export async function getTrips(
     total,
     totalPages,
   };
+}
+
+const FIND_ACTIVE_TRIP_SQL = `
+  SELECT
+    id,
+    bike_id,
+    customer_id,
+    hub_id,
+    trip_status,
+    reservation_expiry,
+    reservation_date,
+    trip_start_date,
+    trip_end_date,
+    trip_end_long,
+    trip_end_lat,
+    trip_secret,
+    deleted,
+    price,
+    isPaid,
+    created_at
+  FROM trips
+  WHERE id = ?
+    AND bike_id = ?
+    AND customer_id = ?
+    AND trip_secret = ?
+    AND deleted = 0
+    AND reservation_expiry >= ?
+  LIMIT 1
+`;
+
+export async function findActiveTripReservation(
+  payload: TripRervationPayload
+): Promise<TripRow | null> {
+  const nowMs = Date.now();
+
+  const [rows] = await pool.query<RowDataPacket[]>(FIND_ACTIVE_TRIP_SQL, [
+    payload.trip_id,
+    payload.bike_id,
+    payload.customer_id,
+    payload.trip_secret,
+    nowMs,
+  ]);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return rows[0] as TripRow;
 }
