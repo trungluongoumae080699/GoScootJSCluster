@@ -14,9 +14,14 @@ export type TripRervationPayload = {
   reservation_expiry: number;
 }
 
+export type TripResponsePayload = {
+    id: string | null;
+    isValid: boolean;
+}
+
 export type TripValidationResponse = {
   trip_id: string;
-  
+
 }
 
 export const validateTrip = async (
@@ -35,11 +40,8 @@ export const validateTrip = async (
       .json({ error: "bikeId path parameter does not match body bike_id" });
   }
   const trip = await findActiveTripReservation(request.body);
-  if (!trip) {
-    return response
-      .status(404)
-      .json({ error: "No active trip reservation found for the given bike and customer" });
-  }
-  return response.status(200).json({ trip: trip });
+  const id: string | null = trip ? trip.id : null;
+  const isValid: boolean = trip ? true : false;
+  return response.status(200).json({id, isValid});
   
 };
