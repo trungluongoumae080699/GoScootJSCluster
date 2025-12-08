@@ -68,7 +68,6 @@ function App() {
    */
   useEffect(() => {
     const checkExistingSession = async () => {
-      
       try {
         // Try formless sign-in if session ID exists
         const response = await formlessSignIn();
@@ -88,13 +87,15 @@ function App() {
     checkExistingSession();
 
     // Only to test notifications - later remove when MQTT is integrated
-    const timeout = setTimeout(() => {
-      addNotification(
-        "Dung lượng pin của xe BIK-A4TDFCDB đã xuống mức báo động. Xin vui lòng kiểm tra"
-      );
-    }, 5000);
+    if (isAuth) {
+      const timeout = setTimeout(() => {
+        addNotification(
+          "Dung lượng pin của xe BIK-A4TDFCDB đã xuống mức báo động. Xin vui lòng kiểm tra"
+        );
+      }, 5000);
 
-    return () => clearTimeout(timeout);
+      return () => clearTimeout(timeout);
+    }
   }, []);
 
   /**
