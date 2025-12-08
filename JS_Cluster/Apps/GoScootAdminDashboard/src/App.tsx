@@ -86,17 +86,29 @@ function App() {
 
     checkExistingSession();
 
-    // Only to test notifications - later remove when MQTT is integrated
-    if (isAuth) {
-      const timeout = setTimeout(() => {
-        addNotification(
-          "Dung lượng pin của xe BIK-A4TDFCDB đã xuống mức báo động. Xin vui lòng kiểm tra"
-        );
-      }, 5000);
-
-      return () => clearTimeout(timeout);
-    }
   }, []);
+  
+  // Only to test notifications - later remove when MQTT is integrated
+  useEffect(() => {
+  if (!isAuth) return;
+  const messages = [
+    "Dung lượng pin của xe BIK-A4TDFCDB đã xuống mức báo động. Xin vui lòng kiểm tra",
+    "Dung lượng pin của xe BIK-STB2CRBX đã xuống mức báo động. Xin vui lòng kiểm tra",
+    "Dung lượng pin của xe BIK-FAF3M7FP đã xuống mức báo động. Xin vui lòng kiểm tra",
+    "Dung lượng pin của xe BIK-EMG34LON đã xuống mức báo động. Xin vui lòng kiểm tra",
+    "Dung lượng pin của xe BIK-1LX866R8 đã xuống mức báo động. Xin vui lòng kiểm tra",
+  ];
+
+  let index = 0;
+
+  const interval = setInterval(() => {
+    addNotification(messages[index]);
+
+    index = (index + 1) % messages.length; // loop back to start
+  }, 10000);
+
+  return () => clearInterval(interval);
+}, [isAuth]);
 
   /**
    * Handle navigation between pages
