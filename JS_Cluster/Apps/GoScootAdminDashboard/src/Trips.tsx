@@ -46,7 +46,7 @@ export default function Trips() {
   const fetchAllTrips = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setLoadingProgress("Fetching trips...");
+    setLoadingProgress("Loading trips...");
 
     try {
       let allTripsCombined: Trip[] = [];
@@ -73,7 +73,7 @@ export default function Trips() {
             const batch = pages.slice(p, p + BATCH_SIZE);
 
             const results = await Promise.all(
-              batch.map((page) => tripApi.getTripsByBike(bikeId, page))
+              batch.map((page) => tripApi.getTripsByBike(bikeId, {page: page}))
             );
 
             results.forEach((res) => {
