@@ -8,6 +8,7 @@ import type {
   Bike,
   BikeTelemetry,
   Response_DashboardGetAlertsDTO,
+  Response_DashboardGetTripsByBikeDTO,
   Trip,
   // Alert, // Will be available after DTO package rebuild
 } from '@trungthao/admin_dashboard_dto';
@@ -165,12 +166,12 @@ export const tripApi = {
    * Get trips for a specific bike
    * Returns Response_DashboardGeTripsByBike with pagination
    */
-  async getTripsByBike(bikeId: string, page: number = 1, pageSize: number = 50): Promise<Trip[]> {
-    const response = await apiRequest<any>(
-      `/dashboard/bikes/${bikeId}/trips?page=${page}&pageSize=${pageSize}`
+  async getTripsByBike(bikeId: string, page: number = 1): Promise<Response_DashboardGetTripsByBikeDTO> {
+    const response = await apiRequest<Response_DashboardGetTripsByBikeDTO>(
+      `/dashboard/trips/${bikeId}?page=${page}&sortBy=reservation_date&sortDirection=asc`
     );
     // Extract trips array from response
-    return response.trips || response;
+    return response;
   },
 
   /**
@@ -189,9 +190,9 @@ export const alertApi = {
    * Get all alerts
    * Returns Response_DashboardGetAlertsDTO with pagination
    */
-  async getAllAlerts(): Promise<Response_DashboardGetAlertsDTO> {
+  async getAllAlerts(page: number): Promise<Response_DashboardGetAlertsDTO> {
     const response = await apiRequest<Response_DashboardGetAlertsDTO>(
-      `/dashboard/alerts`
+      `/dashboard/alerts?page=${page}`
     );
 
     return response;
