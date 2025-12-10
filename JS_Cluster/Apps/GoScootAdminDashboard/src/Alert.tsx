@@ -3,22 +3,27 @@ import Header from "./components/Header";
 import "./Alert.css";
 import AlertCard from "./components/alert/AlertCard";
 import { RxMixerVertical } from "react-icons/rx";
-import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
+import {
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
+} from "react-icons/md";
 import { alertApi } from "./services/apiClient";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Main Alerts Page
 export default function Alerts() {
   const [loading, setLoading] = useState(false);
   const [alerts, setAlerts] = useState<any>([]);
-  const [filteredAlerts, setFilteredAlerts] = useState<any>([]); 
+  const [filteredAlerts, setFilteredAlerts] = useState<any>([]);
   const [showFilter, setshowFilter] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchBikeId, setSearchBikeId] = useState("");
   const [sortOrder, setSortOrder] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3;
+  const pageSize = 10;
 
   const totalPages = Math.ceil(filteredAlerts.length / pageSize);
 
@@ -28,30 +33,57 @@ export default function Alerts() {
     return filteredAlerts.slice(start, end);
   }, [filteredAlerts, currentPage]);
 
-  const fetchAlertData = async () => {
+  const fetchAllAlerts = useCallback(async () => {
     try {
       setLoading(true);
 
-      const alertData = await alertApi.getAllAlerts();
+      // First fetch to get total pages
+      const firstResponse = await alertApi.getAllAlerts(1);
 
-      setAlerts(alertData.alerts);
-      setFilteredAlerts(alertData.alerts);
-      console.log("Fetched alert data:", alertData);
+      if (firstResponse.totalPages <= 1) {
+        setAlerts(firstResponse.alerts);
+        return;
+      }
+
+      // Fetch all remaining pages in parallel batches
+      let allAlertsData = [...firstResponse.alerts];
+      const maxPages = 100;
+      const remainingPages = Array.from(
+        { length: maxPages - 1 },
+        (_, i) => i + 2
+      );
+
+      // Fetch in batches of 5 for better performance
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < remainingPages.length; i += BATCH_SIZE) {
+        const batch = remainingPages.slice(i, i + BATCH_SIZE);
+
+        const results = await Promise.all(
+          batch.map((page) => alertApi.getAllAlerts(page))
+        );
+
+        results.forEach((res) => {
+          allAlertsData = [...allAlertsData, ...res.alerts];
+        });
+      }
+
+      setAlerts(allAlertsData);
+      setFilteredAlerts(allAlertsData);
     } catch (err) {
-      console.error("Failed to fetch alert data:", err);
+      console.log(err instanceof Error ? err.message : "Failed to fetch bikes");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchAlertData();
-  }, []);
+    fetchAllAlerts();
+  }, [fetchAllAlerts]);
 
   // "asc" | "desc"
 
   const handleFilter = () => {
-    let filtered = [...filteredAlerts];
+    let filtered = [...alerts];
 
     // --- DATE FILTER ---
     if (startDate && endDate) {
@@ -94,6 +126,27 @@ export default function Alerts() {
     setSortOrder("");
     setCurrentPage(1);
     setFilteredAlerts(alerts);
+  };
+
+  const getVisiblePages = () => {
+    const maxSide = 2;
+    const pages = [];
+
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    pages.push(1);
+
+    let start = Math.max(2, currentPage - maxSide);
+    let end = Math.min(totalPages - 1, currentPage + maxSide);
+
+    if (start > 2) pages.push("...");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push("...");
+
+    pages.push(totalPages);
+    return pages;
   };
 
   return (
@@ -203,24 +256,39 @@ export default function Alerts() {
             ))}
             {/* Pagination */}
             <div className="pagination">
+              {/* Go to First Page */}
+              <button
+                className="page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(1)}
+              >
+                <MdKeyboardDoubleArrowLeft />
+              </button>
               <button
                 className="page-btn"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
               >
-                <FaArrowLeft />
+                <MdKeyboardArrowLeft />
               </button>
 
               {/* Page Numbers */}
-              {[...Array(totalPages)].map((_, index) => {
-                const page = index + 1;
+              {getVisiblePages().map((page, index) => {
+                if (page === "...") {
+                  return (
+                    <span key={`dots-${index}`} className="dots">
+                      ...
+                    </span>
+                  );
+                }
+
                 return (
                   <button
-                    key={page}
+                    key={`page-${page}-${index}`}
                     className={`page-number ${
                       page === currentPage ? "active" : ""
                     }`}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => setCurrentPage(page as number)}
                   >
                     {page}
                   </button>
@@ -232,7 +300,15 @@ export default function Alerts() {
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
-                <FaArrowRight />
+                <MdKeyboardArrowRight />
+              </button>
+              {/* Go to Last Page */}
+              <button
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+              >
+                <MdKeyboardDoubleArrowRight />
               </button>
             </div>
           </div>
