@@ -1,4 +1,4 @@
-import { BikeStatus, BikeTelemetry, BikeUpdate, OperationStatus } from "@trungthao/admin_dashboard_dto";
+import { Bike, BikeStatus, BikeTelemetry, BikeUpdate, OperationStatus } from "@trungthao/admin_dashboard_dto";
 
 export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -44,18 +44,32 @@ export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
   const last_gps_contact_time = Number(dv.getBigInt64(offset, true));
   offset += 8;
 
-  // --- bikeState (uint8) ---
-  const bikeStateInt = dv.getUint8(offset);
+  // 6) Operation State  (uint8)
+  const operationStateInt = dv.getUint8(offset);
   offset += 1;
 
-  const stateMap: OperationStatus[] = [
+  // 7) Usage State  (uint8)
+  const usageStateInt = dv.getUint8(offset);
+  offset += 1;
+
+  const usageStateMap: BikeStatus[] = [
+    BikeStatus.IDLE,
+    BikeStatus.RESERVED,
+    BikeStatus.INUSED
+  ];
+
+
+  const operationStateMap: OperationStatus[] = [
     OperationStatus.NORMAL,
     OperationStatus.OUT_OF_BOUND,
     OperationStatus.LOW_BATTERY
   ];
 
   const operationStatus: OperationStatus =
-    stateMap[bikeStateInt] ?? OperationStatus.NORMAL;
+    operationStateMap[operationStateInt] ?? OperationStatus.NORMAL;
+
+  const usageStatus: BikeStatus =
+    usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
 
   return {
     id,
@@ -67,7 +81,8 @@ export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
     last_gps_long,
     last_gps_lat,
     last_gps_contact_time,
-    operationStatus,      // readable string
+    operationStatus,     
+    usageStatus
   };
 }
 
@@ -103,18 +118,33 @@ export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
     const latitude = dv.getFloat32(offset, false);
     offset += 4;
 
-    // 6) BikeState (uint8)
-    const bikeStateInt = dv.getUint8(offset);
+    // 6) Operation State  (uint8)
+    const operationStateInt = dv.getUint8(offset);
     offset += 1;
 
-    const stateMap: OperationStatus[] = [
+    // 7) Usage State  (uint8)
+    const usageStateInt = dv.getUint8(offset);
+    offset += 1;
+
+    const usageStateMap: BikeStatus[] = [
+      BikeStatus.IDLE,
+      BikeStatus.RESERVED,
+      BikeStatus.INUSED
+    ];
+
+
+    const operationStateMap: OperationStatus[] = [
       OperationStatus.NORMAL,
-      OperationStatus.OUT_OF_BOUND, 
-      OperationStatus.LOW_BATTERY   
+      OperationStatus.OUT_OF_BOUND,
+      OperationStatus.LOW_BATTERY
     ];
 
     const operationStatus: OperationStatus =
-      stateMap[bikeStateInt] ?? OperationStatus.NORMAL;
+      operationStateMap[operationStateInt] ?? OperationStatus.NORMAL;
+
+    const usageStatus: BikeStatus =
+      usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
+
 
     bikes.push({
       id,
@@ -122,6 +152,7 @@ export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
       longitude,
       latitude,
       operationStatus,
+      usageStatus
     });
   }
 

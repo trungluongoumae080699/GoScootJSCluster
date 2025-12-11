@@ -1,3 +1,5 @@
+import { BikeStatus } from "./Bike.js"
+
 export enum OperationStatus {
     NORMAL = "Normal",
     OUT_OF_BOUND = "Out of bound",
@@ -15,4 +17,5 @@ export type BikeTelemetry = {
     time: number,
     last_gps_contact_time: number,
     operationStatus: OperationStatus
+    usageStatus: BikeStatus
 }

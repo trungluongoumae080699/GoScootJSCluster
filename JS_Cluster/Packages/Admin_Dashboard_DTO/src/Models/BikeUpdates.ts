@@ -6,5 +6,6 @@ export type BikeUpdate = {
     battery_status: number,
     longitude: number,
     latitude: number,
-    operationStatus: OperationStatus
+    operationStatus: OperationStatus,
+    usageStatus: BikeStatus
 }

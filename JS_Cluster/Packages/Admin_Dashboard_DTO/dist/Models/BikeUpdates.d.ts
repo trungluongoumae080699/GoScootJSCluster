@@ -1,3 +1,4 @@
+import { BikeStatus } from "./Bike.js";
 import { OperationStatus } from "./BikeTelemetry.js";
 export type BikeUpdate = {
     id: string;
@@ -5,4 +6,5 @@ export type BikeUpdate = {
     longitude: number;
     latitude: number;
     operationStatus: OperationStatus;
+    usageStatus: BikeStatus;
 };
