@@ -48,15 +48,12 @@ async function startServer() {
     app.use("/app", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
     app.use("/dashboard", authorize([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
 
-    /** 404 handler (no route matched) */
-    app.use((req: Request, res: Response) => {
-      res.status(404).json({ message: "Không tìm thấy tài nguyên." });
-    });
-
     /** Centralized error handler */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       res.status(500).json({ message: "Đã xảy ra lỗi. Xin vui lòng thử lại." });
     });
+
+
 
 
     // Start server
