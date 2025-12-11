@@ -119,12 +119,17 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
 
           // Add new telemetry record to the beginning of the list
           const newTelemetry: BikeTelemetry = {
-            id: `live-${Date.now()}`,
+            id: telemetryData.id, //SỬ DỤNG TRỰC TIẾP ID TỪ SERVER LUÔN EM
             bike_id: bikeId,
+            last_gps_lat: telemetryData.last_gps_lat, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
+            last_gps_long: telemetryData.last_gps_long, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
             longitude: telemetryData.longitude,
             latitude: telemetryData.latitude,
             battery: telemetryData.battery,
             time: telemetryData.time,
+            last_gps_contact_time: telemetryData.last_gps_contact_time, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
+            operationStatus: telemetryData.operationStatus //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
+
           };
 
           setTelemetry(prev => [newTelemetry, ...prev.slice(0, 99)]); // Keep last 100 records
@@ -289,12 +294,12 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
 
   const getStatusText = useCallback((status: BikeStatus) => {
     switch (status) {
-      case BikeStatus.INUSE:
+      case BikeStatus.INUSED:
         return 'Being Rent';
       case BikeStatus.RESERVED:
         return 'Reserved';
       case BikeStatus.IDLE:
-        return 'Available';
+        return 'Available';      
       default:
         return status;
     }

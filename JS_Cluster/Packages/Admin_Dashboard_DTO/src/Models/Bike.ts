@@ -1,13 +1,13 @@
 export enum BikeStatus {
     IDLE = "Idle",
     RESERVED = "Reserved",
-    INUSE = "Inuse"
+    INUSED = "Inused",
 }
 
 export interface Bike  {
     id: string,
     name: string
-    status: BikeStatus,
+    isAvailable: boolean,
     maximum_speed: number,
     maximum_functional_distance: number,
     purchase_date: number,
