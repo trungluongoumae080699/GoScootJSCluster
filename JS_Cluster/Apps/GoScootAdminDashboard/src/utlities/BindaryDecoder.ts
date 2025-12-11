@@ -1,4 +1,5 @@
 import { Bike, BikeStatus, BikeTelemetry, BikeUpdate, OperationStatus } from "@trungthao/admin_dashboard_dto";
+import { Alert } from "../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
 export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -157,4 +158,58 @@ export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
   }
 
   return bikes;
+}
+
+export function decodeAlertBinary(bytes: Uint8Array): Alert {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 0;
+
+  // ---- helper: read uint8-length-prefixed string ----
+  const readString = (): string => {
+    const len = dv.getUint8(offset);
+    offset += 1;
+
+    const strBytes = bytes.slice(offset, offset + len);
+    offset += len;
+
+    return new TextDecoder().decode(strBytes);
+  };
+
+  const alert: Alert = {
+    id: "",
+    bike_id: "",
+    content: "",
+    type: "",
+    longitude: 0,
+    latitude: 0,
+    time: 0,
+  };
+
+  // 1. ID
+  alert.id = readString();
+
+  // 2. Bike_Id
+  alert.bike_id = readString();
+
+  // 3. Content
+  alert.content = readString();
+
+  // 4. Type
+  alert.type = readString();
+
+  // 5. Longitude (float32 little-endian)
+  alert.longitude = dv.getFloat32(offset, true);
+  offset += 4;
+
+  // 6. Latitude (float32 little-endian)
+  alert.latitude = dv.getFloat32(offset, true);
+  offset += 4;
+
+  // 7. Time (uint64 / uint32*2)
+  // JS does not support uint64 directly → read as BigUint64 and convert
+  const timeBig = dv.getBigUint64(offset, true);
+  offset += 8;
+  alert.time = Number(timeBig);
+
+  return alert;
 }

@@ -2,14 +2,80 @@ import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Response } from "express";
 import { redisClient } from "../RedisConfig.js";
 import { fetchBikeIdsAndBatteries } from "../Repositories/RedisRepo/BikeRepo.js";
-import { getBikesByFilter } from "../Repositories/MySqlRepo/BikeRepo.js";
+import { getBikesByFilter, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { BikeTelemetry, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { getTrips } from "../Repositories/MySqlRepo/TripRepo.js";
 import { getBikeTelemetry } from "../Repositories/ClickhouseRepo/TelemetryRepo.js";
 import { getAlerts } from "../Repositories/MySqlRepo/AlertRepo.js";
+import { getHubsWithinBoundary } from "../Repositories/MySqlRepo/HubRepo.js";
+import { Response_BikeListDTO } from "@trungthao/mobile_app_dto";
 
 export type TripSortField = "reservation_date" | "price";
 export type SortDirection = "asc" | "desc";
+
+export const fetchHubs = async (
+  request: CustomRequest<
+    {}, // params
+    {}, // res body
+    {}, // req body
+    {
+      maxLong?: string;
+      maxLat?: string;
+      minLong?: string;
+      minLat?: string;
+    }
+  >,
+  response: Response,
+
+) => {
+  // Extract & convert query params
+  const maxLong = request.query.maxLong ? Number(request.query.maxLong) : undefined;
+  const minLong = request.query.minLong ? Number(request.query.minLong) : undefined;
+  const maxLat = request.query.maxLat ? Number(request.query.maxLat) : undefined;
+  const minLat = request.query.minLat ? Number(request.query.minLat) : undefined;
+
+  // Validate NaN → convert to undefined
+  const clean = (n: number | undefined) =>
+    typeof n === "number" && !Number.isNaN(n) ? n : undefined;
+
+  const result = await getHubsWithinBoundary(
+    clean(minLat),
+    clean(maxLat),
+    clean(minLong),
+    clean(maxLong)
+  );
+
+  return response.status(200).json(result);
+};
+
+export const fetchBikesByHub = async (
+  request: CustomRequest<{ hubId: string }>,
+  response: Response
+) => {
+  const { hubId } = request.params;
+
+   // 1. Fetch base bike data from MySQL
+    const bikes = await getMobileAppBikesByHub(hubId);
+    // 2. For each bike, get telemetry from Redis
+    for (const b of bikes) {
+      const redisKey = `bike:${b.id}:telemetry`;
+
+      // HGETALL returns Record<string, string>
+      const tele = await redisClient.hGetAll(redisKey);
+
+      const batteryStatus = tele.battery_status
+        ? Number(tele.battery_status)
+        : null;
+      b.battery_status = batteryStatus
+    }
+
+    const result: Response_BikeListDTO = {
+        bikes: bikes,
+        total: bikes.length
+    }
+
+    return response.status(200).json(result);
+};
 
 export interface GetTripsOptions {
   bikeId?: string;
