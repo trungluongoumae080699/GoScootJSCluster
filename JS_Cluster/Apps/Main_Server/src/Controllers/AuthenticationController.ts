@@ -32,6 +32,7 @@ import {
 } from "@trungthao/admin_dashboard_dto";
 import { createTempUser, rotatePassword } from "../Repositories/mqttRepo/mqttDynamicSecurity.js";
 import { Staff } from "../Models/Staff.js";
+import { error } from "console";
 
 export const authenticateCustomer = async (
   request: CustomRequest<{}, {}, Request_MobileAppLogInDTO>,
@@ -157,7 +158,7 @@ export const authenticateAdmin = async (
   response: Response,
   next: NextFunction
 ) => {
-  const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
+/*   const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({
       message: "Dữ kiệu không chính xác, xin vui lòng thử lại",
@@ -215,8 +216,8 @@ export const authenticateAdmin = async (
     sessionId: sessionObject._id,
     mqtt_password: mqttPassword,
   };
-
-  response.status(200).json(responseObject);
+ */
+  throw error("Testing...")
 };
 
 export const formlessAuthenticateDashboard = async (

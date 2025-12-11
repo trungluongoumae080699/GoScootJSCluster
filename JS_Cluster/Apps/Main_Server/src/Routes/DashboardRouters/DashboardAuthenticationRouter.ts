@@ -10,12 +10,12 @@ export const dashboardAuthenticationRouter: Router = express.Router();
 
 dashboardAuthenticationRouter.post("/signIn", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    authenticateAdmin(customerRequest, response, next)
+    authenticateAdmin(customerRequest, response, next).catch(next)
 });
 
 dashboardAuthenticationRouter.get("/signIn/session", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    formlessAuthenticateDashboard(customerRequest, response)
+    formlessAuthenticateDashboard(customerRequest, response).catch(next)
 });
 
 

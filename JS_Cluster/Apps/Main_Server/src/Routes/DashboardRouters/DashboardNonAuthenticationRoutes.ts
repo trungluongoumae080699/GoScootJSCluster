@@ -13,23 +13,23 @@ export const dashboardNonAuthenticationRouter: Router = express.Router();
 
 dashboardNonAuthenticationRouter.get("/bikes", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchBikes(customerRequest, response)
+    fetchBikes(customerRequest, response).catch(next)
 });
 
 dashboardNonAuthenticationRouter.get("/trips/:bikeId", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchTripsByBike(customerRequest, response)
+    fetchTripsByBike(customerRequest, response).catch(next)
 });
 
 dashboardNonAuthenticationRouter.get("/telemetry/:bikeId", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchTelemetryByBike(customerRequest, response)
+    fetchTelemetryByBike(customerRequest, response).catch(next)
 });
 
 
 dashboardNonAuthenticationRouter.get("/alerts", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchAlerts(customerRequest, response)
+    fetchAlerts(customerRequest, response).catch(next)
 });
 
 

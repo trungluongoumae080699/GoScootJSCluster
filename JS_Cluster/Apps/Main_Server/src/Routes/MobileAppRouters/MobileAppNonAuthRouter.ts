@@ -9,10 +9,10 @@ export const mobileAppNonAuthRouter: Router = express.Router();
 
 mobileAppNonAuthRouter.get("/trips", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchMyTrips(customerRequest, response)
+    fetchMyTrips(customerRequest, response).catch(next)
 });
 
 mobileAppNonAuthRouter.get("/hub/bikes/:hubId", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchBikesByHub(customerRequest, response)
+    fetchBikesByHub(customerRequest, response).catch(next)
 })
