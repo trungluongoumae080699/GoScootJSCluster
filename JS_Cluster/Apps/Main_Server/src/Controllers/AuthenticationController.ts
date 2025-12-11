@@ -217,7 +217,6 @@ export const registerCustomer = async (
   };
 
   response.status(200).send(responseObject)
- 
 
 }; 
 
