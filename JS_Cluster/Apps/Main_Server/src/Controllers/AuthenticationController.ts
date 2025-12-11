@@ -152,13 +152,12 @@ export const registerCustomer = async (
     }
   }
 };
-
-export const authenticateAdmin = async (
+ export const authenticateAdmin = async (
   request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
   response: Response,
   next: NextFunction
 ) => {
-/*   const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
+  const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({
       message: "Dữ kiệu không chính xác, xin vui lòng thử lại",
@@ -216,9 +215,13 @@ export const authenticateAdmin = async (
     sessionId: sessionObject._id,
     mqtt_password: mqttPassword,
   };
- */
-  throw error("Testing...")
-};
+
+  response.status(200).send(responseObject)
+ 
+
+}; 
+
+
 
 export const formlessAuthenticateDashboard = async (
   request: CustomRequest,
