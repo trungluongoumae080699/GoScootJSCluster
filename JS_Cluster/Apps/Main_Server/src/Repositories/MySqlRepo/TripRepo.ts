@@ -87,6 +87,8 @@ export async function getMyTrips(
             trip_end_date: r.trip_end_date ? Number(r.trip_end_date) : undefined,
             trip_end_long: r.trip_end_long ?? undefined,
             trip_end_lat: r.trip_end_lat ?? undefined,
+            trip_start_lat: r.trip_start_lat ?? undefined,
+            trip_start_long: r.trip_start_long ?? undefined,
             trip_secret: r.trip_secret ?? undefined,
             isPaid: r.isPaid === 0 ? false : true,
             price: r.price ?? undefined
@@ -114,26 +116,83 @@ export async function getMyTrips(
     };
 }
 
+function pickFirstResultSet(callResult: any): RowDataPacket[] {
+  // mysql2 CALL returns: [ [rows], [procMeta] ] OR [ [rows], ... ]
+  // Typically: result[0] is an array of result sets, and result[0][0] is the first result set.
+  const top = callResult?.[0];
+  if (Array.isArray(top) && Array.isArray(top[0])) return top[0] as RowDataPacket[];
+  if (Array.isArray(top)) return top as RowDataPacket[];
+  return [];
+}
+
 export async function reserveBikeForCustomer(
   customerId: string,
   bikeId: string,
-  reservation_expiry: number,
-  trip_secret: string,
-  hubLong: number,
-  hubLat: number
-) {
+  hubId: string,
+  reservationExpiry: number,
+  tripSecret: string,
+): Promise<Response_TripDTO> {
   const conn = await pool.getConnection();
+
   try {
-    const [rows] = await conn.query(
-      "CALL CreateTripReservation(?, ?, ?, ?)",
-      [customerId, bikeId, hubLong, hubLat]
+    // You generate trip_id on server side (recommended). If client generates, pass it in.
+    const tripId = crypto.randomUUID();
+
+    const [callResult] = await conn.query(
+      "CALL CreateTripReservation(?, ?, ?, ?, ?, ?, ?)",
+      [
+        tripId,
+        customerId,
+        bikeId,
+        hubId,
+        reservationExpiry,
+        tripSecret,
+      ]
     );
-    console.log("✅ Trip reservation successful:", rows);
-    return rows;
+
+    const rows = pickFirstResultSet(callResult);
+    if (rows.length === 0) {
+      throw new Error("CreateTripReservation returned no rows");
+    }
+
+    const r: any = rows[0];
+
+    // Map procedure output -> Response_TripDTO
+    const dto: Response_TripDTO = {
+      trip: {
+        id: r.trip_id ?? r.id,
+        bikeId: r.trip_bike_id ?? r.bike_id,
+        customerId: r.trip_customer_id ?? r.customer_id,
+        hubId: r.trip_hub_id ?? r.hub_id,
+        tripStatus: r.trip_status,
+        reservationExpiry: Number(r.reservation_expiry),
+        reservationDate: Number(r.reservation_date),
+        tripSecret: r.trip_secret ?? null,
+        createdAt: r.trip_created_at ?? r.created_at,
+      },
+
+      bike: {
+        id: r.bike_id,
+        maximumSpeed: r.bike_maximum_speed != null ? Number(r.bike_maximum_speed) : undefined,
+        maximumFunctionalDistance:
+          r.bike_maximum_functional_distance != null
+            ? Number(r.bike_maximum_functional_distance)
+            : undefined,
+      },
+
+      hub: {
+        id: r.hub_id,
+        longitude: Number(r.hub_longitude),
+        latitude: Number(r.hub_latitude),
+      },
+    };
+
+    return dto;
   } catch (err: any) {
-    if (err.errno === 1644) {
-      // SQLSTATE '45000' from SIGNAL in the procedure
-      console.error("🚫 Customer already has a pending reservation");
+    if (err?.errno === 1644) {
+      // SIGNAL SQLSTATE '45000'
+      // Better: throw a typed error your API layer can map to 400
+      console.error("🚫 Reservation rejected by procedure:", err?.sqlMessage ?? err?.message);
     } else {
       console.error("❌ Error during trip reservation:", err);
     }
@@ -142,7 +201,6 @@ export async function reserveBikeForCustomer(
     conn.release();
   }
 }
-
   
 
 interface TripRow extends RowDataPacket {

@@ -164,6 +164,8 @@ const tripStatus = faker.helpers.arrayElement([
     let offsetLat: number | null = null;
     let trip_end_long: number | null = null;
     let trip_end_lat: number | null = null;
+    let trip_start_long: number | null = null;
+    let trip_start_lat: number | null = null
 
     const reservation_date = faker.date
       .between({
@@ -181,15 +183,14 @@ const tripStatus = faker.helpers.arrayElement([
         max: 60 * 60 * 1000, // 60 minutes
       });
       tripStart = tripEnd - tripDurationMs;
-
-
-
       // End coordinates: hub location + small random offset
       offsetLng = faker.number.float({ min: -0.002, max: 0.002 });
       offsetLat = faker.number.float({ min: -0.002, max: 0.002 });
-
       trip_end_long = hubGeo.lng + offsetLng;
       trip_end_lat = hubGeo.lat + offsetLat;
+      trip_start_long = hubGeo.lng;
+      trip_start_lat = hubGeo.lat
+
     }
 
     const trip: TripSeed = {
@@ -202,6 +203,8 @@ const tripStatus = faker.helpers.arrayElement([
       reservation_expiry,
       trip_start_date: tripStart,
       trip_end_date: tripEnd,
+      trip_start_lat,
+      trip_start_long,
       trip_end_long,
       trip_end_lat,
       trip_secret: null,

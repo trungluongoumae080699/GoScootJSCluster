@@ -20,6 +20,8 @@ type TripSeed = {
   trip_end_date: number;
   trip_end_long: number;
   trip_end_lat: number;
+  trip_start_long: number;
+  trip_start_lat: number;
   trip_secret: string | null;
 };
 
@@ -60,7 +62,9 @@ async function findScriptByName(name: string): Promise<boolean> {
 /* -------------------------------------------------------------------------- */
 
 async function insertTripsChunk(trips: TripSeed[]) {
-  const placeholders = trips.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
+  const placeholders = trips
+    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .join(", ");
 
   const sql = `
     INSERT INTO trips (
@@ -72,6 +76,8 @@ async function insertTripsChunk(trips: TripSeed[]) {
       reservation_date,
       reservation_expiry,
       trip_start_date,
+      trip_start_long,
+      trip_start_lat,
       trip_end_date,
       trip_end_long,
       trip_end_lat,
@@ -92,6 +98,8 @@ async function insertTripsChunk(trips: TripSeed[]) {
       t.reservation_date,
       t.reservation_expiry,
       t.trip_start_date,
+      t.trip_start_long,
+      t.trip_start_lat,
       t.trip_end_date,
       t.trip_end_long,
       t.trip_end_lat,
