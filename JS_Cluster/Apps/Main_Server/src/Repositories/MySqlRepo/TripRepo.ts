@@ -44,6 +44,8 @@ export async function getMyTrips(
             t.trip_start_date,
             t.trip_end_date,
             t.trip_end_long,
+            t.trip_start_long,
+            t.trip_start_lat,
             t.trip_end_lat,
             t.trip_secret,
             t.isPaid,

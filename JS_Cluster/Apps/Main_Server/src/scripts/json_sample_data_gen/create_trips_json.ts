@@ -138,12 +138,13 @@ export async function generateTripsJson() {
   const now = Date.now();
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+
+  for (let i = 0; i < TRIP_COUNT; i++) {
+    
 const tripStatus = faker.helpers.arrayElement([
   TripStatusType.CANCELLED,
   TripStatusType.COMPLETE
 ]);
-
-  for (let i = 0; i < TRIP_COUNT; i++) {
     const id = generateTripId(usedTripIds);
     const bike_id = faker.helpers.arrayElement(allBikeIds);
     const customer_id = faker.helpers.arrayElement(customerIds);
