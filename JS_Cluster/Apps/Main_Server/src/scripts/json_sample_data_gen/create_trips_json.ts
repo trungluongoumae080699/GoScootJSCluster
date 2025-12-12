@@ -10,10 +10,10 @@ const TRIP_COUNT = 15000;
 /* -------------------------------------------------------------------------- */
 
 enum TripStatusType {
-  CANCELLED = "cancelled",
-  PENDING = "pending",
-  COMPLETE = "complete",
-  IN_PROGRESS = "in progress",
+  CANCELLED = "Cancelled",
+  PENDING = "Pending",
+  COMPLETE = "Complete",
+  IN_PROGRESS = "In progress",
 }
 
 
@@ -138,13 +138,10 @@ export async function generateTripsJson() {
   const now = Date.now();
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-  const tripStatusList: TripStatusType[] = [
-    TripStatusType.CANCELLED,
-    TripStatusType.COMPLETE
-  ]
-  const tripStatus: TripStatusType = tripStatusList[
-    Math.floor(Math.random() * tripStatusList.length)
-  ];
+const tripStatus = faker.helpers.arrayElement([
+  TripStatusType.CANCELLED,
+  TripStatusType.COMPLETE
+]);
 
   for (let i = 0; i < TRIP_COUNT; i++) {
     const id = generateTripId(usedTripIds);
