@@ -3,10 +3,11 @@ import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Customer } from "../Models/Customer.js";
 import { getCustomerById } from "../Repositories/MySqlRepo/CustomerRepo.js";
 import { SessionObject, getSession } from "../Repositories/RedisRepo/SessionRepo.js";
-import { getMyTrips } from "../Repositories/MySqlRepo/TripRepo.js";
+import { getMyTrips, reserveBikeForCustomer } from "../Repositories/MySqlRepo/TripRepo.js";
 import { Response } from "express";
 import { getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { redisClient } from "../RedisConfig.js";
+import { randomBytes } from "crypto";
 
 export const fetchMyTrips = async (request: CustomRequest<{},{},{},{page?: string}>, response: Response) => {
     let session: SessionObject = request.session as SessionObject
@@ -43,4 +44,45 @@ export const fetchBikesByHub = async (
     }
 
     return response.status(200).json(result);
+};
+
+export function generateTripId(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = randomBytes(8);
+
+  let suffix = "";
+  for (let i = 0; i < 8; i++) {
+    suffix += chars[bytes[i] % chars.length];
+  }
+
+  return `TRI_${suffix}`;
+}
+
+export const reserveBike = async (
+  request: CustomRequest<{ bikeId: string; hubId: string }>,
+  response: Response
+) => {
+  try {
+    const tripId = generateTripId();               // TRI_XXXXXXXX
+    const tripSecret = randomBytes(27).toString("base64url").slice(0, 36);
+    const customer_id = request.session!.userId;
+    const bike_id = request.params.bikeId;
+    const hub_id = request.params.hubId;
+
+    const responseTripDTO = await reserveBikeForCustomer(
+      tripId,
+      customer_id,
+      bike_id,
+      hub_id,
+      tripSecret
+    );
+
+    return response.status(200).json(responseTripDTO);
+  } catch (err) {
+    console.error("❌ reserveBike failed:", err);
+
+    return response.status(400).json({
+      message: "Đã xảy ra lỗi, xin vui lòng thử lại."
+    });
+  }
 };

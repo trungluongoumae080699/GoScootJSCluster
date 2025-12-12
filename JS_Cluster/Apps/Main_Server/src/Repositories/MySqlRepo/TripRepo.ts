@@ -126,17 +126,17 @@ function pickFirstResultSet(callResult: any): RowDataPacket[] {
 }
 
 export async function reserveBikeForCustomer(
+  tripId: string,
   customerId: string,
   bikeId: string,
   hubId: string,
-  reservationExpiry: number,
   tripSecret: string,
 ): Promise<Response_TripDTO> {
   const conn = await pool.getConnection();
 
   try {
-    // You generate trip_id on server side (recommended). If client generates, pass it in.
-    const tripId = crypto.randomUUID();
+    const reservationDate = Date.now();
+    const reservationExpiry = reservationDate + 15 * 60 * 1000; // +15 minutes
 
     const [callResult] = await conn.query(
       "CALL CreateTripReservation(?, ?, ?, ?, ?, ?, ?)",
@@ -145,6 +145,7 @@ export async function reserveBikeForCustomer(
         customerId,
         bikeId,
         hubId,
+        reservationDate,
         reservationExpiry,
         tripSecret,
       ]
@@ -157,31 +158,31 @@ export async function reserveBikeForCustomer(
 
     const r: any = rows[0];
 
-    // Map procedure output -> Response_TripDTO
     const dto: Response_TripDTO = {
       trip: {
         id: r.trip_id ?? r.id,
-        bikeId: r.trip_bike_id ?? r.bike_id,
-        customerId: r.trip_customer_id ?? r.customer_id,
-        hubId: r.trip_hub_id ?? r.hub_id,
-        tripStatus: r.trip_status,
-        reservationExpiry: Number(r.reservation_expiry),
-        reservationDate: Number(r.reservation_date),
-        tripSecret: r.trip_secret ?? null,
-        createdAt: r.trip_created_at ?? r.created_at,
+        bike_id: r.trip_bike_id ?? r.bike_id,
+        customer_id: r.trip_customer_id ?? r.customer_id,
+        hub_id: r.trip_hub_id ?? r.hub_id,
+        trip_status: r.trip_status,
+        reservation_expiry: Number(r.reservation_expiry),
+        reservation_date: Number(r.reservation_date),
+        trip_scret: r.trip_secret ?? null, // ✅ fixed typo
       },
 
       bike: {
         id: r.bike_id,
-        maximumSpeed: r.bike_maximum_speed != null ? Number(r.bike_maximum_speed) : undefined,
-        maximumFunctionalDistance:
+        name: r.bike_name,
+        maximum_speed: r.bike_maximum_speed != null ? Number(r.bike_maximum_speed) : 0,
+        maximum_functional_distance:
           r.bike_maximum_functional_distance != null
             ? Number(r.bike_maximum_functional_distance)
-            : undefined,
+            : 0,
       },
 
       hub: {
         id: r.hub_id,
+        address: r.hub_address ?? r.address, // ✅ procedure returns hub_address
         longitude: Number(r.hub_longitude),
         latitude: Number(r.hub_latitude),
       },
@@ -190,8 +191,6 @@ export async function reserveBikeForCustomer(
     return dto;
   } catch (err: any) {
     if (err?.errno === 1644) {
-      // SIGNAL SQLSTATE '45000'
-      // Better: throw a typed error your API layer can map to 400
       console.error("🚫 Reservation rejected by procedure:", err?.sqlMessage ?? err?.message);
     } else {
       console.error("❌ Error during trip reservation:", err);
