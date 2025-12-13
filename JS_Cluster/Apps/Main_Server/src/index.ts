@@ -51,6 +51,7 @@ async function startServer() {
 
     /** Centralized error handler */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.log(err)
       res.status(500).json({ message: "Đã xảy ra lỗi. Xin vui lòng thử lại." });
     });
 
