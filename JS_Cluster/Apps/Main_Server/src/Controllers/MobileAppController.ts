@@ -3,17 +3,17 @@ import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Customer } from "../Models/Customer.js";
 import { getCustomerById } from "../Repositories/MySqlRepo/CustomerRepo.js";
 import { SessionObject, getSession } from "../Repositories/RedisRepo/SessionRepo.js";
-import { getMyTrips, reserveBikeForCustomer } from "../Repositories/MySqlRepo/TripRepo.js";
+import { cancelTrip, getMyTrips, reserveBikeForCustomer } from "../Repositories/MySqlRepo/TripRepo.js";
 import { Response } from "express";
 import { getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { redisClient } from "../RedisConfig.js";
 import { randomBytes } from "crypto";
 
-export const fetchMyTrips = async (request: CustomRequest<{},{},{},{page?: string}>, response: Response) => {
-    let session: SessionObject = request.session as SessionObject
-    let page = request.query.page ? Number(request.query.page) : 1
-    const result = await getMyTrips(session.userId, page)
-    response.status(200).json(result)
+export const fetchMyTrips = async (request: CustomRequest<{}, {}, {}, { page?: string }>, response: Response) => {
+  let session: SessionObject = request.session as SessionObject
+  let page = request.query.page ? Number(request.query.page) : 1
+  const result = await getMyTrips(session.userId, page)
+  response.status(200).json(result)
 
 }
 
@@ -23,27 +23,27 @@ export const fetchBikesByHub = async (
 ) => {
   const { hubId } = request.params;
 
-   // 1. Fetch base bike data from MySQL
-    const bikes = await getMobileAppBikesByHub(hubId);
-    // 2. For each bike, get telemetry from Redis
-    for (const b of bikes) {
-      const redisKey = `bike:${b.id}:telemetry`;
+  // 1. Fetch base bike data from MySQL
+  const bikes = await getMobileAppBikesByHub(hubId);
+  // 2. For each bike, get telemetry from Redis
+  for (const b of bikes) {
+    const redisKey = `bike:${b.id}:telemetry`;
 
-      // HGETALL returns Record<string, string>
-      const tele = await redisClient.hGetAll(redisKey);
+    // HGETALL returns Record<string, string>
+    const tele = await redisClient.hGetAll(redisKey);
 
-      const batteryStatus = tele.battery_status
-        ? Number(tele.battery_status)
-        : null;
-      b.battery_status = batteryStatus
-    }
+    const batteryStatus = tele.battery_status
+      ? Number(tele.battery_status)
+      : null;
+    b.battery_status = batteryStatus
+  }
 
-    const result: Response_BikeListDTO = {
-        bikes: bikes,
-        total: bikes.length
-    }
+  const result: Response_BikeListDTO = {
+    bikes: bikes,
+    total: bikes.length
+  }
 
-    return response.status(200).json(result);
+  return response.status(200).json(result);
 };
 
 export function generateTripId(): string {
@@ -85,4 +85,15 @@ export const reserveBike = async (
       message: "Đã xảy ra lỗi, xin vui lòng thử lại."
     });
   }
+};
+
+export const cancelReservation = async (
+  request: CustomRequest<{ tripId: string }>,
+  response: Response
+) => {
+
+  await cancelTrip(
+    request.params.tripId,
+  );
+  response.status(200).json({message: "Trip cancelled successfully"})
 };
