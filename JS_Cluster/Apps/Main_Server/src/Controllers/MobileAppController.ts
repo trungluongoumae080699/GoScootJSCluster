@@ -101,5 +101,7 @@ export const cancelReservation = async (
 export const getPendingReservation = async (request: CustomRequest, response: Response) => {
   const session = request.session as SessionObject
   const res = await getPendingTripForCustomer(session.userId)
-  response.status(200).json(res)
+  response.status(200).json({
+    trip: res
+  })
 }
