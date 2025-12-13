@@ -8,7 +8,7 @@ const script_name = "insert_bikes"
 const prerequisite_script = "database_modi_01"
 
 // Use the same BikeSeed type you used when generating bikes.json
-export type BikeStatusType = "Idle" | "Reserved" | "Inuse";
+export type BikeStatusType = "Idle" | "Reserved" | "Inused";
 
 export interface BikeSeed {
   id: string;

@@ -13,6 +13,8 @@ export type MobileAppTrip = {
     reservation_date: number;
     reservation_expiry: number;
     trip_start_date?: number | null;
+    trip_start_long?: number | null;
+    trip_start_lat?: number | null;
     trip_end_date?: number | null;
     trip_end_long?: number | null;
     trip_end_lat?: number | null;

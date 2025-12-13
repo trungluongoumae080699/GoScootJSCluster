@@ -77,7 +77,12 @@ export async function getBikeTelemetry(
       battery_status,
       longitude,
       latitude,
-      time
+      time,
+      last_gps_long,
+      last_gps_lat,
+      last_gps_contact_time,
+      operation_status,
+      usage_status
     FROM telemetry
     ${whereSql}
     ORDER BY time ${orderDir}
@@ -97,19 +102,29 @@ export async function getBikeTelemetry(
   const rows = (await dataResult.json()) as {
     id: string;
     bike_id: string;
-    battery: number;
+    battery_status: number;
     longitude: number;
     latitude: number;
     time: number | string;
+    last_gps_long: number;
+    last_gps_lat: number;
+    last_gps_contact_time: number | string;
+    operation_status: string;
+    usage_status: string;
   }[];
 
   const data: BikeTelemetry[] = rows.map((row) => ({
     id: row.id,
     bike_id: row.bike_id,
-    battery: Number(row.battery),
+    battery: Number(row.battery_status),
     longitude: Number(row.longitude),
     latitude: Number(row.latitude),
     time: Number(row.time),
+    last_gps_long: Number(row.last_gps_long),
+    last_gps_lat: Number(row.last_gps_lat),
+    last_gps_contact_time: Number(row.last_gps_contact_time),
+    operationStatus: row.operation_status as BikeTelemetry['operationStatus'],
+    usageStatus: row.usage_status as BikeTelemetry['usageStatus'],
   }));
 
   return {

@@ -32,6 +32,7 @@ import {
 } from "@trungthao/admin_dashboard_dto";
 import { createTempUser, rotatePassword } from "../Repositories/mqttRepo/mqttDynamicSecurity.js";
 import { Staff } from "../Models/Staff.js";
+import { error } from "console";
 
 export const authenticateCustomer = async (
   request: CustomRequest<{}, {}, Request_MobileAppLogInDTO>,
@@ -151,8 +152,7 @@ export const registerCustomer = async (
     }
   }
 };
-
-export const authenticateAdmin = async (
+ export const authenticateAdmin = async (
   request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
   response: Response,
   next: NextFunction
@@ -216,8 +216,11 @@ export const authenticateAdmin = async (
     mqtt_password: mqttPassword,
   };
 
-  response.status(200).json(responseObject);
-};
+  response.status(200).send(responseObject)
+
+}; 
+
+
 
 export const formlessAuthenticateDashboard = async (
   request: CustomRequest,

@@ -7,6 +7,7 @@ import { pool } from "../../MySqlConfig.js";
 import { Response_MyTripsListingDTO, Response_TripDTO } from "@trungthao/mobile_app_dto";
 import { Response_DashboardGetTripsByBikeDTO, Trip, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { GetTripsOptions } from "../../Controllers/DashboardController.js";
+import { TripRervationPayload } from "../../Controllers/BkeController.js";
 
 
 export async function getMyTrips(
@@ -43,6 +44,8 @@ export async function getMyTrips(
             t.trip_start_date,
             t.trip_end_date,
             t.trip_end_long,
+            t.trip_start_long,
+            t.trip_start_lat,
             t.trip_end_lat,
             t.trip_secret,
             t.isPaid,
@@ -84,6 +87,8 @@ export async function getMyTrips(
             trip_end_date: r.trip_end_date ? Number(r.trip_end_date) : undefined,
             trip_end_long: r.trip_end_long ?? undefined,
             trip_end_lat: r.trip_end_lat ?? undefined,
+            trip_start_lat: r.trip_start_lat ?? undefined,
+            trip_start_long: r.trip_start_long ?? undefined,
             trip_secret: r.trip_secret ?? undefined,
             isPaid: r.isPaid === 0 ? false : true,
             price: r.price ?? undefined
@@ -111,26 +116,82 @@ export async function getMyTrips(
     };
 }
 
+function pickFirstResultSet(callResult: any): RowDataPacket[] {
+  // mysql2 CALL returns: [ [rows], [procMeta] ] OR [ [rows], ... ]
+  // Typically: result[0] is an array of result sets, and result[0][0] is the first result set.
+  const top = callResult?.[0];
+  if (Array.isArray(top) && Array.isArray(top[0])) return top[0] as RowDataPacket[];
+  if (Array.isArray(top)) return top as RowDataPacket[];
+  return [];
+}
+
 export async function reserveBikeForCustomer(
+  tripId: string,
   customerId: string,
   bikeId: string,
-  reservation_expiry: number,
-  trip_secret: string,
-  hubLong: number,
-  hubLat: number
-) {
+  hubId: string,
+  tripSecret: string,
+): Promise<Response_TripDTO> {
   const conn = await pool.getConnection();
+
   try {
-    const [rows] = await conn.query(
-      "CALL CreateTripReservation(?, ?, ?, ?)",
-      [customerId, bikeId, hubLong, hubLat]
+    const reservationDate = Date.now();
+    const reservationExpiry = reservationDate + 15 * 60 * 1000; // +15 minutes
+
+    const [callResult] = await conn.query(
+      "CALL CreateTripReservation(?, ?, ?, ?, ?, ?, ?)",
+      [
+        tripId,
+        customerId,
+        bikeId,
+        hubId,
+        reservationDate,
+        reservationExpiry,
+        tripSecret,
+      ]
     );
-    console.log("✅ Trip reservation successful:", rows);
-    return rows;
+
+    const rows = pickFirstResultSet(callResult);
+    if (rows.length === 0) {
+      throw new Error("CreateTripReservation returned no rows");
+    }
+
+    const r: any = rows[0];
+
+    const dto: Response_TripDTO = {
+      trip: {
+        id: r.trip_id ?? r.id,
+        bike_id: r.trip_bike_id ?? r.bike_id,
+        customer_id: r.trip_customer_id ?? r.customer_id,
+        hub_id: r.trip_hub_id ?? r.hub_id,
+        trip_status: r.trip_status,
+        reservation_expiry: Number(r.reservation_expiry),
+        reservation_date: Number(r.reservation_date),
+        trip_scret: r.trip_secret ?? null, // ✅ fixed typo
+      },
+
+      bike: {
+        id: r.bike_id,
+        name: r.bike_name,
+        maximum_speed: r.bike_maximum_speed != null ? Number(r.bike_maximum_speed) : 0,
+        maximum_functional_distance:
+          r.bike_maximum_functional_distance != null
+            ? Number(r.bike_maximum_functional_distance)
+            : 0,
+      },
+
+      hub: {
+        id: r.hub_id,
+        address: r.hub_address ?? r.address, // ✅ procedure returns hub_address
+        longitude: Number(r.hub_longitude),
+        latitude: Number(r.hub_latitude),
+      },
+    };
+
+    return dto;
   } catch (err: any) {
-    if (err.errno === 1644) {
-      // SQLSTATE '45000' from SIGNAL in the procedure
-      console.error("🚫 Customer already has a pending reservation");
+    if (err?.errno === 1644) {
+      console.error("🚫 Reservation rejected by procedure:", err?.sqlMessage ?? err?.message);
     } else {
       console.error("❌ Error during trip reservation:", err);
     }
@@ -139,7 +200,6 @@ export async function reserveBikeForCustomer(
     conn.release();
   }
 }
-
   
 
 interface TripRow extends RowDataPacket {
@@ -301,4 +361,157 @@ export async function getTrips(
     total,
     totalPages,
   };
+}
+
+const FIND_ACTIVE_TRIP_SQL = `
+  SELECT
+    id,
+    bike_id,
+    customer_id,
+    hub_id,
+    trip_status,
+    reservation_expiry,
+    reservation_date,
+    trip_start_date,
+    trip_end_date,
+    trip_end_long,
+    trip_end_lat,
+    trip_secret,
+    deleted,
+    price,
+    isPaid,
+    created_at
+  FROM trips
+  WHERE id = ?
+    AND bike_id = ?
+    AND customer_id = ?
+    AND trip_secret = ?
+    AND deleted = 0
+    AND reservation_expiry >= ?
+  LIMIT 1
+`;
+
+export async function findActiveTripReservation(
+  payload: TripRervationPayload
+): Promise<TripRow | null> {
+  const nowMs = Date.now();
+
+  const [rows] = await pool.query<RowDataPacket[]>(FIND_ACTIVE_TRIP_SQL, [
+    payload.trip_id,
+    payload.bike_id,
+    payload.customer_id,
+    payload.trip_secret,
+    nowMs,
+  ]);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return rows[0] as TripRow;
+}
+
+export async function cancelTrip(tripId: string): Promise<void> {
+  const conn = await pool.getConnection();
+  await conn.query(
+      "CALL CancelTrip(?)",
+      [tripId]
+    );
+
+ 
+}
+
+export async function getPendingTripForCustomer(
+  customer_id: string
+): Promise<Response_TripDTO | null> {
+
+  const [rows] = await pool.query(
+    `
+    SELECT
+        -- trip
+        t.id,
+        t.bike_id,
+        t.hub_id,
+        t.customer_id,
+        t.trip_status,
+        t.reservation_date,
+        t.reservation_expiry,
+        t.trip_start_date,
+        t.trip_end_date,
+        t.trip_end_long,
+        t.trip_start_long,
+        t.trip_start_lat,
+        t.trip_end_lat,
+        t.trip_secret,
+        t.isPaid,
+        t.price,
+
+        -- bike
+        b.id AS bike_id2,
+        b.name,
+        b.maximum_speed,
+        b.maximum_functional_distance,
+
+        -- hub
+        h.id AS hub_id2,
+        h.longitude,
+        h.latitude,
+        h.address
+
+    FROM trips t
+    JOIN bikes b ON t.bike_id = b.id
+    JOIN hubs h  ON t.hub_id = h.id
+
+    WHERE t.customer_id = ?
+      AND t.trip_status = 'Pending'
+      AND t.deleted = 0
+
+    ORDER BY t.reservation_date DESC
+    LIMIT 1
+    `,
+    [customer_id]
+  );
+
+  if ((rows as any[]).length === 0) {
+    return null;
+  }
+
+  const r: any = (rows as any[])[0];
+
+  const dto: Response_TripDTO = {
+    trip: {
+      id: r.id,
+      bike_id: r.bike_id,
+      hub_id: r.hub_id,
+      customer_id: r.customer_id,
+      trip_status: r.trip_status,
+      reservation_date: Number(r.reservation_date),
+      reservation_expiry: Number(r.reservation_expiry),
+      trip_start_date: r.trip_start_date ? Number(r.trip_start_date) : undefined,
+      trip_end_date: r.trip_end_date ? Number(r.trip_end_date) : undefined,
+      trip_end_long: r.trip_end_long ?? undefined,
+      trip_end_lat: r.trip_end_lat ?? undefined,
+      trip_start_lat: r.trip_start_lat ?? undefined,
+      trip_start_long: r.trip_start_long ?? undefined,
+      trip_scret: r.trip_secret ?? undefined,
+      isPaid: r.isPaid === 1,
+      price: r.price ?? undefined
+    },
+
+    bike: {
+      id: r.bike_id2,
+      name: r.name,
+      maximum_speed: r.maximum_speed,
+      maximum_functional_distance: r.maximum_functional_distance
+    },
+
+    hub: {
+      id: r.hub_id2,
+      longitude: r.longitude,
+      latitude: r.latitude,
+      address: r.address
+    }
+  };
+
+  return dto;
 }

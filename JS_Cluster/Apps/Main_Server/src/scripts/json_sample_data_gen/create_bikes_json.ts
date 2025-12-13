@@ -5,12 +5,12 @@ import { faker } from "@faker-js/faker";
 const BikeStatus = {
   IDLE: "Idle",
   RESERVED: "Reserved",
-  INUSE: "Inuse"
+  INUSE: "Inused"
 } as const;
 
 export interface BikeSeed {
   id: string;
-  status: "Idle" | "Reserved" | "Inuse"
+  status: "Idle" | "Reserved" | "Inused"
   maximum_speed: number;
   maximum_functional_distance: number;
   purchase_date: number;

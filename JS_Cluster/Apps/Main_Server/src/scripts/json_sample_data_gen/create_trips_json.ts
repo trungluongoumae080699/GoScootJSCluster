@@ -9,14 +9,14 @@ const TRIP_COUNT = 15000;
 /*                            Local Trip Status Type                           */
 /* -------------------------------------------------------------------------- */
 
-const TripStatusConst = {
-  CANCELLED: "cancelled",
-  PENDING: "pending",
-  COMPLETE: "complete",
-  IN_PROGRESS: "in progress",
-} as const;
+enum TripStatusType {
+  CANCELLED = "Cancelled",
+  PENDING = "Pending",
+  COMPLETE = "Complete",
+  IN_PROGRESS = "In progress",
+}
 
-type TripStatusType = typeof TripStatusConst[keyof typeof TripStatusConst];
+
 
 /* -------------------------------------------------------------------------- */
 /*                                TripSeed type                                */
@@ -30,10 +30,12 @@ interface TripSeed {
   trip_status: TripStatusType;
   reservation_date: number;
   reservation_expiry: number;
-  trip_start_date: number;
-  trip_end_date: number;
-  trip_end_long: number;
-  trip_end_lat: number;
+  trip_start_date?: number | null;
+  trip_end_date?: number | null;
+  trip_start_lat?: number | null;
+  trip_start_long?: number | null;
+  trip_end_long?: number | null;
+  trip_end_lat?: number | null;
   trip_secret: string | null;
 }
 
@@ -136,9 +138,14 @@ export async function generateTripsJson() {
   const now = Date.now();
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-  for (let i = 0; i < TRIP_COUNT; i++) {
-    const id = generateTripId(usedTripIds);
 
+  for (let i = 0; i < TRIP_COUNT; i++) {
+    
+const tripStatus = faker.helpers.arrayElement([
+  TripStatusType.CANCELLED,
+  TripStatusType.COMPLETE
+]);
+    const id = generateTripId(usedTripIds);
     const bike_id = faker.helpers.arrayElement(allBikeIds);
     const customer_id = faker.helpers.arrayElement(customerIds);
     const hub_id = faker.helpers.arrayElement(hubIds);
@@ -150,38 +157,54 @@ export async function generateTripsJson() {
       continue;
     }
 
-    // Generate a realistic timeline within last 30 days
-    const tripEnd = now - faker.number.int({ min: 0, max: THIRTY_DAYS_MS });
-    const tripDurationMs = faker.number.int({
-      min: 5 * 60 * 1000, // 5 minutes
-      max: 60 * 60 * 1000, // 60 minutes
-    });
-    const tripStart = tripEnd - tripDurationMs;
+    let tripEnd: number | null = null;
+    let tripDurationMs: number | null = null;
+    let tripStart: number | null = null;
+    let offsetLng: number | null = null;
+    let offsetLat: number | null = null;
+    let trip_end_long: number | null = null;
+    let trip_end_lat: number | null = null;
+    let trip_start_long: number | null = null;
+    let trip_start_lat: number | null = null
 
-    const reservationLeadMs = faker.number.int({
-      min: 5 * 60 * 1000, // 5 minutes
-      max: 30 * 60 * 1000, // 30 minutes
-    });
-    const reservation_date = tripStart - reservationLeadMs;
+    const reservation_date = faker.date
+      .between({
+        from: new Date("2025-01-01T00:00:00Z"),
+        to: new Date("2025-12-10T23:59:59Z")
+      })
+      .getTime();
     const reservation_expiry = reservation_date + 15 * 60 * 1000; // 15 minutes after reservation
 
-    // End coordinates: hub location + small random offset
-    const offsetLng = faker.number.float({ min: -0.002, max: 0.002 });
-    const offsetLat = faker.number.float({ min: -0.002, max: 0.002 });
+    if (tripStatus === TripStatusType.COMPLETE) {
+      // Generate a realistic timeline within last 30 days
+      tripEnd = now - faker.number.int({ min: 0, max: THIRTY_DAYS_MS });
+      tripDurationMs = faker.number.int({
+        min: 5 * 60 * 1000, // 5 minutes
+        max: 60 * 60 * 1000, // 60 minutes
+      });
+      tripStart = tripEnd - tripDurationMs;
+      // End coordinates: hub location + small random offset
+      offsetLng = faker.number.float({ min: -0.002, max: 0.002 });
+      offsetLat = faker.number.float({ min: -0.002, max: 0.002 });
+      trip_end_long = hubGeo.lng + offsetLng;
+      trip_end_lat = hubGeo.lat + offsetLat;
+      trip_start_long = hubGeo.lng;
+      trip_start_lat = hubGeo.lat
 
-    const trip_end_long = hubGeo.lng + offsetLng;
-    const trip_end_lat = hubGeo.lat + offsetLat;
+    }
 
     const trip: TripSeed = {
       id,
       bike_id,
       customer_id,
       hub_id,
-      trip_status: TripStatusConst.COMPLETE, // all complete
+      trip_status: tripStatus, // all complete
       reservation_date,
       reservation_expiry,
       trip_start_date: tripStart,
       trip_end_date: tripEnd,
+      trip_start_lat,
+      trip_start_long,
       trip_end_long,
       trip_end_lat,
       trip_secret: null,
