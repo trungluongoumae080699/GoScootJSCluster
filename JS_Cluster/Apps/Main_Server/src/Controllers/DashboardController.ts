@@ -162,6 +162,14 @@ export interface GetBikeTelemetryOptions {
   sortDirection?: SortDirection; // default "desc" (latest first)
 }
 
+export interface GetBikeTelemetryResult {
+  data: BikeTelemetry[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 
 
 export const fetchTelemetryByBike = async (

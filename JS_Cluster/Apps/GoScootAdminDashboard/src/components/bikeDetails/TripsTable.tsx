@@ -4,7 +4,6 @@
  */
 
 import { Trip } from '@trungthao/admin_dashboard_dto';
-import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
 interface TripsTableProps {
   trips: Trip[];
@@ -69,21 +68,25 @@ function TripsTable({
         </thead>
         <tbody>
           {trips.length > 0 ? (
-            trips.map((trip) => (
-              <tr
-                key={trip.id}
-                className={selectedTrip === trip.id ? 'selected' : ''}
-                onClick={() => onTripSelect(trip.id)}
-              >
-                <td>{trip.customer_id}</td>
-                <td>
-                  <span className={`trip-status ${trip.trip_status?.toLowerCase()}`}>
-                    {trip.trip_status}
-                  </span>
-                </td>
-                <td>{formatDate(trip.reservation_date)}</td>
-              </tr>
-            ))
+            trips.map((trip) => {
+              const hasLocation = trip.trip_end_long != null && trip.trip_end_lat != null;
+              return (
+                <tr
+                  key={trip.id}
+                  className={`${selectedTrip === trip.id ? 'selected' : ''} ${!hasLocation ? 'no-location' : ''}`}
+                  onClick={() => onTripSelect(trip.id)}
+                  title={hasLocation ? 'Click to view trip end location' : 'No location data available'}
+                >
+                  <td>{trip.customer_id}</td>
+                  <td>
+                    <span className={`trip-status ${trip.trip_status?.toLowerCase()}`}>
+                      {trip.trip_status}
+                    </span>
+                  </td>
+                  <td>{formatDate(trip.reservation_date)}</td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
               <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
@@ -101,8 +104,9 @@ function TripsTable({
             className="pagination-btn"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
+            aria-label="Previous page"
           >
-            <MdChevronLeft size={20} />
+            ◀
           </button>
           <span className="pagination-info">
             Page {page} of {totalPages}
@@ -111,8 +115,9 @@ function TripsTable({
             className="pagination-btn"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
+            aria-label="Next page"
           >
-            <MdChevronRight size={20} />
+            ▶
           </button>
         </div>
       )}

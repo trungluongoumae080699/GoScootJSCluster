@@ -14,7 +14,7 @@ const BIKE_TYPES = ["VINFAST EVO200", "VINFAST KLARA", "VINFAST VENTO"];
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "All Status" },
   { value: "Idle", label: "Available" },
-  { value: "Inuse", label: "Being Rent" },
+  { value: "Inused", label: "Inused" },
   { value: "Reserved", label: "Reserved" },
 ];
 
@@ -243,7 +243,7 @@ export default function Bikes() {
     switch (status) {
       case "Idle":
         return { background: "#d4edda", color: "#155724" };
-      case "Inuse":
+      case "Inused":
         return { background: "#ffe4c4", color: "#856404" };
       case "Reserved":
         return { background: "#fff3cd", color: "#856404" };
@@ -256,8 +256,8 @@ export default function Bikes() {
     switch (status) {
       case "Idle":
         return "Available";
-      case "Inuse":
-        return "Being Rent";
+      case "Inused":
+        return "Inused";
       case "Reserved":
         return "Reserved";
       default:
@@ -401,7 +401,7 @@ export default function Bikes() {
                       <tr
                         key={bike.id}
                         onClick={() => handleBikeClick(bike.id)}
-                        className={bike.status === "Inuse" ? "row-highlighted" : ""}
+                        className={bike.status === "Inused" ? "row-highlighted" : ""}
                       >
                         <td className="vin-cell">{bike.id}</td>
                         <td>{bike.name}</td>
