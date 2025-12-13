@@ -1,27 +1,44 @@
 
+// React hooks for component state management and lifecycle
 import { useRef, useState, useCallback, useEffect } from 'react';
+// Mapbox GL JS library for interactive maps
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+// Type definitions for bike data structures
 import { BikeUpdate, Bike } from '@trungthao/admin_dashboard_dto';
+// Custom hooks for WebSocket connection and map marker management
 import { useWebSocket } from './hooks/useWebSocket';
 import { useBikeMarkers } from './hooks/useBikeMarkers';
 import { useHubMarkers } from './hooks/useHubMarkers';
 
+// Map UI components for displaying information and controls
 import MapStatusIndicator from './components/map/MapStatusIndicator';
 import BikeDetailPopup from './components/map/BikeDetailPopup';
 import HubDetailCard from './components/map/HubDetailCard';
 
+// Map control components for filtering and display options
 import DisplayToggle, { DisplayMode } from './components/map/DisplayToggle';
 import BatteryFilter from './components/map/BatteryFilter';
 import Snackbar from './components/common/Snackbar';
+// WebSocket service for real-time bike location updates
 import { websocketManager } from './services/websocketService';
+// API client for fetching bike and hub data from backend
 import { bikeApi, hubApi, type Hub } from './services/apiClient';
+// Error boundary component for handling component errors gracefully
 import ErrorBoundary from './components/common/ErrorBoundary';
 
-/** Mapbox API access token from environment variables */
+/** 
+ * Mapbox API access token from environment variables
+ * Required for map rendering and geocoding services
+ * Should be set in .env file as VITE_MAPBOX_TOKEN
+ */
 const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
 
-/** Default map center (Saigon center) */
+/** 
+ * Default map center coordinates (Ho Chi Minh City center)
+ * [longitude, latitude] format as required by Mapbox GL JS
+ * Used as fallback when no specific location is provided
+ */
 const SAIGON_CENTER: [number, number] = [106.6297, 10.8231];
 
 /** Props for Map component */
@@ -33,84 +50,109 @@ export interface MapProps {
 }
 
 /**
- * Map component
- * Dashboard map showing real-time bike locations via WebSocket
+ * Main Dashboard Map Component
+ * 
+ * Features:
+ * - Real-time bike location tracking via WebSocket
+ * - Interactive hub markers with bike listings
+ * - Location search with Mapbox Geocoding API
+ * - Bike ID search functionality
+ * - Battery level filtering
+ * - Display mode toggle (bikes/hubs/both)
+ * - Detailed popups for bikes and hubs
+ * 
+ * @param centerOnLocation - Optional coordinates to center map on specific location
+ * @param onNavigate - Callback function for navigation to other pages
  */
 function DashboardMap({ centerOnLocation }: MapProps) {
+  // DOM reference to the map container div element
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the Mapbox GL JS map instance for direct map manipulation
   const mapRef = useRef<mapboxgl.Map | null>(null);
   
-  // State: Number of bikes visible in current map viewport
+  // === MAP STATUS STATE ===
+  // Number of bikes currently visible within the map viewport bounds
   const [visibleBikeCount, setVisibleBikeCount] = useState(0);
-  
-  // State: Total number of bikes tracked by the system
+  // Total number of bikes being tracked by the system
   const [totalBikeCount, setTotalBikeCount] = useState(0);
-  
-  // State: Loading state while map initializes
+  // Loading state during initial map setup and Mapbox GL initialization
   const [isLoading, setIsLoading] = useState(true);
-  
-  // State: Error message if map fails to load
+  // Error message if map fails to load or encounters issues
   const [error, setError] = useState<string | null>(null);
   
-  // State: WebSocket connection status
+  // === WEBSOCKET CONNECTION STATE ===
+  // Real-time WebSocket connection status for live bike updates
   const [wsConnected, setWsConnected] = useState(false);
   
-  // State: Currently selected bike for detail popup
+  // === BIKE SELECTION STATE ===
+  // Currently selected bike for displaying detailed popup information
   const [selectedBike, setSelectedBike] = useState<BikeUpdate | null>(null);
   
-  // State: Search query for location search
+  // === LOCATION SEARCH STATE ===
+  // User input for location search (addresses, landmarks, etc.)
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // State: Search results from Mapbox Geocoding API
+  // Results from Mapbox Geocoding API for location suggestions
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  
-  // State: Show/hide search results dropdown
+  // Controls visibility of the search results dropdown menu
   const [showResults, setShowResults] = useState(false);
   
-  // State: Bike ID search query
+  // === BIKE ID SEARCH STATE ===
+  // User input for searching specific bikes by their unique ID
   const [bikeSearchQuery, setBikeSearchQuery] = useState('');
-  
-  // State: Bike search error message
+  // Error message displayed when bike search fails or bike not found
   const [bikeSearchError, setBikeSearchError] = useState<string | null>(null);
   
-  // State: Display mode (bikes, hubs, or both)
+  // === DISPLAY CONTROL STATE ===
+  // Current display mode: 'bikes', 'hubs', or 'both' - controls which markers are visible
   const [displayMode, setDisplayMode] = useState<DisplayMode>('both');
   
-  // State: Selected hub for detail card
+  // === HUB INTERACTION STATE ===
+  // Currently selected hub for displaying detailed information card
   const [selectedHub, setSelectedHub] = useState<Hub | null>(null);
-  
-  // State: Bikes in selected hub
+  // List of bikes located at the currently selected hub
   const [hubBikes, setHubBikes] = useState<any[]>([]);
-  
-  // State: Loading bikes in hub
+  // Loading state while fetching bikes for the selected hub
   const [hubBikesLoading, setHubBikesLoading] = useState(false);
   
-  // State: Filtered bikes from battery filter
+  // === BATTERY FILTER STATE ===
+  // Bikes filtered by battery level criteria (e.g., low battery bikes)
   const [filteredBikes, setFilteredBikes] = useState<Bike[]>([]);
-  
-  // State: Loading filtered bikes
+  // Loading state while applying battery level filters
   const [filteredBikesLoading, setFilteredBikesLoading] = useState(false);
   
-  // State: Error message for snackbar
+  // === ERROR HANDLING STATE ===
+  // Error message to display in the snackbar notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
-  // State: Show error snackbar
+  // Controls visibility of the error notification snackbar
   const [showErrorSnackbar, setShowErrorSnackbar] = useState(false);
 
   /**
-   * Handler: When user clicks on a bike marker
-   * Opens the detail popup for that bike
+   * BIKE INTERACTION HANDLER
+   * Triggered when user clicks on a bike marker on the map
+   * Opens detailed popup showing bike information (ID, battery, status, etc.)
+   * 
+   * @param bike - BikeUpdate object containing current bike location and status data
    */
   const handleBikeClick = useCallback((bike: BikeUpdate) => {
     setSelectedBike(bike);
   }, []);
   
   /**
-   * Handler: Search for locations using Mapbox Geocoding API
+   * LOCATION SEARCH HANDLER
+   * Uses Mapbox Geocoding API to search for addresses, landmarks, and places
+   * Provides autocomplete suggestions as user types
+   * 
+   * Features:
+   * - Minimum 3 characters required to trigger search
+   * - Limits results to 5 suggestions for performance
+   * - Handles API errors gracefully
+   * 
+   * @param query - User input string for location search
    */
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     
+    // Don't search for very short queries to avoid too many API calls
     if (query.length < 3) {
       setSearchResults([]);
       setShowResults(false);
@@ -118,6 +160,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     }
     
     try {
+      // Call Mapbox Geocoding API for location suggestions
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5`
       );
@@ -155,19 +198,32 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   }, []);
 
   /**
-   * Handler: When user clicks on a hub marker
+   * HUB INTERACTION HANDLER
+   * Triggered when user clicks on a hub/station marker
+   * 
+   * Functionality:
+   * - Opens detailed hub information card
+   * - Fetches and displays all bikes currently at this hub
+   * - Shows loading state while fetching bike data
+   * - Handles different API response formats for compatibility
+   * - Displays error messages if hub data cannot be loaded
+   * 
+   * @param hub - Hub object containing hub ID, location, and metadata
    */
   const handleHubClick = useCallback(async (hub: Hub) => {
     setSelectedHub(hub);
     setHubBikesLoading(true);
     
     try {
+      // Fetch bikes located at this specific hub from the backend API
       const response = await hubApi.getBikesInHub(hub.id);
       
-      // Handle different response formats
+      // Handle different response formats for backward compatibility
       if (response && response.bikes) {
+        // Standard paginated response format
         setHubBikes(response.bikes);
       } else if (Array.isArray(response)) {
+        // Direct array response format
         setHubBikes(response);
       } else {
         console.warn('⚠️ Unexpected response format:', response);
@@ -176,6 +232,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     } catch (error) {
       console.error('❌ Failed to fetch bikes in hub:', error);
       setHubBikes([]);
+      // Show user-friendly error message in snackbar notification
       setErrorMessage(`Failed to load bikes for hub: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setShowErrorSnackbar(true);
     } finally {
@@ -183,10 +240,27 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     }
   }, []);
 
-  // Custom hook: Manages bike markers on the map (add, update, remove)
+  // === CUSTOM HOOKS FOR MAP MARKER MANAGEMENT ===
+  
+  /**
+   * BIKE MARKERS HOOK
+   * Manages all bike markers on the map including:
+   * - Adding new bike markers when bikes come online
+   * - Updating existing markers when bikes move or change status
+   * - Removing markers when bikes go offline
+   * - Controlling marker visibility based on display mode
+   * - Finding specific bikes by ID for search functionality
+   */
   const { updateMarkers, clearMarkers, getBikeById, setBikeMarkersVisible } = useBikeMarkers(handleBikeClick);
   
-  // Custom hook: Manages hub markers on the map
+  /**
+   * HUB MARKERS HOOK
+   * Manages all hub/station markers on the map including:
+   * - Displaying hub locations with custom icons
+   * - Updating hub information and bike counts
+   * - Controlling hub marker visibility
+   * - Handling hub click interactions
+   */
   const { updateHubMarkers, clearHubMarkers, setHubMarkersVisible } = useHubMarkers(handleHubClick);
 
   /**
@@ -329,63 +403,81 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   }, [getBikeById]);
 
   /**
-   * Effect: Initialize Mapbox map on component mount
-   * - Sets up map container with Mapbox GL
-   * - Configures map center (either provided location or default Saigon center)
-   * - Adds navigation controls (zoom, rotate)
-   * - Adds geolocation control (find user's location)
-   * - Cleans up map on unmount
+   * MAP INITIALIZATION EFFECT
+   * 
+   * This is the core map setup that runs once when the component mounts.
+   * It creates and configures the Mapbox GL JS map instance with all necessary
+   * controls and event handlers.
+   * 
+   * Setup Process:
+   * 1. Validates required dependencies (DOM container, API token)
+   * 2. Creates Mapbox map instance with street style
+   * 3. Sets initial center and zoom level
+   * 4. Adds navigation controls (zoom in/out, rotate, compass)
+   * 5. Adds geolocation control (find user's current location)
+   * 6. Sets up error handling for map loading failures
+   * 7. Stores map reference for use by other components
+   * 
+   * Cleanup:
+   * - Removes all markers when component unmounts
+   * - Destroys map instance to prevent memory leaks
    */
   useEffect(() => {
-    // Validate map container and token exist
+    // === VALIDATION ===
+    // Ensure DOM container exists and API token is available
     if (!mapContainerRef.current || !MAPBOX_TOKEN) {
       setError('Mapbox token is missing');
       setIsLoading(false);
       return;
     }
 
-    // Set Mapbox access token
+    // === MAP CONFIGURATION ===
+    // Set global Mapbox access token for API requests
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // Create new map instance
+    // Create new interactive map instance
     const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v11', // Street map style
-      center: centerOnLocation || SAIGON_CENTER, // Center on provided location or default
-      zoom: centerOnLocation ? 15 : 15, // Zoom to district level - shows streets and neighborhoods clearly
+      container: mapContainerRef.current,           // DOM element to render map in
+      style: 'mapbox://styles/mapbox/streets-v11',  // Street map style with roads and labels
+      center: centerOnLocation || SAIGON_CENTER,    // Initial map center coordinates
+      zoom: centerOnLocation ? 15 : 15,             // Zoom level (15 = neighborhood level detail)
     });
 
-    // Event: Map finished loading
+    // === EVENT HANDLERS ===
+    // Map finished loading all tiles and styles
     map.on('load', () => setIsLoading(false));
     
-    // Event: Map encountered an error
+    // Map encountered an error during loading or operation
     map.on('error', (e) => {
       console.error('Map error:', e);
       setError('Failed to load map');
       setIsLoading(false);
     });
 
-    // Add zoom/rotate controls to top-right corner
+    // === MAP CONTROLS ===
+    // Add zoom in/out, rotate, and compass controls to top-right corner
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     
-    // Add geolocation control (find my location button)
+    // Add "Find My Location" button with high-accuracy GPS tracking
     map.addControl(
       new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true }, // Use GPS for accuracy
-        trackUserLocation: true, // Keep tracking as user moves
-        showUserHeading: true, // Show direction user is facing
+        positionOptions: { enableHighAccuracy: true }, // Use GPS for precise location
+        trackUserLocation: true,                        // Continue tracking as user moves
+        showUserHeading: true,                          // Show direction user is facing
       }),
       'top-right'
     );
 
-    // Store map reference for use in other functions
+    // === REFERENCE STORAGE ===
+    // Store map instance for access by other components and hooks
     mapRef.current = map;
 
-    // Cleanup: Remove markers and destroy map when component unmounts
+    // === CLEANUP FUNCTION ===
+    // Runs when component unmounts to prevent memory leaks
     return () => {
-      clearMarkers();
-      clearHubMarkers();
-      map.remove();
+      clearMarkers();     // Remove all bike markers
+      clearHubMarkers();  // Remove all hub markers
+      map.remove();       // Destroy map instance and free resources
     };
   }, [centerOnLocation, clearMarkers]);
 
@@ -436,7 +528,17 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     }
   }, [updateMarkers, bikeSearchError]);
 
-  // Custom hook: Connect to WebSocket for real-time GPS updates
+  // === REAL-TIME DATA CONNECTION ===
+  /**
+   * WEBSOCKET INTEGRATION
+   * Establishes real-time connection to receive live bike location updates
+   * 
+   * Handles:
+   * - Bike location updates (GPS coordinates, battery status, availability)
+   * - Hub information updates (bike counts, status changes)
+   * - Connection errors and reconnection attempts
+   * - Automatic marker updates when new data arrives
+   */
   useWebSocket(handleBikeUpdate, mapRef.current, handleHubUpdate, handleWebSocketError);
 
   /**
