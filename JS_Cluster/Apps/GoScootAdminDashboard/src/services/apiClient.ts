@@ -503,6 +503,8 @@ export const hubApi = {
    * Get bikes in a specific hub
    */
   async getBikesInHub(hubId: string): Promise<BikesResponse> {
-    return apiRequest<BikesResponse>(`/dashboard/use/bikes/hub/${hubId}`);
+    // Use the regular bikes endpoint with hub filter parameter
+    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
+    return bikeApi.getBikes({ hub: hubId });
   },
 };
