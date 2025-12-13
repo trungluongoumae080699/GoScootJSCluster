@@ -3,7 +3,7 @@ import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Customer } from "../Models/Customer.js";
 import { getCustomerById } from "../Repositories/MySqlRepo/CustomerRepo.js";
 import { SessionObject, getSession } from "../Repositories/RedisRepo/SessionRepo.js";
-import { cancelTrip, getMyTrips, reserveBikeForCustomer } from "../Repositories/MySqlRepo/TripRepo.js";
+import { cancelTrip, getMyTrips, getPendingTripForCustomer, reserveBikeForCustomer } from "../Repositories/MySqlRepo/TripRepo.js";
 import { Response } from "express";
 import { getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { redisClient } from "../RedisConfig.js";
@@ -97,3 +97,9 @@ export const cancelReservation = async (
   );
   response.status(200).json({message: "Trip cancelled successfully"})
 };
+
+export const getPendingReservation = async (request: CustomRequest, response: Response) => {
+  const session = request.session as SessionObject
+  const res = await getPendingTripForCustomer(session.userId)
+  response.status(200).json(res)
+}
