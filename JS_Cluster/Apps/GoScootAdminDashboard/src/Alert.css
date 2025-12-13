@@ -1,0 +1,210 @@
+/* Layout */
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; 
+}
+
+.content {
+  display: flex;
+  background: #f9f9f9;
+  height: 100%;
+  overflow: hidden;
+}
+
+.loading {
+  position: fixed; /* Make it relative to the viewport */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Center exactly */
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.8); /* Optional: semi-transparent background */
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  z-index: 1000; /* Ensure it sits on top of other content */
+  text-align: center;
+}
+
+/* Wrapper */
+.alerts-wrapper {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Filter Row */
+.filter-row,
+.action-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Buttons */
+.filter-btn {
+  width: 18vw;
+  height: 6vh;
+  padding: 10px 18px;
+  background-color: #ffffff;
+  border: 2px solid #DF6C20;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: larger;
+  color: #DF6C20;
+}
+
+.date-filter-btn {
+  padding: 10px 18px;
+  background-color: #DF6C20;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: larger;
+  color: white;
+}
+
+.date-filter-btn:hover {
+  background-color: #ff9d55;
+}
+
+.btn-ack {
+  padding: 10px 18px;
+  background-color: #39b45a;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: larger;
+  color: #000;
+}
+
+.btn-ack:hover {
+  background-color: #2e9d4c;
+}
+
+.btn-dismiss {
+  padding: 10px 18px;
+  background-color: #d3d3d3;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: larger;
+}
+
+.btn-dismiss:hover {
+  background-color: #bfbfbf;
+}
+
+.date-popup {
+  position: absolute;
+  top: 7vh;
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.15);
+  z-index: 20;
+  width: 31vw;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Generic group wrapper */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 14vw;
+}
+
+/* ROW 1 — SEARCH + SORT */
+.filter-row-1 {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ROW 2 — DATE RANGE */
+.filter-row-2 {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.date-popup input,
+.date-popup select {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.apply-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 5vw;
+  height: 5vh;
+}
+
+.apply-btn:hover {
+  background: #0065d1;
+}
+
+.clear-btn {
+  background: #ff0000;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 5vw;
+  height: 5vh;
+}
+
+.clear-btn:hover {
+  background: #ec5f5f;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 8px;
+}
+
+.page-btn,
+.page-number {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-number.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}

@@ -1,0 +1,265 @@
+/* Bikes Page Styles */
+.trips-content {
+  padding: 1.5rem 2rem;
+}
+
+/* Stats Section */
+.trips-stats {
+  margin-bottom: 1rem;
+}
+
+.trips-stats p {
+  margin: 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Filters Section */
+.trips-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  max-width: 350px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #ddd;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #C85A28;
+}
+
+.date-filter-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.date-filter-button {
+  padding: 8px 12px;
+  background-color: #DF6C20;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.date-filter-button:hover {
+  background-color: #ee823b;
+}
+
+.date-filter-popup {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  width: 220px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 50;
+}
+
+.date-filter-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.date-filter-row span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.date-filter-row input[type="date"] {
+  width: 120px;
+  padding: 5px;
+}
+
+.close-popup-btn {
+  width: 100%;
+  padding: 6px 0;
+  background: #f30303;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.close-popup-btn:hover {
+  background: #ee4444;
+}
+
+
+/* Table Styles */
+.trips-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.trips-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.trips-table thead {
+  background: #E8A87C;
+}
+
+.trips-table th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #333;
+}
+
+.trips-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.trips-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.trips-table tbody tr.row-highlighted {
+  background: #ffe4d6;
+}
+
+.trips-table tbody tr.row-highlighted:hover {
+  background: #ffd4c0;
+}
+
+.trips-table td {
+  padding: 1rem 1.5rem;
+  font-size: 0.95rem;
+}
+
+.vin-cell {
+  color: #C85A28;
+  font-weight: 600;
+}
+
+.status-badge-table {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #C85A28;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  margin: 0 1rem;
+  font-size: 0.95rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page-input {
+  width: 50px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.page-input:focus {
+  outline: none;
+  border-color: #C85A28;
+}
+
+/* Loading and Error States */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.loading-progress {
+  background: #e8f4fd;
+  color: #1976d2;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .trips-content {
+    padding: 1rem;
+  }
+
+  .trips-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input {
+    max-width: none;
+  }
+
+  .trips-table th,
+  .trips-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+}
