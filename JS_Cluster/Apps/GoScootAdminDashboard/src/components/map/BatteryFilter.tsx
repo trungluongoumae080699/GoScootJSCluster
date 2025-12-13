@@ -1,7 +1,16 @@
+
 import React, { useState, useCallback } from 'react';
 import { Bike } from '@trungthao/admin_dashboard_dto';
 import { websocketManager } from '../../services/websocketService';
 
+/**
+ * COMPONENT PROPS INTERFACE
+ * @param onBatteryFilter - Callback function called with filtered bike array
+ * @param onBikeClick - Callback when user clicks on a bike in the filtered list
+ * @param filteredBikes - Array of bikes matching current battery filter criteria
+ * @param isLoading - Loading state while fetching filtered bikes from API
+ * @param getBikeById - Function to check if bike data is already available in memory
+ */
 interface BatteryFilterProps {
   onBatteryFilter: (maxBattery: number) => void;
   onBikeClick: (bike: Bike) => void;
@@ -10,6 +19,12 @@ interface BatteryFilterProps {
   getBikeById: (bikeId: string) => any; // Function to check if bike is already fetched
 }
 
+/**
+ * BATTERY FILTER COMPONENT IMPLEMENTATION
+ * 
+ * Provides range-based filtering for bike battery levels with
+ * minimum and maximum battery percentage controls.
+ */
 const BatteryFilter: React.FC<BatteryFilterProps> = ({
   onBatteryFilter,
   onBikeClick,
@@ -17,17 +32,28 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
   isLoading,
   getBikeById
 }) => {
-  const [batteryLevel, setBatteryLevel] = useState(100);
-  const [showResults, setShowResults] = useState(false);
+  /**
+   * COMPONENT STATE
+   * Tracks the current battery level threshold and results visibility
+   */
+  const [batteryLevel, setBatteryLevel] = useState(100);    // Maximum battery percentage (0-100)
+  const [showResults, setShowResults] = useState(false);    // Controls visibility of filtered results
 
-  // Debug: Log when filteredBikes changes
+  /**
+   * DEBUG EFFECT
+   * Logs state changes for debugging filtered bikes updates
+   */
   React.useEffect(() => {
     console.log('🎚️ BatteryFilter: filteredBikes updated:', filteredBikes);
     console.log('🎚️ BatteryFilter: isLoading:', isLoading);
     console.log('🎚️ BatteryFilter: showResults:', showResults);
   }, [filteredBikes, isLoading, showResults]);
 
-  // Show results when API call completes (loading finishes)
+  /**
+   * RESULTS VISIBILITY EFFECT
+   * Automatically shows results when API call completes successfully
+   * This ensures users see the filtered results after the loading finishes
+   */
   React.useEffect(() => {
     if (!isLoading && filteredBikes.length >= 0) {
       console.log('🎚️ BatteryFilter: API call completed, showing results');
@@ -35,10 +61,31 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
     }
   }, [isLoading, filteredBikes]);
 
+  /**
+   * SLIDER CHANGE HANDLER
+   * 
+   * Updates the battery level threshold as user drags the slider.
+   * This provides real-time visual feedback but doesn't trigger
+   * the API call until the user releases the slider.
+   * 
+   * @param e - Input change event from range slider
+   */
   const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setBatteryLevel(parseInt(e.target.value));
   }, []);
 
+  /**
+   * SLIDER RELEASE HANDLER
+   * 
+   * Triggers the battery filter API call when user releases the slider.
+   * This prevents excessive API calls while dragging and only filters
+   * when the user has finished selecting their desired threshold.
+   * 
+   * Process:
+   * 1. Log the selected battery level for debugging
+   * 2. Call the parent component's filter function with new threshold
+   * 3. Wait for API response before showing results (handled by useEffect)
+   */
   const handleSliderMouseUp = useCallback(() => {
     console.log('🎚️ BatteryFilter: Slider released at', batteryLevel);
     onBatteryFilter(batteryLevel);
@@ -46,6 +93,23 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
     // setShowResults(true); // Removed this line
   }, [batteryLevel, onBatteryFilter]);
 
+  /**
+   * BIKE ITEM CLICK HANDLER
+   * 
+   * Handles user clicks on individual bikes in the filtered results list.
+   * Implements smart data fetching to avoid unnecessary API calls.
+   * 
+   * Process:
+   * 1. Check if bike data is already available in memory
+   * 2. If available, immediately show bike details popup
+   * 3. If not available, request bike data via WebSocket
+   * 4. Hide the results panel after interaction
+   * 
+   * This optimization reduces server load and improves user experience
+   * by reusing already-fetched bike data when possible.
+   * 
+   * @param bike - Bike object from filtered results list
+   */
   const handleBikeItemClick = useCallback((bike: Bike) => {
     // Check if bike is already fetched
     const existingBike = getBikeById(bike.id);
@@ -61,11 +125,26 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
     setShowResults(false);
   }, [onBikeClick, getBikeById]);
 
+  /**
+   * BATTERY COLOR HELPER FUNCTION
+   * 
+   * Returns appropriate color for battery level indicators based on charge level.
+   * Uses a traffic light color scheme for intuitive understanding:
+   * 
+   * Color Mapping:
+   * - Green (60-100%): Good battery level, bike ready for use
+   * - Orange (30-60%): Medium battery level, may need charging soon
+   * - Red (0-30%): Low battery level, needs immediate charging
+   * - Gray (null/undefined): Unknown battery status
+   * 
+   * @param battery - Battery percentage (0-100) or null/undefined
+   * @returns Hex color code string for the battery indicator
+   */
   const getBatteryColor = (battery: number | null | undefined) => {
-    if (!battery) return '#9E9E9E';
-    if (battery > 60) return '#4CAF50';
-    if (battery > 30) return '#FF9800';
-    return '#F44336';
+    if (!battery) return '#9E9E9E';    // Gray for unknown/missing data
+    if (battery > 60) return '#4CAF50'; // Green for good battery
+    if (battery > 30) return '#FF9800'; // Orange for medium battery
+    return '#F44336';                   // Red for low battery
   };
 
   return (
