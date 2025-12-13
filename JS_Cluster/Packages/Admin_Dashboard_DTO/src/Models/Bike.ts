@@ -6,14 +6,15 @@ export enum BikeStatus {
 
 export interface Bike  {
     id: string,
-    name: string
+    name: string,
     isAvailable: boolean,
+    status: BikeStatus,
     maximum_speed: number,
     maximum_functional_distance: number,
     purchase_date: number,
     last_service_date: number,
     current_hub?: string | null,
     deleted: boolean,
-    created_at: Date
+    created_at: Date,
     battery_status?: number | null
 }

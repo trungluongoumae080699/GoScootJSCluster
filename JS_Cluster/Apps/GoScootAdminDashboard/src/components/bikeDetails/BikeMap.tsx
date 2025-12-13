@@ -1,6 +1,7 @@
 /**
  * BikeMap Component
  * Displays bike location on a small map with real-time updates
+ * Shows two markers when current GPS and last known GPS differ significantly
  */
 
 import { useRef, useEffect } from 'react';
@@ -12,6 +13,28 @@ const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
 
 // Default center location (Ho Chi Minh City, Vietnam) when no telemetry data
 const DEFAULT_CENTER: [number, number] = [106.6297, 10.8231];
+
+// Distance threshold in meters to consider coordinates as "significantly different"
+const DISTANCE_THRESHOLD_METERS = 50;
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in meters
+ */
+function calculateDistance(
+  lat1: number, lon1: number, 
+  lat2: number, lon2: number
+): number {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 /**
  * Validate and return coordinates if valid for Mapbox, otherwise null
@@ -48,11 +71,25 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const lastGpsMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Get valid telemetry location (first valid one)
   const telemetryLocation = telemetry.length > 0 
     ? getValidLocation({ longitude: telemetry[0].longitude, latitude: telemetry[0].latitude })
     : null;
+
+  // Get last GPS location from telemetry (different from current location)
+  const lastGpsLocation = telemetry.length > 0 
+    ? getValidLocation({ longitude: telemetry[0].last_gps_long, latitude: telemetry[0].last_gps_lat })
+    : null;
+
+  // Check if the two locations differ significantly
+  const locationsAreDifferent = telemetryLocation && lastGpsLocation 
+    ? calculateDistance(
+        telemetryLocation.latitude, telemetryLocation.longitude,
+        lastGpsLocation.latitude, lastGpsLocation.longitude
+      ) > DISTANCE_THRESHOLD_METERS
+    : false;
 
   // Get the current location (prioritize: selectedTripLocation > liveLocation > telemetry > lastKnownLocation)
   // Only use locations that have valid coordinates
@@ -109,6 +146,10 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
     }
 
     return () => {
+      if (lastGpsMarkerRef.current) {
+        lastGpsMarkerRef.current.remove();
+        lastGpsMarkerRef.current = null;
+      }
       if (markerRef.current) {
         markerRef.current.remove();
         markerRef.current = null;
@@ -119,6 +160,91 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
       }
     };
   }, [bike, MAPBOX_TOKEN]);
+
+  // Effect to handle the "last GPS" marker when locations differ significantly
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Remove existing last GPS marker if it exists
+    if (lastGpsMarkerRef.current) {
+      lastGpsMarkerRef.current.remove();
+      lastGpsMarkerRef.current = null;
+    }
+
+    // If locations differ significantly, add a second marker for last GPS position
+    if (locationsAreDifferent && lastGpsLocation && !validSelectedTrip) {
+      const lastGpsEl = document.createElement('div');
+      lastGpsEl.style.width = '14px';
+      lastGpsEl.style.height = '14px';
+      lastGpsEl.style.borderRadius = '50%';
+      lastGpsEl.style.backgroundColor = '#FF9800'; // Orange for last GPS
+      lastGpsEl.style.border = '3px solid white';
+      lastGpsEl.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
+
+      const lastGpsMarker = new mapboxgl.Marker({ element: lastGpsEl })
+        .setLngLat([lastGpsLocation.longitude, lastGpsLocation.latitude])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 15 }).setHTML(
+            `<strong>Last GPS Location</strong><br/>` +
+            `<span style="color: #FF9800;">📍 Previous Position</span><br/>` +
+            `Lat: ${lastGpsLocation.latitude.toFixed(6)}<br/>` +
+            `Lng: ${lastGpsLocation.longitude.toFixed(6)}`
+          )
+        )
+        .addTo(mapRef.current);
+
+      lastGpsMarkerRef.current = lastGpsMarker;
+
+      // Also draw a line between the two points
+      const lineId = 'gps-difference-line';
+      
+      // Remove existing line if any
+      if (mapRef.current.getSource(lineId)) {
+        mapRef.current.removeLayer(lineId);
+        mapRef.current.removeSource(lineId);
+      }
+
+      // Add line between current and last GPS
+      if (telemetryLocation) {
+        mapRef.current.addSource(lineId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [lastGpsLocation.longitude, lastGpsLocation.latitude],
+                [telemetryLocation.longitude, telemetryLocation.latitude]
+              ]
+            }
+          }
+        });
+
+        mapRef.current.addLayer({
+          id: lineId,
+          type: 'line',
+          source: lineId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#FF9800',
+            'line-width': 2,
+            'line-dasharray': [2, 2]
+          }
+        });
+      }
+    } else {
+      // Remove line if locations are not different
+      const lineId = 'gps-difference-line';
+      if (mapRef.current.getSource(lineId)) {
+        mapRef.current.removeLayer(lineId);
+        mapRef.current.removeSource(lineId);
+      }
+    }
+  }, [locationsAreDifferent, lastGpsLocation, telemetryLocation, validSelectedTrip]);
 
   // Pan to selected trip location when it changes, or back to current location when deselected
   useEffect(() => {
@@ -263,6 +389,29 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
           {locationSource === 'live' ? '● Live Tracking' 
             : locationSource === 'lastKnown' ? '📍 Last Known Location'
             : '📍 Current Location'}
+        </div>
+      )}
+      {/* Show GPS discrepancy warning when current and last GPS differ significantly */}
+      {locationsAreDifferent && !validSelectedTrip && (
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: '10px',
+          background: 'rgba(255, 152, 0, 0.95)',
+          color: 'white',
+          padding: '6px 10px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
+        }}>
+          <span>⚠ GPS Discrepancy Detected</span>
+          <span style={{ fontWeight: 'normal', fontSize: '10px' }}>
+            🟢 Current GPS &nbsp;&nbsp; 🟠 Last GPS
+          </span>
         </div>
       )}
       <div ref={mapContainerRef} className="trip-map" />

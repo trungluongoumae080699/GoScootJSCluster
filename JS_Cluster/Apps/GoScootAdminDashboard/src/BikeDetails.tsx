@@ -119,17 +119,17 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
 
           // Add new telemetry record to the beginning of the list
           const newTelemetry: BikeTelemetry = {
-            id: telemetryData.id, //SỬ DỤNG TRỰC TIẾP ID TỪ SERVER LUÔN EM
+            id: telemetryData.id,
             bike_id: bikeId,
-            last_gps_lat: telemetryData.last_gps_lat, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
-            last_gps_long: telemetryData.last_gps_long, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
+            battery: telemetryData.battery,
+            last_gps_long: telemetryData.last_gps_long,
+            last_gps_lat: telemetryData.last_gps_lat,
             longitude: telemetryData.longitude,
             latitude: telemetryData.latitude,
-            battery: telemetryData.battery,
             time: telemetryData.time,
-            last_gps_contact_time: telemetryData.last_gps_contact_time, //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
-            operationStatus: telemetryData.operationStatus //FIELD NÀY MỚI, EM TẠO THÊM MỘT COLUMN TRONG BẢNG
-
+            last_gps_contact_time: telemetryData.last_gps_contact_time,
+            operationStatus: telemetryData.operationStatus,
+            usageStatus: telemetryData.usageStatus,
           };
 
           setTelemetry(prev => [newTelemetry, ...prev.slice(0, 99)]); // Keep last 100 records
@@ -258,6 +258,11 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
         'Battery (%)': t.battery,
         'Longitude': t.longitude,
         'Latitude': t.latitude,
+        'Last GPS Long': t.last_gps_long,
+        'Last GPS Lat': t.last_gps_lat,
+        'Last GPS Contact': t.last_gps_contact_time ? new Date(t.last_gps_contact_time).toISOString() : 'N/A',
+        'Operation Status': t.operationStatus,
+        'Usage Status': t.usageStatus,
         'Timestamp': new Date(t.time).toISOString(),
       }));
 
@@ -270,6 +275,11 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
         { wch: 12 },  // Battery
         { wch: 15 },  // Longitude
         { wch: 15 },  // Latitude
+        { wch: 15 },  // Last GPS Long
+        { wch: 15 },  // Last GPS Lat
+        { wch: 25 },  // Last GPS Contact
+        { wch: 15 },  // Operation Status
+        { wch: 12 },  // Usage Status
         { wch: 25 },  // Timestamp
       ];
       
@@ -444,10 +454,15 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
               liveLocation={liveLocation}
               selectedTripLocation={selectedTripLocation}
               lastKnownLocation={
-                // Use the most recent trip's end location as fallback
-                trips.length > 0 && trips[0].trip_end_long != null && trips[0].trip_end_lat != null
-                  ? { longitude: trips[0].trip_end_long, latitude: trips[0].trip_end_lat }
-                  : null
+                // Find the first trip with valid end location (skip cancelled trips without location)
+                (() => {
+                  const tripWithLocation = trips.find(
+                    t => t.trip_end_long != null && t.trip_end_lat != null
+                  );
+                  return tripWithLocation 
+                    ? { longitude: tripWithLocation.trip_end_long!, latitude: tripWithLocation.trip_end_lat! }
+                    : null;
+                })()
               }
               onMapClick={handleMapClick}
             />

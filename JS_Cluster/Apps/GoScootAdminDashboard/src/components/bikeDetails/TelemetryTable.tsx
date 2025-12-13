@@ -3,8 +3,36 @@
  * Displays bike telemetry/movement history with date filtering, pagination, and Excel export
  */
 
-import { BikeTelemetry } from '@trungthao/admin_dashboard_dto';
-import { MdFileDownload, MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { BikeTelemetry, OperationStatus, BikeStatus } from '@trungthao/admin_dashboard_dto';
+import { MdFileDownload } from 'react-icons/md';
+
+/** Get CSS class for operation status badge */
+function getOperationStatusClass(status: OperationStatus): string {
+  switch (status) {
+    case OperationStatus.NORMAL:
+      return 'status-normal';
+    case OperationStatus.OUT_OF_BOUND:
+      return 'status-warning';
+    case OperationStatus.LOW_BATTERY:
+      return 'status-danger';
+    default:
+      return 'status-normal';
+  }
+}
+
+/** Get CSS class for usage status badge */
+function getUsageStatusClass(status: BikeStatus): string {
+  switch (status) {
+    case BikeStatus.IDLE:
+      return 'status-idle';
+    case BikeStatus.RESERVED:
+      return 'status-reserved';
+    case BikeStatus.INUSED:
+      return 'status-inuse';
+    default:
+      return 'status-idle';
+  }
+}
 
 interface TelemetryTableProps {
   telemetry: BikeTelemetry[];
@@ -77,12 +105,17 @@ function TelemetryTable({
           </button>
         </div>
       </div>
-      <table className="trips-table">
+      <table className="trips-table telemetry-table">
         <thead>
           <tr>
             <th>Battery</th>
             <th>Longitude</th>
             <th>Latitude</th>
+            <th>Last GPS Long</th>
+            <th>Last GPS Lat</th>
+            <th>GPS Contact</th>
+            <th>Operation</th>
+            <th>Usage</th>
             <th>Timestamp</th>
           </tr>
         </thead>
@@ -100,12 +133,25 @@ function TelemetryTable({
                 </td>
                 <td>{t.longitude.toFixed(6)}</td>
                 <td>{t.latitude.toFixed(6)}</td>
+                <td>{t.last_gps_long?.toFixed(6) ?? 'N/A'}</td>
+                <td>{t.last_gps_lat?.toFixed(6) ?? 'N/A'}</td>
+                <td>{t.last_gps_contact_time ? formatDate(t.last_gps_contact_time) : 'N/A'}</td>
+                <td>
+                  <span className={`telemetry-status ${getOperationStatusClass(t.operationStatus)}`}>
+                    {t.operationStatus}
+                  </span>
+                </td>
+                <td>
+                  <span className={`telemetry-status ${getUsageStatusClass(t.usageStatus)}`}>
+                    {t.usageStatus}
+                  </span>
+                </td>
                 <td>{formatDate(t.time)}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={4} style={{ textAlign: 'center', padding: '2rem' }}>
+              <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
                 No telemetry data found for the selected date range
               </td>
             </tr>
@@ -120,8 +166,9 @@ function TelemetryTable({
             className="pagination-btn"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
+            aria-label="Previous page"
           >
-            <MdChevronLeft size={20} />
+            ◀
           </button>
           <span className="pagination-info">
             Page {page} of {totalPages}
@@ -130,8 +177,9 @@ function TelemetryTable({
             className="pagination-btn"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
+            aria-label="Next page"
           >
-            <MdChevronRight size={20} />
+            ▶
           </button>
         </div>
       )}

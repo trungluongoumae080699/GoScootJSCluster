@@ -135,7 +135,7 @@ export const bikeApi = {
     }
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/dashboard/bikes?${queryString}` : '/dashboard/bikes';
+    const endpoint = queryString ? `/dashboard/use/bikes?${queryString}` : '/dashboard/use/bikes';
     
     return apiRequest<BikesResponse>(endpoint);
   },
@@ -204,8 +204,8 @@ export const bikeApi = {
     
     const queryString = params.toString();
     const endpoint = queryString 
-      ? `/dashboard/telemetry/${bikeId}?${queryString}` 
-      : `/dashboard/telemetry/${bikeId}`;
+      ? `/dashboard/use/telemetry/${bikeId}?${queryString}` 
+      : `/dashboard/use/telemetry/${bikeId}`;
     
     const response = await apiRequest<any>(endpoint);
     
@@ -254,7 +254,7 @@ export const bikeApi = {
     }
     
     const queryString = params.toString();
-    const endpoint = `/dashboard/telemetry/${bikeId}?${queryString}`;
+    const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
     
     const response = await apiRequest<any>(endpoint);
     
@@ -270,7 +270,7 @@ export const bikeApi = {
    * Get latest telemetry for all bikes
    */
   async getAllBikesTelemetry(): Promise<BikeTelemetry[]> {
-    return apiRequest<BikeTelemetry[]>('/dashboard/telemetry');
+    return apiRequest<BikeTelemetry[]>('/dashboard/use/telemetry');
   },
 };
 
@@ -332,8 +332,8 @@ export const tripApi = {
     
     const queryString = params.toString();
     const endpoint = queryString 
-      ? `/dashboard/trips/${bikeId}?${queryString}` 
-      : `/dashboard/trips/${bikeId}`;
+      ? `/dashboard/use/trips/${bikeId}?${queryString}` 
+      : `/dashboard/use/trips/${bikeId}`;
     
     const response = await apiRequest<any>(endpoint);
     
@@ -361,7 +361,7 @@ export const tripApi = {
    * Get all trips
    */
   async getAllTrips(): Promise<Trip[]> {
-    return apiRequest<Trip[]>('/dashboard/trips');
+    return apiRequest<Trip[]>('/dashboard/use/trips');
   },
 };
 
@@ -375,7 +375,7 @@ export const alertApi = {
    */
   async getAllAlerts(page: number): Promise<Response_DashboardGetAlertsDTO> {
     const response = await apiRequest<Response_DashboardGetAlertsDTO>(
-      `/dashboard/alerts?page=${page}`
+      `/dashboard/use/alerts?page=${page}`
     );
 
     return response;
@@ -387,7 +387,7 @@ export const alertApi = {
    */
   async getAlertsByBike(bikeId: string, page: number = 1, pageSize: number = 50): Promise<Alert[]> {
     const response = await apiRequest<any>(
-      `/dashboard/alerts?bikeId=${bikeId}&page=${page}`
+      `/dashboard/use/alerts?bikeId=${bikeId}&page=${page}&pageSize=${pageSize}`
     );
     // Extract alerts array from response
     return response.alerts || response;
