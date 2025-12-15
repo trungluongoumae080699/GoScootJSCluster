@@ -167,7 +167,7 @@ export async function reserveBikeForCustomer(
         trip_status: r.trip_status,
         reservation_expiry: Number(r.reservation_expiry),
         reservation_date: Number(r.reservation_date),
-        trip_scret: r.trip_secret ?? null, // ✅ fixed typo
+        trip_secret: r.trip_secret ?? null, // ✅ fixed typo
       },
 
       bike: {
@@ -493,7 +493,7 @@ export async function getPendingTripForCustomer(
       trip_end_lat: r.trip_end_lat ?? undefined,
       trip_start_lat: r.trip_start_lat ?? undefined,
       trip_start_long: r.trip_start_long ?? undefined,
-      trip_scret: r.trip_secret ?? undefined,
+      trip_secret: r.trip_secret ?? undefined,
       isPaid: r.isPaid === 1,
       price: r.price ?? undefined
     },
