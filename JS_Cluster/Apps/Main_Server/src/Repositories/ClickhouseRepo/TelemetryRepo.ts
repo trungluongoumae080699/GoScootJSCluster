@@ -81,7 +81,7 @@ export async function getBikeTelemetry(
       last_gps_long,
       last_gps_lat,
       last_gps_contact_time,
-      operation_Satus,
+      operationSatus,
       usageStatus
     FROM telemetry
     ${whereSql}
