@@ -49,7 +49,6 @@ function BikeDetailsWrapper({
 }
 
 function App() {
-  const { addNotification } = useNotifications();
   const [pageTitle, setPageTitle] = useState("");
   // Track current page (simple client-side routing)
   const [currentPage, setCurrentPage] = useState<string>("bike-detail");

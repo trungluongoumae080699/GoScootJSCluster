@@ -13,9 +13,11 @@ import { alertApi } from "./services/apiClient";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMqttClient } from "./hooks/useMqttClient";
 import { decodeAlertBinary } from "./utlities/BindaryDecoder";
+import { useNotifications } from "./context/NotificationContext";
 
 // Main Alerts Page
 export default function Alerts() {
+  const { addNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<any>([]);
@@ -56,6 +58,7 @@ export default function Alerts() {
 
     const handleMessage = (topic: string, payload: any) => {
       const alert = decodeAlertBinary(new Uint8Array(payload));
+      addNotification(alert.content);
       console.log("Alert:", alert);
     };
     
