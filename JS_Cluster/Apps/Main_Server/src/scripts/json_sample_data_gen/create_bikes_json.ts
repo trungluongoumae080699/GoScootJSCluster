@@ -95,6 +95,7 @@ export async function generateBikesJson() {
       deleted: false,
       created_at: new Date(purchase_date).toISOString(),
     };
+    bikes.push(bike)
 
   }
 
