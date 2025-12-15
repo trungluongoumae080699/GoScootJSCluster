@@ -11,10 +11,13 @@ import {
 } from "react-icons/md";
 import { alertApi } from "./services/apiClient";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMqttClient } from "./hooks/useMqttClient";
+import { decodeTelemetry } from "./utlities/BindaryDecoder";
 
 // Main Alerts Page
 export default function Alerts() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<any>([]);
   const [filteredAlerts, setFilteredAlerts] = useState<any>([]);
   const [showFilter, setshowFilter] = useState(false);
@@ -33,10 +36,42 @@ export default function Alerts() {
     return filteredAlerts.slice(start, end);
   }, [filteredAlerts, currentPage]);
 
+  const client = useMqttClient(
+    "0dbd0886-f5c9-4916-8f0b-ef7195158503", 
+    "SGGvuz8O5ZaMBQ2EPbhS2A==");
+
+  useEffect(() => {
+    console.log("Subscribing to topic")
+    if (!client) {
+      console.log("Subscription failed")
+      return
+    }
+
+    const topic = `alerts/+`;
+
+    client.subscribe(topic, (err) => {
+      if (err) console.error("Failed to subscribe:", err);
+      else console.log("Successfully subscribed to:", topic);
+    });
+
+    const handleMessage = (topic: string, payload: any) => {
+      const alert = decodeTelemetry(new Uint8Array(payload));
+      console.log("Alert:", alert);
+    };
+    
+    client.on("message", handleMessage);
+
+    // cleanup when component unmounts OR bikeId changes
+    return () => {
+      client.off("message", handleMessage);
+      client.unsubscribe(topic);
+    };
+  }, [client]);
+
   const fetchAllAlerts = useCallback(async () => {
     try {
       setLoading(true);
-
+      setError(null);
       // First fetch to get total pages
       const firstResponse = await alertApi.getAllAlerts(1);
 
@@ -70,7 +105,10 @@ export default function Alerts() {
       setAlerts(allAlertsData);
       setFilteredAlerts(allAlertsData);
     } catch (err) {
-      console.log(err instanceof Error ? err.message : "Failed to fetch bikes");
+      console.log(
+        err instanceof Error ? err.message : "Failed to fetch alerts"
+      );
+      setError(err instanceof Error ? err.message : "Failed to load alerts");
     } finally {
       setLoading(false);
     }
@@ -148,6 +186,54 @@ export default function Alerts() {
     pages.push(totalPages);
     return pages;
   };
+
+  if (loading) {
+    return (
+      <div className="bike-details-container">
+        <Header title="Alerts" />
+        <div className="main-content">
+          <Sidebar />
+          <div
+            className="content-area"
+            style={{ padding: "20px", textAlign: "center" }}
+          >
+            <p>Loading alerts...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bike-details-container">
+        <Header title="Alerts" />
+        <div className="main-content">
+          <Sidebar />
+          <div className="content-area" style={{ padding: "20px" }}>
+            <div
+              className="error-message"
+              style={{
+                color: "red",
+                padding: "20px",
+                background: "#fee",
+                borderRadius: "8px",
+              }}
+            >
+              <h3>Error Loading Alert Data</h3>
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                style={{ marginTop: "10px", padding: "8px 16px" }}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="layout">

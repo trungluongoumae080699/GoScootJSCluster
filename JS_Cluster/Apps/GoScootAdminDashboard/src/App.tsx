@@ -17,6 +17,7 @@ import SignUp from "./SignUp";
 import { formlessSignIn } from "./services/authService";
 import Alert from "./Alert";
 import Trips from "./Trips";
+import TripDetails from "./TripDetails";
 
 /**
  * Protected Route wrapper
@@ -176,6 +177,14 @@ function App() {
           element={
             <ProtectedRoute isAuth={isAuth}>
               <Trips />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:bikeId/:tripId"
+          element={
+            <ProtectedRoute isAuth={isAuth}>
+              <TripDetails />
             </ProtectedRoute>
           }
         />
