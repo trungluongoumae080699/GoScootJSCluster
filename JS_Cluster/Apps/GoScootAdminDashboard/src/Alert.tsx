@@ -12,7 +12,7 @@ import {
 import { alertApi } from "./services/apiClient";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMqttClient } from "./hooks/useMqttClient";
-import { decodeTelemetry } from "./utlities/BindaryDecoder";
+import { decodeAlertBinary } from "./utlities/BindaryDecoder";
 
 // Main Alerts Page
 export default function Alerts() {
@@ -55,7 +55,7 @@ export default function Alerts() {
     });
 
     const handleMessage = (topic: string, payload: any) => {
-      const alert = decodeTelemetry(new Uint8Array(payload));
+      const alert = decodeAlertBinary(new Uint8Array(payload));
       console.log("Alert:", alert);
     };
     
