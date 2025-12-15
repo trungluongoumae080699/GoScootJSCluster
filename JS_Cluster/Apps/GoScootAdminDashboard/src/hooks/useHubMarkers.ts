@@ -1,30 +1,48 @@
-
 import { useRef, useCallback } from 'react';
-import mapboxgl from 'mapbox-gl';
-import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
+import mapboxgl from 'mapbox-gl'; // Mapbox GL JS for interactive map markers
+import { BikeUpdate } from '@trungthao/admin_dashboard_dto'; // Type definition for bike data
 
+/**
+ * BIKE MARKERS HOOK
+ * 
+ * @param onBikeClick - Callback function triggered when user clicks on a bike marker
+ * @returns Object with methods to manage bike markers on the map
+ */
 export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
-  // Ref: Store all active markers (bikeId -> Marker instance)
+  // === DATA STORAGE REFERENCES ===
+  // Maps bike IDs to their corresponding Mapbox marker instances for efficient updates
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   
-  // Ref: Store all bike data (bikeId -> BikeUpdate data)
+  // Maps bike IDs to their current data (GPS coordinates, battery, status, etc.)
   const bikeDataRef = useRef<Map<string, BikeUpdate>>(new Map());
   
-  // Ref: Track all unique bikes ever seen (for cumulative total count)
+  // Set of all unique bike IDs ever encountered (used for cumulative total count)
   const allBikesSeenRef = useRef<Set<string>>(new Set());
   
-  // Ref: Track current visibility state
+  // Current visibility state of all bike markers (true = visible, false = hidden)
   const isVisibleRef = useRef<boolean>(true);
 
   /**
-   * Get color for operation status (matches popup colors)
+   * BIKE STATUS COLOR MAPPING
+   * 
+   * Determines the marker color based on bike operational status.
+   * Colors match the bike detail popup for visual consistency.
+   * 
+   * Color Scheme:
+   * - Normal: Green (#4CAF50) - Bike is operational and available
+   * - Out of bound: Orange (#FF9800) - Bike is outside allowed area
+   * - Low battery: Red (#F44336) - Bike needs charging
+   * - Default: Gray (#757575) - Unknown or other status
+   * 
+   * @param operationStatus - Current operational status of the bike
+   * @returns Hex color code for the marker
    */
   const getOperationStatusColor = (operationStatus: string) => {
     switch (operationStatus) {
-      case 'Normal': return '#4CAF50';
-      case 'Out of bound': return '#FF9800';
-      case 'Low battery': return '#F44336';
-      default: return '#757575';
+      case 'Normal': return '#4CAF50';        // Green - operational
+      case 'Out of bound': return '#FF9800';  // Orange - location issue
+      case 'Low battery': return '#F44336';   // Red - needs charging
+      default: return '#757575';              // Gray - unknown status
     }
   };
 

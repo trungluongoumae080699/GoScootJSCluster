@@ -200,6 +200,8 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 14px;
+  color: #333;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -327,4 +329,57 @@
   .bike-image img {
     width: 200px;
   }
+}
+
+/* Telemetry Table Styles */
+.telemetry-table {
+  table-layout: auto;
+}
+
+.telemetry-table th,
+.telemetry-table td {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.telemetry-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+/* Operation Status Styles */
+.status-normal {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-warning {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.status-danger {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Usage Status Styles */
+.status-idle {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-reserved {
+  background: #fff8e1;
+  color: #f57c00;
+}
+
+.status-inuse {
+  background: #fce4ec;
+  color: #c2185b;
 }

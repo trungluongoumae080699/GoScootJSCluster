@@ -4,8 +4,7 @@ import http from "http";
 import type { NextFunction, Response } from "express";
 
 import https from "https";
-import { mobileAppAuthenticationRouter } from "./Routes/MobileAppRouters/MobileAppAuthorizationRouter.js";
-import { dashboardAuthenticationRouter } from "./Routes/DashboardRouters/DashboardAuthenticationRouter.js";
+
 import { pool, query } from "./MySqlConfig.js";
 import { initRedis, redisClient } from "./RedisConfig.js";
 import { requestPreProcession } from "./Middlewares/RequestPreProcession.js";
@@ -15,6 +14,9 @@ import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
 import { initMqtt } from "./MqttConfig.js";
 import { dashboardNonAuthenticationRouter } from "./Routes/DashboardRouters/DashboardNonAuthenticationRoutes.js";
 import { bikeRouter } from "./Routes/BikeRouters.js";
+import { authenticationRouter } from "./Routes/AuthenticationRouter.js";
+import { dashboardAuthenticationRouter } from "./Routes/DashboardRouters/DashboardAuthenticationRouter.js";
+import { mobileAppAuthRouter } from "./Routes/MobileAppRouters/MobileAppAuthRouter.js";
 
 
 const app: Application = express();
@@ -41,20 +43,15 @@ async function startServer() {
     app.use(requestPreProcession())
     app.use(express.json());
     app.use(express.static("Asset"));
-
-    app.use("/bike", bikeRouter);
-    app.use("/app/auth", mobileAppAuthenticationRouter);
     app.use("/dashboard/auth", dashboardAuthenticationRouter)
-    app.use("/app", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
-    app.use("/dashboard", authorize([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
-
-    /** 404 handler (no route matched) */
-    app.use((req: Request, res: Response) => {
-      res.status(404).json({ message: "Không tìm thấy tài nguyên." });
-    });
+    app.use("/bike", bikeRouter);
+    app.use("/app/auth", mobileAppAuthRouter)
+    app.use("/app/use", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
+    app.use("/dashboard/use", authorize([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
 
     /** Centralized error handler */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.log(err)
       res.status(500).json({ message: "Đã xảy ra lỗi. Xin vui lòng thử lại." });
     });
 

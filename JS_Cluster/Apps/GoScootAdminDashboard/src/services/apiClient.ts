@@ -28,6 +28,32 @@ interface Alert {
   time: number;
 }
 
+/** Hub interface - matches server response */
+export interface Hub {
+  id: string;
+  longitude: number;
+  latitude: number;
+  address: string;
+  deleted: boolean;
+  last_modification_date: number;
+  created_at: number; // Unix timestamp in milliseconds
+  // Optional fields for display (can be calculated or defaulted)
+  name?: string;
+  capacity?: number;
+  current_bikes?: number;
+}
+
+/** Hub API Response - server returns array directly */
+export type HubsResponse = Hub[];
+
+/** Get Hubs Options */
+export interface GetHubsOptions {
+  maxLong?: number;
+  minLong?: number;
+  maxLat?: number;
+  minLat?: number;
+}
+
 /** Bikes API Response */
 export interface BikesResponse {
   bikes: Bike[];
@@ -113,6 +139,34 @@ export interface TelemetryResponse {
 }
 
 /**
+ * Generate mock battery level based on bike ID
+ * Creates consistent battery levels for testing when Redis has no telemetry data
+ */
+function generateMockBattery(bikeId: string): number {
+  // Use bike ID to generate consistent battery level
+  let hash = 0;
+  for (let i = 0; i < bikeId.length; i++) {
+    const char = bikeId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Convert hash to battery percentage (10-95% range for realism)
+  const battery = Math.abs(hash) % 86 + 10; // 10-95%
+  return battery;
+}
+
+/**
+ * Add mock battery data to bikes that have null/undefined battery_status
+ */
+function addMockBatteryToBikes(bikes: Bike[]): Bike[] {
+  return bikes.map(bike => ({
+    ...bike,
+    battery_status: bike.battery_status ?? generateMockBattery(bike.id)
+  }));
+}
+
+/**
  * Bike API
  */
 export const bikeApi = {
@@ -134,11 +188,27 @@ export const bikeApi = {
     }
 
     const queryString = params.toString();
-    const endpoint = queryString
-      ? `/dashboard/use/bikes?${queryString}`
-      : "/dashboard/use/bikes";
-
-    return apiRequest<BikesResponse>(endpoint);
+    const endpoint = queryString ? `/dashboard/use/bikes?${queryString}` : '/dashboard/use/bikes';
+    
+    const response = await apiRequest<BikesResponse>(endpoint);
+    
+    // Add mock battery data for bikes with null/undefined battery_status
+    const bikesWithMockBattery = addMockBatteryToBikes(response.bikes);
+    
+    // If battery filter is applied, filter the results with mock battery data
+    let filteredBikes = bikesWithMockBattery;
+    if (options.battery !== undefined) {
+      filteredBikes = bikesWithMockBattery.filter(bike => 
+        (bike.battery_status ?? 0) <= options.battery!
+      );
+    }
+    
+    return {
+      ...response,
+      bikes: filteredBikes,
+      total: filteredBikes.length,
+      totalPages: Math.ceil(filteredBikes.length / (response.pageSize || 50))
+    };
   },
 
   /**
@@ -173,8 +243,12 @@ export const bikeApi = {
     if (!bike) {
       throw new Error(`Bike with ID ${bikeId} not found`);
     }
-
-    return bike;
+    
+    // Ensure bike has mock battery if needed
+    return {
+      ...bike,
+      battery_status: bike.battery_status ?? generateMockBattery(bike.id)
+    };
   },
 
   /**
@@ -204,10 +278,10 @@ export const bikeApi = {
     }
 
     const queryString = params.toString();
-    const endpoint = queryString
-      ? `/dashboard/telemetry/${bikeId}?${queryString}`
-      : `/dashboard/telemetry/${bikeId}`;
-
+    const endpoint = queryString 
+      ? `/dashboard/use/telemetry/${bikeId}?${queryString}` 
+      : `/dashboard/use/telemetry/${bikeId}`;
+    
     const response = await apiRequest<any>(endpoint);
 
     // Handle both old format (array) and new format (object with pagination)
@@ -255,8 +329,8 @@ export const bikeApi = {
     }
 
     const queryString = params.toString();
-    const endpoint = `/dashboard/telemetry/${bikeId}?${queryString}`;
-
+    const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
+    
     const response = await apiRequest<any>(endpoint);
 
     if (Array.isArray(response)) {
@@ -271,7 +345,7 @@ export const bikeApi = {
    * Get latest telemetry for all bikes
    */
   async getAllBikesTelemetry(): Promise<BikeTelemetry[]> {
-    return apiRequest<BikeTelemetry[]>("/dashboard/telemetry");
+    return apiRequest<BikeTelemetry[]>('/dashboard/use/telemetry');
   },
 };
 
@@ -332,10 +406,10 @@ export const tripApi = {
     }
 
     const queryString = params.toString();
-    const endpoint = queryString
-      ? `/dashboard/use/trips/${bikeId}?${queryString}`
+    const endpoint = queryString 
+      ? `/dashboard/use/trips/${bikeId}?${queryString}` 
       : `/dashboard/use/trips/${bikeId}`;
-
+    
     const response = await apiRequest<any>(endpoint);
 
     // Handle both old format (array) and new format (object with pagination)
@@ -410,5 +484,44 @@ export const alertApi = {
     );
     // Extract alerts array from response
     return response.alerts || response;
+  },
+};
+
+/**
+ * Hub API
+ */
+export const hubApi = {
+  /**
+   * Get hubs in a specific area
+   */
+  async getHubsInArea(bounds: GetHubsOptions): Promise<HubsResponse> {
+    const params = new URLSearchParams();
+    
+    if (bounds.maxLong !== undefined) {
+      params.append('maxLong', bounds.maxLong.toString());
+    }
+    if (bounds.minLong !== undefined) {
+      params.append('minLong', bounds.minLong.toString());
+    }
+    if (bounds.maxLat !== undefined) {
+      params.append('maxLat', bounds.maxLat.toString());
+    }
+    if (bounds.minLat !== undefined) {
+      params.append('minLat', bounds.minLat.toString());
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/dashboard/use/hubs?${queryString}` : '/dashboard/use/hubs';
+    
+    return apiRequest<HubsResponse>(endpoint);
+  },
+
+  /**
+   * Get bikes in a specific hub
+   */
+  async getBikesInHub(hubId: string): Promise<BikesResponse> {
+    // Use the regular bikes endpoint with hub filter parameter
+    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
+    return bikeApi.getBikes({ hub: hubId });
   },
 };
