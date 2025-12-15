@@ -413,12 +413,11 @@ export async function findActiveTripReservation(
 
 export async function cancelTrip(tripId: string): Promise<void> {
   const conn = await pool.getConnection();
-  await conn.query(
-      "CALL CancelTrip(?)",
-      [tripId]
-    );
-
- 
+  try {
+    await conn.query("CALL CancelTrip(?)", [tripId]);
+  } finally {
+    conn.release(); // 🔥 bắt buộc
+  }
 }
 
 export async function getPendingTripForCustomer(
