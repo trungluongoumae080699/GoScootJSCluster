@@ -8,15 +8,14 @@ import type {
   Bike,
   BikeTelemetry,
   Response_DashboardGetAlertsDTO,
-  Response_DashboardGetTripsByBikeDTO,
   Trip,
   // Alert, // Will be available after DTO package rebuild
-} from '@trungthao/admin_dashboard_dto';
+} from "@trungthao/admin_dashboard_dto";
 
-import { getSessionId, clearAuth, getApiBaseUrl } from './authService';
+import { getSessionId, clearAuth, getApiBaseUrl } from "./authService";
 
 // Re-export auth functions for backward compatibility
-export { getSessionId, clearAuth as clearSession } from './authService';
+export { getSessionId, clearAuth as clearSession } from "./authService";
 
 // Temporary Alert type until DTO package is rebuilt
 interface Alert {
@@ -66,9 +65,9 @@ export interface BikesResponse {
 
 /** Bikes API Filter Options */
 export interface GetBikesOptions {
-  battery?: number;  // Max battery percentage
-  hub?: string;      // Hub ID filter
-  page?: number;     // Page number (default: 1)
+  battery?: number; // Max battery percentage
+  hub?: string; // Hub ID filter
+  page?: number; // Page number (default: 1)
 }
 
 /** Base API URL */
@@ -84,17 +83,17 @@ async function apiRequest<T>(
   requiresAuth: boolean = true
 ): Promise<T> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true", // Required for ngrok tunnels
   };
 
   // Add authorization header for authenticated requests
   if (requiresAuth) {
     const sessionId = getSessionId();
     if (!sessionId) {
-      throw new Error('No session ID found. Please log in.');
+      throw new Error("No session ID found. Please log in.");
     }
-    headers['authorization'] = sessionId;
+    headers["authorization"] = sessionId;
   }
 
   // Merge with any additional headers from options
@@ -110,7 +109,7 @@ async function apiRequest<T>(
   // Handle 401 Unauthorized - session expired
   if (response.status === 401) {
     clearAuth();
-    throw new Error('Session expired. Please log in again.');
+    throw new Error("Session expired. Please log in again.");
   }
 
   if (!response.ok) {
@@ -123,11 +122,11 @@ async function apiRequest<T>(
 
 /** Telemetry Filter Options */
 export interface GetTelemetryOptions {
-  from?: number;       // Start timestamp
-  to?: number;         // End timestamp
-  page?: number;       // Page number
-  pageSize?: number;   // Items per page
-  sortDirection?: 'asc' | 'desc';
+  from?: number; // Start timestamp
+  to?: number; // End timestamp
+  page?: number; // Page number
+  pageSize?: number; // Items per page
+  sortDirection?: "asc" | "desc";
 }
 
 /** Telemetry API Response */
@@ -177,17 +176,17 @@ export const bikeApi = {
    */
   async getBikes(options: GetBikesOptions = {}): Promise<BikesResponse> {
     const params = new URLSearchParams();
-    
+
     if (options.page) {
-      params.append('page', options.page.toString());
+      params.append("page", options.page.toString());
     }
     if (options.battery !== undefined) {
-      params.append('battery', options.battery.toString());
+      params.append("battery", options.battery.toString());
     }
     if (options.hub) {
-      params.append('hub', options.hub);
+      params.append("hub", options.hub);
     }
-    
+
     const queryString = params.toString();
     const endpoint = queryString ? `/dashboard/use/bikes?${queryString}` : '/dashboard/use/bikes';
     
@@ -228,19 +227,19 @@ export const bikeApi = {
   async getBikeById(bikeId: string): Promise<Bike> {
     // Fetch bikes and find the one with matching ID
     const response = await this.getBikes({ page: 1 });
-    
+
     // Search through all pages if needed
     let allBikes = response.bikes;
-    let bike = allBikes.find(b => b.id === bikeId);
-    
+    let bike = allBikes.find((b) => b.id === bikeId);
+
     if (!bike && response.totalPages > 1) {
       // Search remaining pages
       for (let page = 2; page <= response.totalPages && !bike; page++) {
         const pageResponse = await this.getBikes({ page });
-        bike = pageResponse.bikes.find(b => b.id === bikeId);
+        bike = pageResponse.bikes.find((b) => b.id === bikeId);
       }
     }
-    
+
     if (!bike) {
       throw new Error(`Bike with ID ${bikeId} not found`);
     }
@@ -257,34 +256,34 @@ export const bikeApi = {
    * Returns TelemetryResponse with pagination
    */
   async getBikeTelemetry(
-    bikeId: string, 
+    bikeId: string,
     options: GetTelemetryOptions = {}
   ): Promise<TelemetryResponse> {
     const params = new URLSearchParams();
-    
+
     if (options.page) {
-      params.append('page', options.page.toString());
+      params.append("page", options.page.toString());
     }
     if (options.pageSize) {
-      params.append('pageSize', options.pageSize.toString());
+      params.append("pageSize", options.pageSize.toString());
     }
     if (options.from !== undefined) {
-      params.append('from', options.from.toString());
+      params.append("from", options.from.toString());
     }
     if (options.to !== undefined) {
-      params.append('to', options.to.toString());
+      params.append("to", options.to.toString());
     }
     if (options.sortDirection) {
-      params.append('sortDirection', options.sortDirection);
+      params.append("sortDirection", options.sortDirection);
     }
-    
+
     const queryString = params.toString();
     const endpoint = queryString 
       ? `/dashboard/use/telemetry/${bikeId}?${queryString}` 
       : `/dashboard/use/telemetry/${bikeId}`;
     
     const response = await apiRequest<any>(endpoint);
-    
+
     // Handle both old format (array) and new format (object with pagination)
     if (Array.isArray(response)) {
       return {
@@ -295,7 +294,7 @@ export const bikeApi = {
         totalPages: 1,
       };
     }
-    
+
     // Server returns 'data' field, not 'telemetry'
     return {
       telemetry: response.data || response.telemetry || [],
@@ -312,32 +311,32 @@ export const bikeApi = {
    */
   async exportBikeTelemetry(
     bikeId: string,
-    options: Omit<GetTelemetryOptions, 'page' | 'pageSize'> = {}
+    options: Omit<GetTelemetryOptions, "page" | "pageSize"> = {}
   ): Promise<BikeTelemetry[]> {
     const params = new URLSearchParams();
-    
+
     // Large page size to get all data for export
-    params.append('pageSize', '10000');
-    
+    params.append("pageSize", "10000");
+
     if (options.from !== undefined) {
-      params.append('from', options.from.toString());
+      params.append("from", options.from.toString());
     }
     if (options.to !== undefined) {
-      params.append('to', options.to.toString());
+      params.append("to", options.to.toString());
     }
     if (options.sortDirection) {
-      params.append('sortDirection', options.sortDirection);
+      params.append("sortDirection", options.sortDirection);
     }
-    
+
     const queryString = params.toString();
     const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
     
     const response = await apiRequest<any>(endpoint);
-    
+
     if (Array.isArray(response)) {
       return response;
     }
-    
+
     // Server returns 'data' field, not 'telemetry'
     return response.data || response.telemetry || [];
   },
@@ -352,13 +351,13 @@ export const bikeApi = {
 
 /** Trip Filter Options */
 export interface GetTripsOptions {
-  from?: number;       // Start timestamp (reservation_date)
-  to?: number;         // End timestamp (reservation_date)
-  status?: string;     // Trip status filter
-  sortBy?: 'reservation_date' | 'price';
-  sortDirection?: 'asc' | 'desc';
-  page?: number;       // Page number
-  pageSize?: number;   // Items per page
+  from?: number; // Start timestamp (reservation_date)
+  to?: number; // End timestamp (reservation_date)
+  status?: string; // Trip status filter
+  sortBy?: "reservation_date" | "price";
+  sortDirection?: "asc" | "desc";
+  page?: number; // Page number
+  pageSize?: number; // Items per page
 }
 
 /** Trips API Response */
@@ -379,40 +378,40 @@ export const tripApi = {
    * Returns TripsResponse with pagination
    */
   async getTripsByBike(
-    bikeId: string, 
+    bikeId: string,
     options: GetTripsOptions = {}
   ): Promise<TripsResponse> {
     const params = new URLSearchParams();
-    
+
     if (options.page) {
-      params.append('page', options.page.toString());
+      params.append("page", options.page.toString());
     }
     if (options.pageSize) {
-      params.append('pageSize', options.pageSize.toString());
+      params.append("pageSize", options.pageSize.toString());
     }
     if (options.from !== undefined) {
-      params.append('from', options.from.toString());
+      params.append("from", options.from.toString());
     }
     if (options.to !== undefined) {
-      params.append('to', options.to.toString());
+      params.append("to", options.to.toString());
     }
     if (options.status) {
-      params.append('status', options.status);
+      params.append("status", options.status);
     }
     if (options.sortBy) {
-      params.append('sortBy', options.sortBy);
+      params.append("sortBy", options.sortBy);
     }
     if (options.sortDirection) {
-      params.append('sortDirection', options.sortDirection);
+      params.append("sortDirection", options.sortDirection);
     }
-    
+
     const queryString = params.toString();
     const endpoint = queryString 
       ? `/dashboard/use/trips/${bikeId}?${queryString}` 
       : `/dashboard/use/trips/${bikeId}`;
     
     const response = await apiRequest<any>(endpoint);
-    
+
     // Handle both old format (array) and new format (object with pagination)
     if (Array.isArray(response)) {
       return {
@@ -423,7 +422,7 @@ export const tripApi = {
         totalPages: 1,
       };
     }
-    
+
     return {
       trips: response.trips || [],
       page: response.page || 1,
@@ -436,8 +435,22 @@ export const tripApi = {
   /**
    * Get all trips
    */
-  async getAllTrips(): Promise<Trip[]> {
-    return apiRequest<Trip[]>('/dashboard/use/trips');
+  async getAllTrips( // For fast testing, only fetches first 5 pages of bikes
+    tripOptions: GetTripsOptions = {}
+  ): Promise<Trip[]> {
+    const MAX_PAGES = 3;
+    const trips: Trip[] = [];
+
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const bikePage = await bikeApi.getBikes({ page });
+
+      for (const bike of bikePage.bikes) {
+        const tripResponse = await tripApi.getTripsByBike(bike.id, tripOptions);
+        trips.push(...tripResponse.trips);
+      }
+    }
+
+    return trips;
   },
 };
 
@@ -461,7 +474,11 @@ export const alertApi = {
    * Get alerts for a specific bike
    * Note: Using the general alerts endpoint with bikeId filter
    */
-  async getAlertsByBike(bikeId: string, page: number = 1, pageSize: number = 50): Promise<Alert[]> {
+  async getAlertsByBike(
+    bikeId: string,
+    page: number = 1,
+    pageSize: number = 50
+  ): Promise<Alert[]> {
     const response = await apiRequest<any>(
       `/dashboard/use/alerts?bikeId=${bikeId}&page=${page}&pageSize=${pageSize}`
     );

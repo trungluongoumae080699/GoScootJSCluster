@@ -17,6 +17,7 @@ import SignUp from "./SignUp";
 import { formlessSignIn } from "./services/authService";
 import Alert from "./Alert";
 import Trips from "./Trips";
+import TripDetails from "./TripDetails";
 
 /**
  * Protected Route wrapper
@@ -48,7 +49,6 @@ function BikeDetailsWrapper({
 }
 
 function App() {
-  const { addNotification } = useNotifications();
   const [pageTitle, setPageTitle] = useState("");
   // Track current page (simple client-side routing)
   const [currentPage, setCurrentPage] = useState<string>("bike-detail");
@@ -176,6 +176,14 @@ function App() {
           element={
             <ProtectedRoute isAuth={isAuth}>
               <Trips />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:bikeId/:tripId"
+          element={
+            <ProtectedRoute isAuth={isAuth}>
+              <TripDetails />
             </ProtectedRoute>
           }
         />
