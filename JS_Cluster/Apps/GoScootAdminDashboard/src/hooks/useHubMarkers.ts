@@ -1,131 +1,103 @@
+
 import { useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl'; // Mapbox GL JS for interactive map markers
-import { BikeUpdate } from '@trungthao/admin_dashboard_dto'; // Type definition for bike data
+import { Hub } from '../services/apiClient'; // Type definition for hub data
 
 /**
- * BIKE MARKERS HOOK
+ * HUB MARKERS HOOK
  * 
- * @param onBikeClick - Callback function triggered when user clicks on a bike marker
- * @returns Object with methods to manage bike markers on the map
+ * @param onHubClick - Callback function triggered when user clicks on a hub marker
+ * @returns Object with methods to manage hub markers on the map
  */
-export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
+export function useHubMarkers(onHubClick: (hub: Hub) => void) {
   // === DATA STORAGE REFERENCES ===
-  // Maps bike IDs to their corresponding Mapbox marker instances for efficient updates
+  // Maps hub IDs to their corresponding Mapbox marker instances for efficient updates
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   
-  // Maps bike IDs to their current data (GPS coordinates, battery, status, etc.)
-  const bikeDataRef = useRef<Map<string, BikeUpdate>>(new Map());
+  // Maps hub IDs to their current data (GPS coordinates, address, bike count, etc.)
+  const hubDataRef = useRef<Map<string, Hub>>(new Map());
   
-  // Set of all unique bike IDs ever encountered (used for cumulative total count)
-  const allBikesSeenRef = useRef<Set<string>>(new Set());
-  
-  // Current visibility state of all bike markers (true = visible, false = hidden)
+  // Current visibility state of all hub markers (true = visible, false = hidden)
   const isVisibleRef = useRef<boolean>(true);
 
   /**
-   * BIKE STATUS COLOR MAPPING
+   * HUB MARKER ELEMENT CREATOR
    * 
-   * Determines the marker color based on bike operational status.
-   * Colors match the bike detail popup for visual consistency.
+   * Creates a custom DOM element for each hub marker consisting of:
+   * - Hub icon image (moto_hub.png) as the main marker
+   * - Address label positioned below the icon
+   * - Interactive hover effects for better UX
+   * - Click handler to trigger hub detail display
    * 
-   * Color Scheme:
-   * - Normal: Green (#4CAF50) - Bike is operational and available
-   * - Out of bound: Orange (#FF9800) - Bike is outside allowed area
-   * - Low battery: Red (#F44336) - Bike needs charging
-   * - Default: Gray (#757575) - Unknown or other status
+   * Visual Design:
+   * - 32x32px hub icon with rounded corners
+   * - White background with subtle shadow
+   * - Address text in small, readable font
+   * - Hover effects: scale up and add glow
+   * - Cursor pointer to indicate clickability
    * 
-   * @param operationStatus - Current operational status of the bike
-   * @returns Hex color code for the marker
+   * @param hub - Hub object containing ID, coordinates, and address
+   * @returns DOM element ready to be used as a Mapbox marker
    */
-  const getOperationStatusColor = (operationStatus: string) => {
-    switch (operationStatus) {
-      case 'Normal': return '#4CAF50';        // Green - operational
-      case 'Out of bound': return '#FF9800';  // Orange - location issue
-      case 'Low battery': return '#F44336';   // Red - needs charging
-      default: return '#757575';              // Gray - unknown status
-    }
-  };
-
-  /**
-   * Get color for usage status (matches popup colors)
-   */
-  const getUsageStatusColor = (usageStatus: string) => {
-    switch (usageStatus) {
-      case 'Idle': return '#4CAF50';
-      case 'Reserved': return '#FF9800';
-      case 'Inused': return '#2196F3';
-      default: return '#757575';
-    }
-  };
-
-  /**
-   * Creates a custom marker element for a bike
-   * Returns a DOM element with:
-   * - Dual-colored dot (operationStatus and usageStatus)
-   * - Bike ID label below the dot
-   * - Hover effects
-   * - Click handler
-   */
-  const createMarkerElement = (bike: BikeUpdate) => {
-    // Container: Holds both dot and label, stacked vertically
+  const createHubMarkerElement = (hub: Hub) => {
+    // === CONTAINER SETUP ===
+    // Main container that holds both the icon and address label vertically
     const container = document.createElement('div');
     container.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer';
 
-    // Dot: Circular marker with dual colors representing the bike states
-    const dot = document.createElement('div');
-    dot.className = 'bike-dot-marker';
+    // === HUB ICON MARKER ===
+    // The main visual marker representing the hub location
+    const marker = document.createElement('div');
+    marker.className = 'hub-marker';
+    marker.style.cssText = 'width:32px;height:32px;background:white;border:2px solid #4CAF50;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;padding:4px';
     
-    // Get colors for both states
-    const operationColor = getOperationStatusColor(bike.operationStatus || 'Normal');
-    const usageColor = getUsageStatusColor(bike.usageStatus || 'Idle');
+    // Create image element for hub icon
+    const img = document.createElement('img');
+    img.src = '/moto_hub.png';
+    img.alt = 'Hub';
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain';
     
-    // Create gradient background with both colors (split vertically)
-    const gradient = `linear-gradient(90deg, ${operationColor} 50%, ${usageColor} 50%)`;
-    
-    dot.style.cssText = `width:14px;height:14px;border-radius:50%;background:${gradient};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:all 0.3s ease`;
+    marker.appendChild(img);
 
-    // Label: Shows bike ID below the dot
+    // Label: Shows hub address below the marker
     const label = document.createElement('div');
-    label.className = 'bike-id-label';
-    label.textContent = bike.id;
-    label.style.cssText = 'font-size:10px;font-weight:bold;color:#333;background-color:white;padding:2px 6px;border-radius:4px;margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.3);white-space:nowrap;pointer-events:none';
+    label.className = 'hub-label';
+    label.textContent = hub.name || hub.address || hub.id;
+    label.style.cssText = 'font-size:9px;font-weight:bold;color:#333;background-color:white;padding:2px 4px;border-radius:3px;margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.3);white-space:nowrap;pointer-events:none;max-width:80px;overflow:hidden;text-overflow:ellipsis';
 
-    // Add dot and label to container
-    container.appendChild(dot);
+    // Add marker and label to container
+    container.appendChild(marker);
     container.appendChild(label);
 
     // Event: Mouse hover - enhance shadow and border
     container.addEventListener('mouseenter', () => {
-      dot.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
-      dot.style.borderWidth = '3px';
+      marker.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
+      marker.style.borderWidth = '3px';
+      marker.style.transform = 'scale(1.1)';
     });
     
     // Event: Mouse leave - restore normal appearance
     container.addEventListener('mouseleave', () => {
-      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      dot.style.borderWidth = '2px';
+      marker.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      marker.style.borderWidth = '2px';
+      marker.style.transform = 'scale(1)';
     });
     
-    // Event: Click - trigger bike detail popup
+    // Event: Click - trigger hub detail popup
     container.addEventListener('click', () => {
-      onBikeClick(bike);
+      onHubClick(hub);
     });
 
     return container;
   };
 
   /**
-   * Updates bike markers on the map
-   * Optimized for performance:
-   * - Only stores bikes in viewport
-   * - Updates marker position instead of recreating
-   * - Minimal DOM operations
+   * Updates hub markers on the map
    * 
-   * @param bikes - Array of bike updates from WebSocket
+   * @param hubs - Array of hubs from API
    * @param map - Mapbox map instance
-   * @returns Object with totalCount and visibleCount
    */
-  const updateMarkers = useCallback((bikes: BikeUpdate[], map: mapboxgl.Map) => {
+  const updateHubMarkers = useCallback((hubs: Hub[], map: mapboxgl.Map) => {
     // Get viewport bounds once
     const bounds = map.getBounds();
     const west = bounds.getWest();
@@ -137,38 +109,37 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
     const isInViewport = (lng: number, lat: number) =>
       lng >= west && lng <= east && lat >= south && lat <= north;
     
-    // Step 1: Store ALL bikes and track them for total count
-    bikes.forEach(bike => {
-      bikeDataRef.current.set(bike.id, bike);
-      allBikesSeenRef.current.add(bike.id); // Track for cumulative total
+    // Step 1: Store ALL hubs
+    hubs.forEach(hub => {
+      hubDataRef.current.set(hub.id, hub);
     });
     
-    // Step 2: Remove markers for bikes outside viewport
-    markersRef.current.forEach((marker, bikeId) => {
-      const bike = bikeDataRef.current.get(bikeId);
-      if (!bike || !isInViewport(bike.longitude, bike.latitude)) {
+    // Step 2: Remove markers for hubs outside viewport or deleted
+    markersRef.current.forEach((marker, hubId) => {
+      const hub = hubDataRef.current.get(hubId);
+      if (!hub || hub.deleted || !isInViewport(hub.longitude, hub.latitude)) {
         marker.remove();
-        markersRef.current.delete(bikeId);
+        markersRef.current.delete(hubId);
       }
     });
 
-    // Step 3: Add or update markers for bikes in viewport
-    bikeDataRef.current.forEach((bike) => {
-      if (!isInViewport(bike.longitude, bike.latitude)) return;
+    // Step 3: Add or update markers for hubs in viewport
+    hubDataRef.current.forEach((hub) => {
+      if (hub.deleted || !isInViewport(hub.longitude, hub.latitude)) return;
       
-      const existingMarker = markersRef.current.get(bike.id);
+      const existingMarker = markersRef.current.get(hub.id);
 
       if (existingMarker) {
         // Just update position (faster than recreating)
-        existingMarker.setLngLat([bike.longitude, bike.latitude]);
+        existingMarker.setLngLat([hub.longitude, hub.latitude]);
       } else {
         // Create new marker
-        const el = createMarkerElement(bike);
+        const el = createHubMarkerElement(hub);
         const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([bike.longitude, bike.latitude])
+          .setLngLat([hub.longitude, hub.latitude])
           .setPopup(
             new mapboxgl.Popup({ offset: 15 }).setHTML(
-              `<strong>Bike ${bike.id}</strong><br/>Battery: ${bike.battery_status}%`
+              `<strong>${hub.name || 'Hub'}</strong><br/>${hub.address}<br/>Capacity: ${hub.capacity || 'Unknown'}`
             )
           )
           .addTo(map);
@@ -176,40 +147,36 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
         // Apply current visibility state to new marker
         el.style.display = isVisibleRef.current ? 'flex' : 'none';
 
-        markersRef.current.set(bike.id, marker);
+        markersRef.current.set(hub.id, marker);
       }
     });
 
-    // Return counts
     return {
-      totalCount: allBikesSeenRef.current.size, // Cumulative total of all bikes ever seen
-      visibleCount: markersRef.current.size // Bikes currently visible in viewport
+      totalCount: hubDataRef.current.size,
+      visibleCount: markersRef.current.size
     };
-  }, [onBikeClick]);
+  }, [onHubClick]);
 
   /**
-   * Removes all markers from the map
-   * Called when component unmounts or map is reset
+   * Removes all hub markers from the map
    */
-  const clearMarkers = useCallback(() => {
+  const clearHubMarkers = useCallback(() => {
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current.clear();
-    bikeDataRef.current.clear();
-    allBikesSeenRef.current.clear();
+    hubDataRef.current.clear();
   }, []);
 
   /**
-   * Get bike data by ID
-   * Returns the bike data if it exists in memory
+   * Get hub data by ID
    */
-  const getBikeById = useCallback((bikeId: string): BikeUpdate | undefined => {
-    return bikeDataRef.current.get(bikeId);
+  const getHubById = useCallback((hubId: string): Hub | undefined => {
+    return hubDataRef.current.get(hubId);
   }, []);
 
   /**
-   * Show/hide bike markers
+   * Show/hide hub markers
    */
-  const setBikeMarkersVisible = useCallback((visible: boolean) => {
+  const setHubMarkersVisible = useCallback((visible: boolean) => {
     isVisibleRef.current = visible;
     markersRef.current.forEach(marker => {
       const element = marker.getElement();
@@ -217,6 +184,10 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
     });
   }, []);
 
-  // Return functions to manage markers
-  return { updateMarkers, clearMarkers, getBikeById, setBikeMarkersVisible };
+  return { 
+    updateHubMarkers, 
+    clearHubMarkers, 
+    getHubById, 
+    setHubMarkersVisible 
+  };
 }
