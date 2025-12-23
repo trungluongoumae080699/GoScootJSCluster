@@ -251,7 +251,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    * - Controlling marker visibility based on display mode
    * - Finding specific bikes by ID for search functionality
    */
-  const { updateMarkers, clearMarkers, getBikeById, setBikeMarkersVisible } = useBikeMarkers(handleBikeClick);
+  const { updateMarkers, clearMarkers, getBikeById, getAllBikes, setBikeMarkersVisible } = useBikeMarkers(handleBikeClick);
   
   /**
    * HUB MARKERS HOOK
@@ -343,20 +343,48 @@ function DashboardMap({ centerOnLocation }: MapProps) {
 
   /**
    * Handler: Battery filter
+   * Filters bikes from WebSocket data instead of making API calls
    */
   const handleBatteryFilter = useCallback(async (maxBattery: number) => {
     setFilteredBikesLoading(true);
     
     try {
-      const response = await bikeApi.getBikes({ battery: maxBattery });
-      setFilteredBikes(response.bikes);
+      // Get all bikes from WebSocket data (much faster than API calls)
+      const allWebSocketBikes = getAllBikes();
+      
+      console.log(`🔋 Filtering ${allWebSocketBikes.length} bikes from WebSocket data with battery ≤ ${maxBattery}%`);
+      
+      // Filter bikes by battery level
+      const filtered = allWebSocketBikes.filter(bike => 
+        (bike.battery_status ?? 0) <= maxBattery
+      );
+      
+      console.log(`🔋 Found ${filtered.length} bikes with battery ≤ ${maxBattery}%`);
+      
+      // Convert BikeUpdate to Bike format for the filter component
+      const bikesForFilter = filtered.map(bikeUpdate => ({
+        id: bikeUpdate.id,
+        name: bikeUpdate.id, // Use ID as name if no name field
+        battery_status: bikeUpdate.battery_status,
+        current_hub: bikeUpdate.current_hub || null,
+        // Add other required Bike fields with defaults
+        longitude: bikeUpdate.longitude,
+        latitude: bikeUpdate.latitude,
+        operationStatus: bikeUpdate.operationStatus,
+        usageStatus: bikeUpdate.usageStatus,
+        created_at: Date.now(),
+        last_modification_date: Date.now(),
+        deleted: false
+      }));
+      
+      setFilteredBikes(bikesForFilter);
     } catch (error) {
-      console.error('Failed to fetch filtered bikes:', error);
+      console.error('Failed to filter bikes from WebSocket data:', error);
       setFilteredBikes([]);
     } finally {
       setFilteredBikesLoading(false);
     }
-  }, []);
+  }, [getAllBikes]);
 
   /**
    * Handler: Hub update from WebSocket
@@ -715,6 +743,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
         filteredBikes={filteredBikes}
         isLoading={filteredBikesLoading}
         getBikeById={getBikeById}
+        mapRef={mapRef}
       />
 
       <MapStatusIndicator 

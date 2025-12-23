@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
+import mapboxgl from 'mapbox-gl';
 import { Bike } from '@trungthao/admin_dashboard_dto';
 import { websocketManager } from '../../services/websocketService';
 
@@ -10,6 +11,7 @@ import { websocketManager } from '../../services/websocketService';
  * @param filteredBikes - Array of bikes matching current battery filter criteria
  * @param isLoading - Loading state while fetching filtered bikes from API
  * @param getBikeById - Function to check if bike data is already available in memory
+ * @param mapRef - Reference to the Mapbox map instance for navigation
  */
 interface BatteryFilterProps {
   onBatteryFilter: (maxBattery: number) => void;
@@ -17,6 +19,7 @@ interface BatteryFilterProps {
   filteredBikes: Bike[];
   isLoading: boolean;
   getBikeById: (bikeId: string) => any; // Function to check if bike is already fetched
+  mapRef: React.RefObject<mapboxgl.Map | null>; // Map reference for navigation
 }
 
 /**
@@ -30,7 +33,8 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
   onBikeClick,
   filteredBikes,
   isLoading,
-  getBikeById
+  getBikeById,
+  mapRef
 }) => {
   /**
    * COMPONENT STATE
@@ -39,15 +43,7 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
   const [batteryLevel, setBatteryLevel] = useState(100);    // Maximum battery percentage (0-100)
   const [showResults, setShowResults] = useState(false);    // Controls visibility of filtered results
 
-  /**
-   * DEBUG EFFECT
-   * Logs state changes for debugging filtered bikes updates
-   */
-  React.useEffect(() => {
-    console.log('🎚️ BatteryFilter: filteredBikes updated:', filteredBikes);
-    console.log('🎚️ BatteryFilter: isLoading:', isLoading);
-    console.log('🎚️ BatteryFilter: showResults:', showResults);
-  }, [filteredBikes, isLoading, showResults]);
+
 
   /**
    * RESULTS VISIBILITY EFFECT
@@ -56,7 +52,6 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
    */
   React.useEffect(() => {
     if (!isLoading && filteredBikes.length >= 0) {
-      console.log('🎚️ BatteryFilter: API call completed, showing results');
       setShowResults(true);
     }
   }, [isLoading, filteredBikes]);
@@ -82,31 +77,24 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
    * when the user has finished selecting their desired threshold.
    * 
    * Process:
-   * 1. Log the selected battery level for debugging
-   * 2. Call the parent component's filter function with new threshold
-   * 3. Wait for API response before showing results (handled by useEffect)
+   * 1. Call the parent component's filter function with new threshold
+   * 2. Wait for API response before showing results (handled by useEffect)
    */
   const handleSliderMouseUp = useCallback(() => {
-    console.log('🎚️ BatteryFilter: Slider released at', batteryLevel);
     onBatteryFilter(batteryLevel);
-    // Don't show results immediately - wait for API response
-    // setShowResults(true); // Removed this line
   }, [batteryLevel, onBatteryFilter]);
 
   /**
    * BIKE ITEM CLICK HANDLER
    * 
    * Handles user clicks on individual bikes in the filtered results list.
-   * Implements smart data fetching to avoid unnecessary API calls.
+   * Now includes map navigation to the bike's location.
    * 
    * Process:
    * 1. Check if bike data is already available in memory
-   * 2. If available, immediately show bike details popup
+   * 2. If available, navigate map to bike location and show bike details popup
    * 3. If not available, request bike data via WebSocket
    * 4. Hide the results panel after interaction
-   * 
-   * This optimization reduces server load and improves user experience
-   * by reusing already-fetched bike data when possible.
    * 
    * @param bike - Bike object from filtered results list
    */
@@ -116,14 +104,28 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
     
     if (!existingBike) {
       // Bike not fetched, request it via WebSocket
+      console.log(`🔍 Requesting bike ${bike.id} via WebSocket...`);
       websocketManager.requestBike(bike.id);
     } else {
-      // Bike already fetched, show it
+      // Bike already fetched, navigate to it and show details
+      console.log(`🎯 Navigating to bike ${bike.id} at [${existingBike.longitude}, ${existingBike.latitude}]`);
+      
+      // Navigate map to bike location
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [existingBike.longitude, existingBike.latitude],
+          zoom: 16, // Zoom in to see the bike clearly
+          duration: 2000 // 2 second smooth animation
+        });
+      }
+      
+      // Show bike details popup
       onBikeClick(existingBike);
     }
     
+    // Hide the filter results panel
     setShowResults(false);
-  }, [onBikeClick, getBikeById]);
+  }, [onBikeClick, getBikeById, mapRef]);
 
   /**
    * BATTERY COLOR HELPER FUNCTION
