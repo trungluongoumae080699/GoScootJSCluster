@@ -19,8 +19,22 @@ export interface ViewportBounds {
   minLat: number;
 }
 
+/** WebSocket message types */
+export enum WSMessageType {
+  VIEWPORT_UPDATE = 0,
+  BIKE_REQUEST = 1
+}
+
+/** Error message from server */
+export interface WSErrorMessage {
+  message: string;
+}
+
 /** Callback for receiving bike updates */
 export type BikeUpdateCallback = (bikes: BikeUpdate[]) => void;
+
+/** Callback for receiving error messages */
+export type ErrorCallback = (error: string) => void;
 
 /**
  * WebSocket Manager Class
@@ -54,6 +68,9 @@ export class WebSocketManager {
   /** Callback function to handle bike updates */
   private onBikeUpdate: BikeUpdateCallback | null = null;
   
+  /** Callback function to handle error messages */
+  private onError: ErrorCallback | null = null;
+  
   /** Flag to prevent reconnection when user intentionally closes connection */
   private isIntentionallyClosed = false;
 
@@ -64,9 +81,11 @@ export class WebSocketManager {
    * The connection is authenticated using the session ID from login.
    * 
    * @param onBikeUpdate - Callback function to handle bike updates
+   * @param onError - Callback function to handle error messages
    */
-  connect(onBikeUpdate: BikeUpdateCallback): void {
+  connect(onBikeUpdate: BikeUpdateCallback, onError?: ErrorCallback): void {
     this.onBikeUpdate = onBikeUpdate;
+    this.onError = onError || null;
     this.isIntentionallyClosed = false;
     this.createConnection();
   }
@@ -186,9 +205,19 @@ export class WebSocketManager {
       return;
     }
 
-    // Case 3: Text message - Server notifications or status messages
+    // Case 3: Text message - Server notifications or error messages
     if (typeof event.data === 'string') {
       console.log('📄 Text message from server:', event.data);
+      
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed.message && this.onError) {
+          this.onError(parsed.message);
+        }
+      } catch (e) {
+        // Not JSON, just log it
+        console.log('📄 Non-JSON text message:', event.data);
+      }
       return;
     }
 
@@ -217,8 +246,9 @@ export class WebSocketManager {
       return;
     }
 
-    // Build viewport message
+    // Build viewport message with msgType
     const message = {
+      msgType: WSMessageType.VIEWPORT_UPDATE,
       maxLong: bounds.maxLong, // Eastern boundary
       minLong: bounds.minLong, // Western boundary
       maxLat: bounds.maxLat,   // Northern boundary
@@ -292,6 +322,32 @@ export class WebSocketManager {
     }
 
     console.log('🔌 WebSocket disconnected');
+  }
+
+  /**
+   * Request specific bike data from server
+   * 
+   * Sends a message to request bike data for a specific bike ID.
+   * Used when searching for a bike that hasn't been fetched yet.
+   * 
+   * @param bikeId - ID of the bike to request
+   */
+  requestBike(bikeId: string): void {
+    // Guard: Only send if connection is open
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket not open, cannot request bike');
+      return;
+    }
+
+    // Build bike request message
+    const message = {
+      msgType: WSMessageType.BIKE_REQUEST,
+      bike_id: bikeId
+    };
+
+    // Send as JSON string
+    this.ws.send(JSON.stringify(message));
+    console.log('📤 Requested bike:', bikeId);
   }
 
   /**

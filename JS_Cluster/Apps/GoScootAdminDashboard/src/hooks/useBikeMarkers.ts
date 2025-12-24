@@ -1,22 +1,69 @@
 
-import { useRef, useCallback } from 'react';
-import mapboxgl from 'mapbox-gl';
-import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
 
+import { useRef, useCallback } from 'react';
+import mapboxgl from 'mapbox-gl'; // Mapbox GL JS for interactive map markers
+import { BikeUpdate } from '@trungthao/admin_dashboard_dto'; // Type definition for bike data
+
+/**
+ * BIKE MARKERS HOOK
+ * 
+ * @param onBikeClick - Callback function triggered when user clicks on a bike marker
+ * @returns Object with methods to manage bike markers on the map
+ */
 export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
-  // Ref: Store all active markers (bikeId -> Marker instance)
+  // === DATA STORAGE REFERENCES ===
+  // Maps bike IDs to their corresponding Mapbox marker instances for efficient updates
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   
-  // Ref: Store all bike data (bikeId -> BikeUpdate data)
+  // Maps bike IDs to their current data (GPS coordinates, battery, status, etc.)
   const bikeDataRef = useRef<Map<string, BikeUpdate>>(new Map());
   
-  // Ref: Track all unique bikes ever seen (for cumulative total count)
+  // Set of all unique bike IDs ever encountered (used for cumulative total count)
   const allBikesSeenRef = useRef<Set<string>>(new Set());
+  
+  // Current visibility state of all bike markers (true = visible, false = hidden)
+  const isVisibleRef = useRef<boolean>(true);
+
+  /**
+   * BIKE STATUS COLOR MAPPING
+   * 
+   * Determines the marker color based on bike operational status.
+   * Colors match the bike detail popup for visual consistency.
+   * 
+   * Color Scheme:
+   * - Normal: Green (#4CAF50) - Bike is operational and available
+   * - Out of bound: Orange (#FF9800) - Bike is outside allowed area
+   * - Low battery: Red (#F44336) - Bike needs charging
+   * - Default: Gray (#757575) - Unknown or other status
+   * 
+   * @param operationStatus - Current operational status of the bike
+   * @returns Hex color code for the marker
+   */
+  const getOperationStatusColor = (operationStatus: string) => {
+    switch (operationStatus) {
+      case 'Normal': return '#4CAF50';        // Green - operational
+      case 'Out of bound': return '#FF9800';  // Orange - location issue
+      case 'Low battery': return '#F44336';   // Red - needs charging
+      default: return '#757575';              // Gray - unknown status
+    }
+  };
+
+  /**
+   * Get color for usage status (matches popup colors)
+   */
+  const getUsageStatusColor = (usageStatus: string) => {
+    switch (usageStatus) {
+      case 'Idle': return '#4CAF50';
+      case 'Reserved': return '#FF9800';
+      case 'Inused': return '#2196F3';
+      default: return '#757575';
+    }
+  };
 
   /**
    * Creates a custom marker element for a bike
    * Returns a DOM element with:
-   * - Colored dot (green if battery > 20%, red otherwise)
+   * - Dual-colored dot (operationStatus and usageStatus)
    * - Bike ID label below the dot
    * - Hover effects
    * - Click handler
@@ -26,11 +73,18 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
     const container = document.createElement('div');
     container.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer';
 
-    // Dot: Circular marker representing the bike
+    // Dot: Circular marker with dual colors representing the bike states
     const dot = document.createElement('div');
     dot.className = 'bike-dot-marker';
-    const color = bike.battery_status > 20 ? '#4CAF50' : '#F44336';
-    dot.style.cssText = `width:12px;height:12px;border-radius:50%;background-color:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:all 0.3s ease`;
+    
+    // Get colors for both states
+    const operationColor = getOperationStatusColor(bike.operationStatus || 'Normal');
+    const usageColor = getUsageStatusColor(bike.usageStatus || 'Idle');
+    
+    // Create gradient background with both colors (split vertically)
+    const gradient = `linear-gradient(90deg, ${operationColor} 50%, ${usageColor} 50%)`;
+    
+    dot.style.cssText = `width:14px;height:14px;border-radius:50%;background:${gradient};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:all 0.3s ease`;
 
     // Label: Shows bike ID below the dot
     const label = document.createElement('div');
@@ -121,6 +175,9 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
           )
           .addTo(map);
 
+        // Apply current visibility state to new marker
+        el.style.display = isVisibleRef.current ? 'flex' : 'none';
+
         markersRef.current.set(bike.id, marker);
       }
     });
@@ -151,6 +208,25 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
     return bikeDataRef.current.get(bikeId);
   }, []);
 
+  /**
+   * Get all bikes currently stored in memory from WebSocket
+   * Returns array of all bike data received via WebSocket
+   */
+  const getAllBikes = useCallback((): BikeUpdate[] => {
+    return Array.from(bikeDataRef.current.values());
+  }, []);
+
+  /**
+   * Show/hide bike markers
+   */
+  const setBikeMarkersVisible = useCallback((visible: boolean) => {
+    isVisibleRef.current = visible;
+    markersRef.current.forEach(marker => {
+      const element = marker.getElement();
+      element.style.display = visible ? 'flex' : 'none';
+    });
+  }, []);
+
   // Return functions to manage markers
-  return { updateMarkers, clearMarkers, getBikeById };
+  return { updateMarkers, clearMarkers, getBikeById, getAllBikes, setBikeMarkersVisible };
 }

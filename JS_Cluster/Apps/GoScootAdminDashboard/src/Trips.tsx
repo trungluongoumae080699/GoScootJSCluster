@@ -7,21 +7,9 @@ import "./Trips.css";
 import type { Trip, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { tripApi } from "./services/apiClient";
 import { RxMixerVertical } from "react-icons/rx";
+import { formatDate } from "./utlities/convert";
 
 const PAGE_SIZE = 10;
-
-const bikeIDList = [
-  "BIK-00Y5441D",
-  "BIK-00ZRONBT",
-  "BIK-01GL4BA3",
-  "BIK-01NR0D1Q",
-  "BIK-01WVFWRE",
-  "BIK-026NQACW",
-  "BIK-03VQ2B55",
-  "BIK-03Y4597M",
-  "BIK-047OJXJU",
-  "BIK-04SO07Z4",
-];
 
 export default function Trips() {
   const navigate = useNavigate();
@@ -49,45 +37,11 @@ export default function Trips() {
     setLoadingProgress("Loading trips...");
 
     try {
-      let allTripsCombined: Trip[] = [];
-
-      for (let i = 0; i < bikeIDList.length; i++) {   //Later replace the bike list with API call to get all bike IDs
-        const bikeId = bikeIDList[i];
-
-        // First request → get total pages
-        const first = await tripApi.getTripsByBike(bikeId);
-
-        let bikeTrips = [...first.trips];
-
-        // If no more pages → continue to next bike
-        if (first.totalPages > 1) {
-          // Prepare pages 2..N
-          const pages = Array.from(
-            { length: first.totalPages - 1 },
-            (_, i) => i + 2
-          );
-
-          // Fetch pages gradually (batch to avoid overload)
-          const BATCH_SIZE = 5;
-          for (let p = 0; p < pages.length; p += BATCH_SIZE) {
-            const batch = pages.slice(p, p + BATCH_SIZE);
-
-            const results = await Promise.all(
-              batch.map((page) => tripApi.getTripsByBike(bikeId, {page: page}))
-            );
-
-            results.forEach((res) => {
-              bikeTrips.push(...res.trips);
-            });
-          }
-        }
-
-        // Add trips from this bike to overall result
-        allTripsCombined.push(...bikeTrips);
-      }
+      // First request → get total pages
+      const allTrips = await tripApi.getAllTrips();
 
       // Final set all trips (VERY IMPORTANT)
-      setAllTrips(allTripsCombined);
+      setAllTrips(allTrips);
       setLoadingProgress("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch trips");
@@ -141,8 +95,8 @@ export default function Trips() {
     setCurrentPage(1);
   }, [searchValue]);
 
-  const handleBikeClick = (tripId: string) => {
-    navigate(`/trip/${tripId}`);
+  const handleTripClick = (bikeId: string, tripId: string) => {
+    navigate(`/trips/${bikeId}/${tripId}`);
   };
 
   const getStatusStyle = (status: TripStatus) => {
@@ -204,19 +158,6 @@ export default function Trips() {
     setShowDateFilter(false);
     setStartDateFilter("");
     setEndDateFilter("");
-  };
-
-  const formatDate = (milis?: number) => {
-    if (!milis) return "N/A";
-    const date = new Date(milis);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
   };
 
   return (
@@ -309,7 +250,7 @@ export default function Trips() {
                     {currentPageTrips.map((trip) => (
                       <tr
                         key={trip.id}
-                        onClick={() => handleBikeClick(trip.id)}
+                        onClick={() => handleTripClick(trip.bike_id, trip.id)}
                         className={
                           trip.trip_status === "in progress"
                             ? "row-highlighted"

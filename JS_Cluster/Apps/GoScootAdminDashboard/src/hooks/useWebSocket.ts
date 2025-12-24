@@ -18,6 +18,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
 import { websocketManager, ViewportBounds } from '../services/websocketService';
+import { hubApi, Hub } from '../services/apiClient';
 import mapboxgl from 'mapbox-gl';
 
 /**
@@ -25,11 +26,15 @@ import mapboxgl from 'mapbox-gl';
  * 
  * @param onBikeUpdate - Callback when bike updates are received from server
  * @param map - Mapbox map instance (optional, for automatic viewport tracking)
+ * @param onHubUpdate - Callback when hub updates are received from server
+ * @param onError - Callback when error messages are received
  * @returns Object with sendViewport function for manual viewport updates
  */
 export function useWebSocket(
   onBikeUpdate: (bikes: BikeUpdate[]) => void,
-  map?: mapboxgl.Map | null
+  map?: mapboxgl.Map | null,
+  onHubUpdate?: (hubs: Hub[]) => void,
+  onError?: (error: string) => void
 ) {
   // Ref: Track if we've already connected (prevent double connection)
   const isConnectedRef = useRef(false);
@@ -60,7 +65,10 @@ export function useWebSocket(
     console.log('🔌 Initializing WebSocket connection...');
     
     // Connect with a wrapper that always calls the latest callback
-    websocketManager.connect((bikes) => callbackRef.current(bikes));
+    websocketManager.connect(
+      (bikes) => callbackRef.current(bikes),
+      onError
+    );
     isConnectedRef.current = true;
 
     // Cleanup: Disconnect when component unmounts
@@ -80,10 +88,20 @@ export function useWebSocket(
   useEffect(() => {
     if (!map) return;
 
-    const sendInitialViewport = () => {
+    const sendInitialViewport = async () => {
       const bounds = getMapBounds(map);
       if (bounds) {
         websocketManager.sendViewport(bounds);
+        
+        // Also fetch hubs in the area
+        if (onHubUpdate) {
+          try {
+            const hubs = await hubApi.getHubsInArea(bounds);
+            onHubUpdate(hubs);
+          } catch (error) {
+            console.error('Failed to fetch hubs:', error);
+          }
+        }
       }
     };
 
@@ -123,10 +141,20 @@ export function useWebSocket(
       clearTimeout(debounceTimer);
       
       // Wait 500ms after user stops moving before sending update
-      debounceTimer = setTimeout(() => {
+      debounceTimer = setTimeout(async () => {
         const bounds = getMapBounds(map);
         if (bounds) {
           websocketManager.sendViewport(bounds);
+          
+          // Also fetch hubs in the new area
+          if (onHubUpdate) {
+            try {
+              const hubs = await hubApi.getHubsInArea(bounds);
+              onHubUpdate(hubs);
+            } catch (error) {
+              console.error('Failed to fetch hubs:', error);
+            }
+          }
         }
       }, 500); // Debounce delay: 500ms
     };

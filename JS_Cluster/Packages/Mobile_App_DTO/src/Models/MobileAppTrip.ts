@@ -22,7 +22,7 @@ export type MobileAppTrip = {
     trip_end_date?: number | null,
     trip_end_long?: number | null,
     trip_end_lat?: number | null,
-    trip_scret?: string | null,
+    trip_secret?: string | null,
     price?: number | null,
     isPaid?: boolean | null,
 }

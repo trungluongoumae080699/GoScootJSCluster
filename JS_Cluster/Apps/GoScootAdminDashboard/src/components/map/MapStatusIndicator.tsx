@@ -26,7 +26,7 @@ function MapStatusIndicator({ wsConnected, totalBikeCount, visibleBikeCount }: M
     <div
       style={{
         position: 'absolute',
-        top: '20px',
+        bottom: '20px',
         left: '20px',
         zIndex: 1000, // Ensure it appears above map
         background: 'white',

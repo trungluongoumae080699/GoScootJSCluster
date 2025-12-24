@@ -68,6 +68,18 @@ export const authenticateCustomer = async (
 
   await saveSession(sessionObject);
 
+  // 2️⃣ Create temporary MQTT user based on session ID
+  const mqttUsername = sessionObject._id; // username = sessionId
+  let mqttPassword: string | null = crypto.randomBytes(16).toString("base64"); // strong random pass
+
+  try {
+    await createTempUser(mqttUsername, mqttPassword);
+    console.log(`[MQTT] Temporary user created: ${mqttUsername}`);
+  } catch (err) {
+    console.error("[MQTT] Failed to create temporary MQTT user", err);
+    mqttPassword = null;
+  }
+
   const responseObject: Response_MobileAppLogInDTO = {
     user_profile: {
       id: user.id,
@@ -75,6 +87,7 @@ export const authenticateCustomer = async (
       phone_number: user.password,
     },
     session_id: sessionObject._id,
+    mqtt_password: mqttPassword
   };
   response.status(200).json(responseObject);
 };
@@ -97,6 +110,17 @@ export const formlessAuthenticateCustomer = async (
       }
       const user: Customer | null = await getCustomerById(session.userId);
       if (user) {
+        const mqttUsername = session._id; // username = sessionId
+        let mqttPassword: string | null = crypto.randomBytes(16).toString("base64"); // strong random pass
+
+        try {
+          await createTempUser(mqttUsername, mqttPassword);
+          console.log(`[MQTT] Temporary user created: ${mqttUsername}`);
+        } catch (err) {
+          console.error("[MQTT] Failed to create temporary MQTT user", err);
+          mqttPassword = null;
+        }
+
         const res: Response_MobileAppLogInDTO = {
           user_profile: {
             id: user.id,
@@ -104,6 +128,7 @@ export const formlessAuthenticateCustomer = async (
             phone_number: user.password,
           },
           session_id: session._id,
+          mqtt_password: mqttPassword
         };
         response.status(200).json(res);
       } else {
@@ -152,7 +177,7 @@ export const registerCustomer = async (
     }
   }
 };
- export const authenticateAdmin = async (
+export const authenticateAdmin = async (
   request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
   response: Response,
   next: NextFunction
@@ -218,7 +243,7 @@ export const registerCustomer = async (
 
   response.status(200).send(responseObject)
 
-}; 
+};
 
 
 
