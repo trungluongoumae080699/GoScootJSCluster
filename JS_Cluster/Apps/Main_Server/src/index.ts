@@ -19,6 +19,7 @@ import { dashboardAuthenticationRouter } from "./Routes/DashboardRouters/Dashboa
 import { mobileAppAuthRouter } from "./Routes/MobileAppRouters/MobileAppAuthRouter.js";
 import cookieParser from "cookie-parser";
 
+
 const app: Application = express();
 const PORT = 4000;
 
@@ -40,6 +41,16 @@ async function startServer() {
     await initMqtt()
 
     const server = http.createServer(app);
+    app.use(cors({
+      origin: "http://localhost:5173",
+      credentials: true,
+    }));
+
+    // Nếu có preflight:
+    app.options("*", cors({
+      origin: "http://localhost:5173",
+      credentials: true,
+    }));
     app.use(cookieParser())
     app.use(requestPreProcession())
     app.use(express.json());
@@ -48,7 +59,7 @@ async function startServer() {
     app.use("/bike", bikeRouter);
     app.use("/app/auth", mobileAppAuthRouter)
     app.use("/app/use", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
-    app.use("/dashboard/use", authorizeFromCookie([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
+    app.use("/dashboard/use", authorizeFromCookie([LogInType.ADMIN]), dashboardNonAuthenticationRouter)
 
     /** Centralized error handler */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

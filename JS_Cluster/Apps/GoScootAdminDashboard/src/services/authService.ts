@@ -22,18 +22,7 @@ const STAFF_PROFILE_KEY = 'goscoot_staff_profile';
  * The proxy in vite.config.ts handles forwarding to the actual ngrok server
  */
 export function getApiBaseUrl(): string {
-  const envUrl = (import.meta as any).env.VITE_API_BASE_URL || 'https://still-simply-katydid.ngrok.app/GoScoot/Server';
-  
-  // In development, extract just the path for the Vite proxy to work
-  if ((import.meta as any).env.DEV) {
-    try {
-      const url = new URL(envUrl);
-      return url.pathname; // Returns '/GoScoot/Server'
-    } catch {
-      return envUrl;
-    }
-  }
-  
+  const envUrl = 'https://still-simply-katydid.ngrok.app/GoScoot/Server'; 
   return envUrl;
 }
 
