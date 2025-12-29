@@ -119,13 +119,18 @@ export function getAuthState(): AuthState {
 /**
  * Store all credentials from login response
  */
+
 function storeCredentials(response: Response_DashboardLogInDTO): void {
-  setSessionId(response.sessionId);
+  //setSessionId(response.sessionId);
   setStaffProfile(response.staffProfile);
+  /*
   if (response.mqtt_password) {
     setMqttPassword(response.mqtt_password);
   }
+    */
+
 }
+  
 
 /**
  * Sign in with email and password
@@ -149,7 +154,7 @@ export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Re
   const data: Response_DashboardLogInDTO = await response.json();
   
   // Store credentials securely
-  storeCredentials(data);
+  //storeCredentials(data);
   return data;
 }
 

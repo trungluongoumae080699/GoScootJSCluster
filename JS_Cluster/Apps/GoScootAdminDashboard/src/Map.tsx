@@ -7,7 +7,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 // Type definitions for bike data structures
 import { BikeUpdate, Bike } from '@trungthao/admin_dashboard_dto';
 // Custom hooks for WebSocket connection and map marker management
-import { useWebSocket } from './hooks/useWebSocket';
+//import { useWebSocket } from './hooks/useWebSocket';
+
 import { useBikeMarkers } from './hooks/useBikeMarkers';
 import { useHubMarkers } from './hooks/useHubMarkers';
 
@@ -362,11 +363,11 @@ function DashboardMap({ centerOnLocation }: MapProps) {
       console.log(`🔋 Found ${filtered.length} bikes with battery ≤ ${maxBattery}%`);
       
       // Convert BikeUpdate to Bike format for the filter component
-      const bikesForFilter = filtered.map(bikeUpdate => ({
+      const bikesForFilter: Bike[] = filtered.map(bikeUpdate => ({
         id: bikeUpdate.id,
         name: bikeUpdate.id, // Use ID as name if no name field
         battery_status: bikeUpdate.battery_status,
-        current_hub: bikeUpdate.current_hub || null,
+        current_hub: bikeUpdate.currentHub || null,
         // Add other required Bike fields with defaults
         longitude: bikeUpdate.longitude,
         latitude: bikeUpdate.latitude,
@@ -567,7 +568,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    * - Connection errors and reconnection attempts
    * - Automatic marker updates when new data arrives
    */
-  useWebSocket(handleBikeUpdate, mapRef.current, handleHubUpdate, handleWebSocketError);
+  //useWebSocket(handleBikeUpdate, mapRef.current, handleHubUpdate, handleWebSocketError);
 
   /**
    * Effect: Poll WebSocket connection status

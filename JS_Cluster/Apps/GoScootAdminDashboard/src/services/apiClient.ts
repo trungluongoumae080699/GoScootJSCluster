@@ -80,7 +80,7 @@ const API_BASE_URL = getApiBaseUrl();
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
-  requiresAuth: boolean = true
+  //requiresAuth: boolean = true
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -88,6 +88,7 @@ async function apiRequest<T>(
   };
 
   // Add authorization header for authenticated requests
+  /*
   if (requiresAuth) {
     const sessionId = getSessionId();
     if (!sessionId) {
@@ -95,6 +96,7 @@ async function apiRequest<T>(
     }
     headers["authorization"] = sessionId;
   }
+    */
 
   // Merge with any additional headers from options
   if (options.headers) {
