@@ -7,4 +7,5 @@ export type BikeUpdate = {
     latitude: number;
     operationStatus: OperationStatus;
     usageStatus: BikeStatus;
+    currentHub: string | null;
 };
