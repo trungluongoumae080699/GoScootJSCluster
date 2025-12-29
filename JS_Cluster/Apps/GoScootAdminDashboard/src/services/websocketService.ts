@@ -7,9 +7,10 @@
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
 import { decodeBikeUpdates } from '../utlities/BindaryDecoder';
 import { getSessionId } from './apiClient';
+import { Alert } from '../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts';
 
 /** WebSocket base URL from environment variables */
-const WS_BASE_URL = (import.meta as any).env.VITE_WS_BASE_URL || 'ws://still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws';
+const WS_BASE_URL = (import.meta as any).env.VITE_WS_BASE_URL || 'wss://still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws';
 
 /** Map viewport bounds */
 export interface ViewportBounds {
@@ -35,6 +36,8 @@ export type BikeUpdateCallback = (bikes: BikeUpdate[]) => void;
 
 /** Callback for receiving error messages */
 export type ErrorCallback = (error: string) => void;
+
+export type AlertCallback = (alert: Alert) => void;
 
 /**
  * WebSocket Manager Class
@@ -67,7 +70,10 @@ export class WebSocketManager {
   
   /** Callback function to handle bike updates */
   private onBikeUpdate: BikeUpdateCallback | null = null;
-  
+
+  /** Callback function to handle alerts */
+  private onAlert: AlertCallback | null = null;
+
   /** Callback function to handle error messages */
   private onError: ErrorCallback | null = null;
   
@@ -83,11 +89,23 @@ export class WebSocketManager {
    * @param onBikeUpdate - Callback function to handle bike updates
    * @param onError - Callback function to handle error messages
    */
-  connect(onBikeUpdate: BikeUpdateCallback, onError?: ErrorCallback): void {
-    this.onBikeUpdate = onBikeUpdate;
-    this.onError = onError || null;
+
+  connect(): void {
     this.isIntentionallyClosed = false;
     this.createConnection();
+  }
+
+    // ✅ Setters (allow null to clear)
+  public setOnBikeUpdate(cb: BikeUpdateCallback | null): void {
+    this.onBikeUpdate = cb;
+  }
+
+  public setOnAlert(cb: AlertCallback | null): void {
+    this.onAlert = cb;
+  }
+
+  public setOnError(cb: ErrorCallback | null): void {
+    this.onError = cb;
   }
 
   /**
@@ -102,23 +120,26 @@ export class WebSocketManager {
    */
   private createConnection(): void {
     // Get session ID for authentication
-    const sessionId = getSessionId();
+    //const sessionId = getSessionId();
     
+    /*
     if (!sessionId) {
       console.error('❌ No session ID found. Cannot connect to WebSocket.');
       return;
     }
+      */
 
     // Build WebSocket URL with authorization query parameter
     // Server validates this session ID before accepting connection
-    const wsUrl = `${WS_BASE_URL}?authorization=${encodeURIComponent(sessionId)}`;
+    const wsUrl = `${WS_BASE_URL}`;
     
     console.log('🔌 Connecting to WebSocket:', wsUrl);
 
     try {
       // Create new WebSocket connection
       this.ws = new WebSocket(wsUrl);
-      this.setupEventHandlers(wsUrl, sessionId);
+
+      this.setupEventHandlers(wsUrl);
     } catch (error) {
       console.error('❌ Failed to create WebSocket:', error);
       this.scheduleReconnect();
@@ -134,7 +155,7 @@ export class WebSocketManager {
    * - onerror: Connection error occurred
    * - onclose: Connection closed (intentionally or due to error)
    */
-  private setupEventHandlers(wsUrl: string, sessionId: string): void {
+  private setupEventHandlers(wsUrl: string): void {
     if (!this.ws) return;
 
     // Event: Connection opened successfully
@@ -152,7 +173,7 @@ export class WebSocketManager {
     this.ws.onerror = (error) => {
       console.error('❌ WebSocket error:', error);
       console.error('❌ WebSocket URL was:', wsUrl);
-      console.error('❌ Session ID:', sessionId);
+      //console.error('❌ Session ID:', sessionId);
     };
 
     // Event: Connection closed

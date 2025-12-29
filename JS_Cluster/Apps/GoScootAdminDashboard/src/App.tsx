@@ -18,6 +18,7 @@ import { formlessSignIn } from "./services/authService";
 import Alert from "./Alert";
 import Trips from "./Trips";
 import TripDetails from "./TripDetails";
+import { websocketManager } from "./services/websocketService";
 
 /**
  * Protected Route wrapper
@@ -87,6 +88,12 @@ function App() {
     checkExistingSession();
 
   }, []);
+
+  useEffect(() => {
+    if (!isAuth) return;
+  websocketManager.connect();
+  return () => websocketManager.disconnect();
+}, [isAuth]);
 
   /**
    * Handle navigation between pages
