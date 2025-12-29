@@ -177,6 +177,8 @@ export const registerCustomer = async (
     }
   }
 };
+
+/*
 export const authenticateAdmin = async (
   request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
   response: Response,
@@ -245,6 +247,94 @@ export const authenticateAdmin = async (
 
 };
 
+*/
+
+export const authenticateAdminSecured = async (
+  request: CustomRequest<{}, {}, Request_DashboardLogInDTO>,
+  response: Response,
+  next: NextFunction
+) => {
+  const parsed = AdminLogInRequestDTOSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({
+      message: "Dữ kiệu không chính xác, xin vui lòng thử lại",
+    });
+  }
+
+  const { email, password } = parsed.data;
+  const user = await getStaffByEmail(email);
+
+  if (!user) {
+    return response.status(401).json({
+      message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại",
+    });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
+    return response.status(401).json({
+      message: "Email hoặc mật khẩu không đúng. Xin vui lòng thử lại...",
+    });
+  }
+
+  // 1) Create session
+  const sessionObject: SessionObject = {
+    _id: crypto.randomUUID(),
+    userId: user.id,
+    validPeriod: 3600000, // 1h
+    createdAt: new Date(),
+    logInType: LogInType.ADMIN,
+  };
+
+  await saveSession(sessionObject);
+
+  // 2) Create temporary MQTT user based on session ID
+  const mqttUsername = sessionObject._id; // username = sessionId (OK)
+  const mqttPassword = crypto.randomBytes(16).toString("base64"); // random
+
+  try {
+    await createTempUser(mqttUsername, mqttPassword);
+    console.log(`[MQTT] Temporary user created: ${mqttUsername}`);
+  } catch (err) {
+    console.error("[MQTT] Failed to create temporary MQTT user", err);
+    return response.status(500).json({
+      message: "Đăng nhập thất bại. Không thể tạo MQTT session.",
+    });
+  }
+
+  // 3) Set HttpOnly cookies (NO secrets in JSON body)
+  const isProd = process.env.NODE_ENV === "production";
+
+  // Session cookie
+  response.cookie("GO_SCOOT_SESSION_ID", sessionObject._id, {
+    httpOnly: true,
+    secure: isProd,       
+    sameSite: "strict",   
+    path: "/",            
+    maxAge: sessionObject.validPeriod,
+  });
+
+  // MQTT password cookie (short-lived is recommended)
+  response.cookie("GO_SCOOT_MQTT_PASSWORD", mqttPassword, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "strict",
+    path: "/",        
+    maxAge: sessionObject.validPeriod
+  });
+
+  // 4) Response body: only non-sensitive data
+  const responseObject = {
+    staffProfile: {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+    },
+  };
+
+  return response.status(200).json(responseObject);
+};
+
 
 
 export const formlessAuthenticateDashboard = async (
@@ -252,49 +342,76 @@ export const formlessAuthenticateDashboard = async (
   response: Response
 ) => {
   let session: SessionObject | null = null;
-  const sessionId = request.headers["authorization"] as string | undefined;
-  if (sessionId) {
-    session = await getSession(sessionId);
-    if (session) {
-      const now = Date.now();
-      const createdAtMs = new Date(session.createdAt).getTime();
-      const expiryMs = createdAtMs + session.validPeriod;
-      if (now > expiryMs) {
-        response.status(401).json({ message: "Phiên đăng nhập đã hết hạn." });
-        return;
-      }
-      const user: Staff | null = await getStaffById(session.userId);
-      if (user) {
-        const mqttUsername = session._id; // username = sessionId
-        const mqttPassword = crypto.randomBytes(16).toString("base64"); // strong random pass
 
-        try {
-          await rotatePassword(mqttUsername, mqttPassword);
-          console.log(`Password rotated for user: ${mqttUsername}`);
-        } catch (err) {
-          console.error("[MQTT] Failed to create temporary MQTT user", err);
-          return response.status(500).json({
-            message: "Đăng nhập thất bại. Không thể tạo MQTT session.",
-          });
-        }
-        const res: Response_DashboardLogInDTO = {
-          staffProfile: {
-            id: user.id,
-            full_name: user.full_name,
-            email: user.email,
-          },
-          sessionId: session._id,
-          mqtt_password: mqttPassword
-        };
-        response.status(200).json(res);
-      } else {
-        response.status(401).json({ message: "Không tìm thấy người dùng" });
-        return;
-      }
-    }
+  // 1️⃣ Lấy sessionId từ cookie
+  const sessionId = request.cookies?.GO_SCOOT_SESSION_ID as string | undefined;
+
+  if (!sessionId) {
+    return response.status(401).json({
+      message: "Thiếu mã phiên đăng nhập.",
+    });
   }
-  if (!sessionId || !session) {
-    response.status(401).json({ message: "Thiếu mã phiên đăng nhập." });
-    return;
+
+  // 2️⃣ Lookup session
+  session = await getSession(sessionId);
+  if (!session) {
+    return response.status(401).json({
+      message: "Phiên đăng nhập không hợp lệ.",
+    });
   }
+
+  // 3️⃣ Check expiry
+  const now = Date.now();
+  const createdAtMs = new Date(session.createdAt).getTime();
+  const expiryMs = createdAtMs + session.validPeriod;
+
+  if (now > expiryMs) {
+    return response.status(401).json({
+      message: "Phiên đăng nhập đã hết hạn.",
+    });
+  }
+
+  // 4️⃣ Fetch staff
+  const user: Staff | null = await getStaffById(session.userId);
+  if (!user) {
+    return response.status(401).json({
+      message: "Không tìm thấy người dùng",
+    });
+  }
+
+  // 5️⃣ Rotate MQTT password
+  const mqttUsername = session._id; // username = sessionId
+  const mqttPassword = crypto.randomBytes(16).toString("base64");
+
+  try {
+    await rotatePassword(mqttUsername, mqttPassword);
+    console.log(`[MQTT] Password rotated for user: ${mqttUsername}`);
+  } catch (err) {
+    console.error("[MQTT] Failed to rotate MQTT password", err);
+    return response.status(500).json({
+      message: "Không thể tạo MQTT session.",
+    });
+  }
+
+  // 6️⃣ Set MQTT password cookie (HttpOnly, short-lived)
+  const isProd = process.env.NODE_ENV === "production";
+
+  response.cookie("GO_SCOOT_MQTT_PASSWORD", mqttPassword, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "strict",
+    path: "/mqtt",               // CHỈ gửi cho MQTT WS endpoint
+    maxAge: 15 * 60 * 1000,      // 15 phút (khuyến nghị)
+  });
+
+  // 7️⃣ Trả response KHÔNG chứa secret
+  const res: Response_DashboardLogInDTO = {
+    staffProfile: {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+    },
+  };
+
+  return response.status(200).json(res);
 };

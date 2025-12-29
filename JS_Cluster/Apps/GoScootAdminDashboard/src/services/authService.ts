@@ -62,12 +62,6 @@ export function getSessionId(): string | null {
   return sessionStorage.getItem(SESSION_KEY);
 }
 
-/**
- * Store session ID in session storage
- */
-export function setSessionId(sessionId: string): void {
-  sessionStorage.setItem(SESSION_KEY, sessionId);
-}
 
 /**
  * Get the MQTT password (stored in memory only)
@@ -76,12 +70,7 @@ export function getMqttPassword(): string | null {
   return mqttPassword;
 }
 
-/**
- * Store MQTT password in memory (not persisted for security)
- */
-export function setMqttPassword(password: string | null): void {
-  mqttPassword = password;
-}
+
 
 /**
  * Get stored staff profile

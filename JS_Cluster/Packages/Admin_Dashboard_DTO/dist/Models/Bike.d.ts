@@ -7,6 +7,7 @@ export interface Bike {
     id: string;
     name: string;
     isAvailable: boolean;
+    status: BikeStatus;
     maximum_speed: number;
     maximum_functional_distance: number;
     purchase_date: number;

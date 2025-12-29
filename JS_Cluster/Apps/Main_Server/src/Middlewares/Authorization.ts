@@ -23,6 +23,7 @@ export interface CustomRequest<
     request: RequestObject;
     session?: SessionObject;
 }
+
 export function authorize(allowedRoles: LogInType[]): RequestHandler {
     return async (req, res, next) => {
         console.log("🔐 Authorizing...");
@@ -53,4 +54,54 @@ export function authorize(allowedRoles: LogInType[]): RequestHandler {
         next()
 
     };
+}
+
+export function authorizeFromCookie(
+  allowedRoles: LogInType[]
+): RequestHandler {
+  return async (req, res, next) => {
+    console.log("🔐 Authorizing (cookie-based)...");
+
+    let session: SessionObject | null = null;
+
+    // 1️⃣ Lấy sessionId từ cookie
+    const sessionId = req.cookies?.GO_SCOOT_SESSION_ID as string | undefined;
+
+    if (!sessionId) {
+      return res.status(401).json({
+        message: "Thiếu mã phiên đăng nhập.",
+      });
+    }
+
+    // 2️⃣ Lookup session
+    session = await getSession(sessionId);
+    if (!session) {
+      return res.status(401).json({
+        message: "Phiên đăng nhập không hợp lệ.",
+      });
+    }
+
+    // 3️⃣ Check expiry
+    const now = Date.now();
+    const createdAtMs = new Date(session.createdAt).getTime();
+    const expiryMs = createdAtMs + session.validPeriod;
+
+    if (now > expiryMs) {
+      return res.status(401).json({
+        message: "Phiên đăng nhập đã hết hạn.",
+      });
+    }
+
+    // 4️⃣ Check role
+    if (!allowedRoles.includes(session.logInType)) {
+      return res.status(401).json({
+        message: "Bạn không được thực hiện thao tác này",
+      });
+    }
+
+    // 5️⃣ Attach session to request
+    (req as CustomRequest).session = session;
+
+    next();
+  };
 }

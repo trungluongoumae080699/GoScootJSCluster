@@ -9,7 +9,7 @@ import { pool, query } from "./MySqlConfig.js";
 import { initRedis, redisClient } from "./RedisConfig.js";
 import { requestPreProcession } from "./Middlewares/RequestPreProcession.js";
 import { mobileAppNonAuthRouter } from "./Routes/MobileAppRouters/MobileAppNonAuthRouter.js";
-import { authorize } from "./Middlewares/Authorization.js";
+import { authorize, authorizeFromCookie } from "./Middlewares/Authorization.js";
 import { LogInType } from "./Repositories/RedisRepo/SessionRepo.js";
 import { initMqtt } from "./MqttConfig.js";
 import { dashboardNonAuthenticationRouter } from "./Routes/DashboardRouters/DashboardNonAuthenticationRoutes.js";
@@ -17,7 +17,7 @@ import { bikeRouter } from "./Routes/BikeRouters.js";
 import { authenticationRouter } from "./Routes/AuthenticationRouter.js";
 import { dashboardAuthenticationRouter } from "./Routes/DashboardRouters/DashboardAuthenticationRouter.js";
 import { mobileAppAuthRouter } from "./Routes/MobileAppRouters/MobileAppAuthRouter.js";
-
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 const PORT = 4000;
@@ -40,6 +40,7 @@ async function startServer() {
     await initMqtt()
 
     const server = http.createServer(app);
+    app.use(cookieParser())
     app.use(requestPreProcession())
     app.use(express.json());
     app.use(express.static("Asset"));
@@ -47,7 +48,7 @@ async function startServer() {
     app.use("/bike", bikeRouter);
     app.use("/app/auth", mobileAppAuthRouter)
     app.use("/app/use", authorize([LogInType.CUSTOMER]), mobileAppNonAuthRouter);
-    app.use("/dashboard/use", authorize([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
+    app.use("/dashboard/use", authorizeFromCookie([LogInType.ADMIN]), dashboardNonAuthenticationRouter )
 
     /** Centralized error handler */
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
