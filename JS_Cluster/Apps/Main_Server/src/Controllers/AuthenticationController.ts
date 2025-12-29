@@ -308,20 +308,13 @@ export const authenticateAdminSecured = async (
   // Session cookie
   response.cookie("GO_SCOOT_SESSION_ID", sessionObject._id, {
     httpOnly: true,
-    secure: isProd,       
+    secure: true,       
     sameSite: "strict",   
     path: "/",            
     maxAge: sessionObject.validPeriod,
   });
 
-  // MQTT password cookie (short-lived is recommended)
-  response.cookie("GO_SCOOT_MQTT_PASSWORD", mqttPassword, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "strict",
-    path: "/",        
-    maxAge: sessionObject.validPeriod
-  });
+
 
   // 4) Response body: only non-sensitive data
   const responseObject = {
@@ -378,31 +371,6 @@ export const formlessAuthenticateDashboard = async (
       message: "Không tìm thấy người dùng",
     });
   }
-
-  // 5️⃣ Rotate MQTT password
-  const mqttUsername = session._id; // username = sessionId
-  const mqttPassword = crypto.randomBytes(16).toString("base64");
-
-  try {
-    await rotatePassword(mqttUsername, mqttPassword);
-    console.log(`[MQTT] Password rotated for user: ${mqttUsername}`);
-  } catch (err) {
-    console.error("[MQTT] Failed to rotate MQTT password", err);
-    return response.status(500).json({
-      message: "Không thể tạo MQTT session.",
-    });
-  }
-
-  // 6️⃣ Set MQTT password cookie (HttpOnly, short-lived)
-  const isProd = process.env.NODE_ENV === "production";
-
-  response.cookie("GO_SCOOT_MQTT_PASSWORD", mqttPassword, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "strict",
-    path: "/mqtt",               // CHỈ gửi cho MQTT WS endpoint
-    maxAge: 15 * 60 * 1000,      // 15 phút (khuyến nghị)
-  });
 
   // 7️⃣ Trả response KHÔNG chứa secret
   const res: Response_DashboardLogInDTO = {
