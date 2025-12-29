@@ -196,6 +196,7 @@ export function useMapRealtime(
     }, [onBikeUpdate, onError]);
 
     // Initial viewport
+    /*
     useEffect(() => {
         if (!map) return;
         const sendInitialViewport = async () => {
@@ -221,6 +222,44 @@ export function useMapRealtime(
         };
 
     }, [map]);
+    */
+
+    useEffect(() => {
+        if (!map) return;
+
+        let cancelled = false;
+
+        const sendInitialViewport = async () => {
+            if (cancelled) return;
+
+            const bounds = getMapBounds(map);
+            if (!bounds) return;
+
+            websocketManager.sendViewport(bounds);
+
+            try {
+                const hubs = await hubApi.getHubsInArea(bounds);
+                if (!cancelled) onHubUpdate(hubs);
+            } catch (e) {
+                if (!cancelled) onError(`Failed to fetch hubs: ${e instanceof Error ? e.message : String(e)}`);
+            }
+        };
+
+        // 1) attach listener
+        map.on("load", sendInitialViewport);
+
+        // 2) run ASAP (covers "already loaded" / "load fired before listener")
+        //    - if map not loaded yet, sendInitialViewport will just use current bounds anyway (usually ok)
+        queueMicrotask(sendInitialViewport);
+
+        // 3) if already loaded, call immediately too (optional redundancy)
+        if (map.loaded()) sendInitialViewport();
+
+        return () => {
+            cancelled = true;
+            map.off("load", sendInitialViewport);
+        };
+    }, [map, onHubUpdate, onError]);
 
     // Track map movement
     useEffect(() => {

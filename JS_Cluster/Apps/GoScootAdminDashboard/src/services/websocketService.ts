@@ -229,11 +229,12 @@ export class WebSocketManager {
     if (event.data instanceof Blob) {
       event.data.arrayBuffer().then((buf) => {
         const bytes = new Uint8Array(buf);
-        const updates = decodeBikeUpdates(bytes);
-        console.log('🔄 Received bike updates:', updates.length, 'bikes');
+        const { protocol, payload } = decodeBinaryPayload(bytes);
 
-        if (this.onBikeUpdate) {
-          this.onBikeUpdate(updates);
+        if (protocol === 1) {
+          const bikeUpdates = decodeBikeUpdates(payload);
+          console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
+          this.onBikeUpdate?.(bikeUpdates);
         }
       });
       return;
