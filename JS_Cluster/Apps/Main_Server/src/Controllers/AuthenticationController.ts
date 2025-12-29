@@ -288,20 +288,6 @@ export const authenticateAdminSecured = async (
 
   await saveSession(sessionObject);
 
-  // 2) Create temporary MQTT user based on session ID
-  const mqttUsername = sessionObject._id; // username = sessionId (OK)
-  const mqttPassword = crypto.randomBytes(16).toString("base64"); // random
-
-  try {
-    await createTempUser(mqttUsername, mqttPassword);
-    console.log(`[MQTT] Temporary user created: ${mqttUsername}`);
-  } catch (err) {
-    console.error("[MQTT] Failed to create temporary MQTT user", err);
-    return response.status(500).json({
-      message: "Đăng nhập thất bại. Không thể tạo MQTT session.",
-    });
-  }
-
   // 3) Set HttpOnly cookies (NO secrets in JSON body)
   const isProd = process.env.NODE_ENV === "production";
 
