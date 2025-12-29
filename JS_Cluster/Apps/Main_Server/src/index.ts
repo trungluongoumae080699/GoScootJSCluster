@@ -41,16 +41,12 @@ async function startServer() {
     await initMqtt()
 
     const server = http.createServer(app);
-    app.use(cors({
+    const corsOptions = {
       origin: "http://localhost:5173",
       credentials: true,
-    }));
+    };
 
-    // Nếu có preflight:
-    app.options("*", cors({
-      origin: "http://localhost:5173",
-      credentials: true,
-    }));
+    app.use(cors(corsOptions));
     app.use(cookieParser())
     app.use(requestPreProcession())
     app.use(express.json());
