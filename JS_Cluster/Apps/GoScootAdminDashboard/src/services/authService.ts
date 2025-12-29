@@ -128,6 +128,7 @@ function storeCredentials(response: Response_DashboardLogInDTO): void {
 export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Response_DashboardLogInDTO> {
   const response = await fetch(`${API_BASE_URL}/dashboard/auth/signIn`, {
     method: 'POST',
+    credentials: "include",
     headers: {
       'Content-Type': 'application/json',
       'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels

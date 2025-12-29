@@ -295,7 +295,7 @@ export const authenticateAdminSecured = async (
   response.cookie("GO_SCOOT_SESSION_ID", sessionObject._id, {
     httpOnly: true,
     secure: true,       
-    sameSite: "strict",   
+    sameSite: "none",   
     path: "/",            
     maxAge: sessionObject.validPeriod,
   });
