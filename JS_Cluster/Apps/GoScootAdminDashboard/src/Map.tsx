@@ -27,6 +27,7 @@ import { websocketManager } from './services/websocketService';
 import { bikeApi, hubApi, type Hub } from './services/apiClient';
 // Error boundary component for handling component errors gracefully
 import ErrorBoundary from './components/common/ErrorBoundary';
+import { useMapRealtime } from './hooks/useWebSocket';
 
 /** 
  * Mapbox API access token from environment variables
@@ -568,7 +569,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    * - Connection errors and reconnection attempts
    * - Automatic marker updates when new data arrives
    */
-  //useWebSocket(handleBikeUpdate, mapRef.current, handleHubUpdate, handleWebSocketError);
+  useMapRealtime(handleBikeUpdate, handleHubUpdate, handleWebSocketError, mapRef.current);
 
   /**
    * Effect: Poll WebSocket connection status

@@ -82,10 +82,33 @@ export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
     last_gps_long,
     last_gps_lat,
     last_gps_contact_time,
-    operationStatus,     
+    operationStatus,
     usageStatus
   };
 }
+
+export type BinaryDecodedPayload = {
+  protocol: number;
+  payload: Uint8Array;
+};
+
+export function decodeBinaryPayload(bytes: Uint8Array): BinaryDecodedPayload {
+  if (bytes.byteLength < 1) {
+    throw new Error("Payload too small to contain protocol byte");
+  }
+
+  // protocol is uint8 (0–9)
+  const protocol = bytes[0];
+
+  // remaining bytes = actual payload
+  const payload = bytes.slice(1);
+
+  return {
+    protocol,
+    payload,
+  };
+}
+
 
 export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

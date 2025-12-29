@@ -1,25 +1,25 @@
-// /**
-//  * useWebSocket Hook
-//  * 
-//  * React hook for managing WebSocket connection and real-time bike updates.
-//  * 
-//  * Features:
-//  * - Connects to WebSocket on mount, disconnects on unmount
-//  * - Automatically sends viewport updates when map moves
-//  * - Debounces viewport updates to avoid spamming server
-//  * - Handles callback updates without reconnecting
-//  * 
-//  * Usage:
-//  * ```tsx
-//  * useWebSocket(handleBikeUpdate, mapRef.current);
-//  * ```
-//  */
+/**
+ * useWebSocket Hook
+ * 
+ * React hook for managing WebSocket connection and real-time bike updates.
+ * 
+ * Features:
+ * - Connects to WebSocket on mount, disconnects on unmount
+ * - Automatically sends viewport updates when map moves
+ * - Debounces viewport updates to avoid spamming server
+ * - Handles callback updates without reconnecting
+ * 
+ * Usage:
+ * ```tsx
+ * useWebSocket(handleBikeUpdate, mapRef.current);
+ * ```
+ */
 
-// import { useEffect, useCallback, useRef } from 'react';
-// import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-// import { websocketManager, ViewportBounds } from '../services/websocketService';
-// import { hubApi, Hub } from '../services/apiClient';
-// import mapboxgl from 'mapbox-gl';
+import { useEffect, useCallback, useRef } from 'react';
+import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
+import { websocketManager, ViewportBounds } from '../services/websocketService';
+import { hubApi, Hub } from '../services/apiClient';
+import mapboxgl from 'mapbox-gl';
 
 // /**
 //  * Hook to manage WebSocket connection for real-time bike updates
@@ -38,7 +38,7 @@
 // ) {
 //   // Ref: Track if we've already connected (prevent double connection)
 //   const isConnectedRef = useRef(false);
-  
+
 //   // Ref: Store latest callback without triggering reconnection
 //   const callbackRef = useRef(onBikeUpdate);
 
@@ -63,7 +63,7 @@
 //     if (isConnectedRef.current) return;
 
 //     console.log('🔌 Initializing WebSocket connection...');
-    
+
 //     // Connect with a wrapper that always calls the latest callback
 //     websocketManager.connect(
 //       (bikes) => callbackRef.current(bikes),
@@ -92,7 +92,7 @@
 //       const bounds = getMapBounds(map);
 //       if (bounds) {
 //         websocketManager.sendViewport(bounds);
-        
+
 //         // Also fetch hubs in the area
 //         if (onHubUpdate) {
 //           try {
@@ -139,13 +139,13 @@
 //     const handleMapMove = () => {
 //       // Clear previous timer
 //       clearTimeout(debounceTimer);
-      
+
 //       // Wait 500ms after user stops moving before sending update
 //       debounceTimer = setTimeout(async () => {
 //         const bounds = getMapBounds(map);
 //         if (bounds) {
 //           websocketManager.sendViewport(bounds);
-          
+
 //           // Also fetch hubs in the new area
 //           if (onHubUpdate) {
 //             try {
@@ -182,27 +182,99 @@
 //   return { sendViewport };
 // }
 
-// /**
-//  * Helper: Get current map bounds as ViewportBounds
-//  * 
-//  * Extracts the visible area boundaries from Mapbox map.
-//  * Returns null if map bounds cannot be retrieved.
-//  * 
-//  * @param map - Mapbox map instance
-//  * @returns Viewport bounds or null on error
-//  */
-// function getMapBounds(map: mapboxgl.Map): ViewportBounds | null {
-//   try {
-//     const bounds = map.getBounds();
-    
-//     return {
-//       maxLong: bounds.getEast(),  // Eastern edge (right)
-//       minLong: bounds.getWest(),  // Western edge (left)
-//       maxLat: bounds.getNorth(),  // Northern edge (top)
-//       minLat: bounds.getSouth(),  // Southern edge (bottom)
-//     };
-//   } catch (error) {
-//     console.error('Failed to get map bounds:', error);
-//     return null;
-//   }
-// }
+export function useMapRealtime(
+    onBikeUpdate: (bikes: BikeUpdate[]) => void,
+    onHubUpdate: (hubs: Hub[]) => void,
+    onError: (error: string) => void,
+    map?: mapboxgl.Map | null,
+
+) {
+    // Register callbacks
+    useEffect(() => {
+        websocketManager.setOnBikeUpdate(onBikeUpdate);
+        websocketManager.setOnError(onError);
+    }, [onBikeUpdate, onError]);
+
+    // Initial viewport
+    useEffect(() => {
+        if (!map) return;
+        const sendInitialViewport = async () => {
+            const bounds = getMapBounds(map);
+            if (!bounds) return;
+
+            websocketManager.sendViewport(bounds);
+
+            if (onHubUpdate) {
+                const hubs = await hubApi.getHubsInArea(bounds);
+                onHubUpdate(hubs);
+            }
+        };
+
+        if (map.loaded()) sendInitialViewport();
+        else map.on('load', sendInitialViewport);
+
+        map.on('load', sendInitialViewport);
+
+
+        return () => {
+            map.off("load", sendInitialViewport); // ✅
+        };
+
+    }, [map]);
+
+    // Track map movement
+    useEffect(() => {
+        if (!map) return;
+
+        let timer: NodeJS.Timeout;
+
+        const handleMove = () => {
+            clearTimeout(timer);
+            timer = setTimeout(async () => {
+                const bounds = getMapBounds(map);
+                if (!bounds) return;
+
+                websocketManager.sendViewport(bounds);
+
+                if (onHubUpdate) {
+                    const hubs = await hubApi.getHubsInArea(bounds);
+                    onHubUpdate(hubs);
+                }
+            }, 500);
+        };
+
+        map.on('moveend', handleMove);
+        map.on('zoomend', handleMove);
+
+        return () => {
+            clearTimeout(timer);
+            map.off('moveend', handleMove);
+            map.off('zoomend', handleMove);
+        };
+    }, [map]);
+}
+
+/**
+ * Helper: Get current map bounds as ViewportBounds
+ * 
+ * Extracts the visible area boundaries from Mapbox map.
+ * Returns null if map bounds cannot be retrieved.
+ * 
+ * @param map - Mapbox map instance
+ * @returns Viewport bounds or null on error
+ */
+function getMapBounds(map: mapboxgl.Map): ViewportBounds | null {
+    try {
+        const bounds = map.getBounds();
+
+        return {
+            maxLong: bounds.getEast(),  // Eastern edge (right)
+            minLong: bounds.getWest(),  // Western edge (left)
+            maxLat: bounds.getNorth(),  // Northern edge (top)
+            minLat: bounds.getSouth(),  // Southern edge (bottom)
+        };
+    } catch (error) {
+        console.error('Failed to get map bounds:', error);
+        return null;
+    }
+}

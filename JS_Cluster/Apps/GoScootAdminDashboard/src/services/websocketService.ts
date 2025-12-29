@@ -5,7 +5,7 @@
  */
 
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { decodeBikeUpdates } from '../utlities/BindaryDecoder';
+import { decodeBikeUpdates, decodeBinaryPayload } from '../utlities/BindaryDecoder';
 import { getSessionId } from './apiClient';
 import { Alert } from '../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts';
 
@@ -55,19 +55,19 @@ export type AlertCallback = (alert: Alert) => void;
 export class WebSocketManager {
   /** WebSocket connection instance */
   private ws: WebSocket | null = null;
-  
+
   /** Number of reconnection attempts made */
   private reconnectAttempts = 0;
-  
+
   /** Maximum number of reconnection attempts before giving up */
   private maxReconnectAttempts = 5;
-  
+
   /** Base delay between reconnection attempts (increases with each attempt) */
   private reconnectDelay = 3000; // 3 seconds
-  
+
   /** Timer for scheduled reconnection */
   private reconnectTimer: NodeJS.Timeout | null = null;
-  
+
   /** Callback function to handle bike updates */
   private onBikeUpdate: BikeUpdateCallback | null = null;
 
@@ -76,7 +76,7 @@ export class WebSocketManager {
 
   /** Callback function to handle error messages */
   private onError: ErrorCallback | null = null;
-  
+
   /** Flag to prevent reconnection when user intentionally closes connection */
   private isIntentionallyClosed = false;
 
@@ -95,7 +95,7 @@ export class WebSocketManager {
     this.createConnection();
   }
 
-    // ✅ Setters (allow null to clear)
+  // ✅ Setters (allow null to clear)
   public setOnBikeUpdate(cb: BikeUpdateCallback | null): void {
     this.onBikeUpdate = cb;
   }
@@ -121,7 +121,7 @@ export class WebSocketManager {
   private createConnection(): void {
     // Get session ID for authentication
     //const sessionId = getSessionId();
-    
+
     /*
     if (!sessionId) {
       console.error('❌ No session ID found. Cannot connect to WebSocket.');
@@ -132,7 +132,7 @@ export class WebSocketManager {
     // Build WebSocket URL with authorization query parameter
     // Server validates this session ID before accepting connection
     const wsUrl = `${WS_BASE_URL}`;
-    
+
     console.log('🔌 Connecting to WebSocket:', wsUrl);
 
     try {
@@ -180,7 +180,7 @@ export class WebSocketManager {
     this.ws.onclose = (event) => {
       console.log('🔌 WebSocket closed:', event.code, event.reason, 'clean?', event.wasClean);
       console.log('🔌 Close codes: 1000=Normal, 1006=Abnormal, 1008=Policy, 1011=Server error');
-      
+
       // Only attempt reconnect if not intentionally closed by user
       if (!this.isIntentionallyClosed) {
         this.scheduleReconnect();
@@ -203,6 +203,18 @@ export class WebSocketManager {
     // Case 1: Binary message (ArrayBuffer) - Bike updates
     if (event.data instanceof ArrayBuffer) {
       const bytes = new Uint8Array(event.data);
+      const { protocol, payload } = decodeBinaryPayload(bytes);
+      if (protocol == 1) {
+        const bikeUpdates: BikeUpdate[] = decodeBikeUpdates(payload);
+        console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
+        if (this.onBikeUpdate) {
+          this.onBikeUpdate(bikeUpdates);
+        }
+      }
+      /*
+      else if (protocol == 0){
+        const alertData = new TextDecoder().decode(payload);
+      }
       const updates = decodeBikeUpdates(bytes); // Decode binary format
       console.log('🔄 Received bike updates:', updates.length, 'bikes');
       
@@ -210,6 +222,7 @@ export class WebSocketManager {
         this.onBikeUpdate(updates);
       }
       return;
+      */
     }
 
     // Case 2: Blob message - Convert to ArrayBuffer then decode
@@ -218,7 +231,7 @@ export class WebSocketManager {
         const bytes = new Uint8Array(buf);
         const updates = decodeBikeUpdates(bytes);
         console.log('🔄 Received bike updates:', updates.length, 'bikes');
-        
+
         if (this.onBikeUpdate) {
           this.onBikeUpdate(updates);
         }
@@ -229,7 +242,7 @@ export class WebSocketManager {
     // Case 3: Text message - Server notifications or error messages
     if (typeof event.data === 'string') {
       console.log('📄 Text message from server:', event.data);
-      
+
       try {
         const parsed = JSON.parse(event.data);
         if (parsed.message && this.onError) {
@@ -301,10 +314,10 @@ export class WebSocketManager {
 
     // Increment attempt counter
     this.reconnectAttempts++;
-    
+
     // Calculate delay with exponential backoff
     const delay = this.reconnectDelay * this.reconnectAttempts;
-    
+
     console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     // Schedule reconnection
@@ -329,7 +342,7 @@ export class WebSocketManager {
   disconnect(): void {
     // Mark as intentionally closed to prevent reconnection
     this.isIntentionallyClosed = true;
-    
+
     // Cancel any pending reconnection
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
