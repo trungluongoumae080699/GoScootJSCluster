@@ -7,6 +7,7 @@ import Login from "./screens/Login";
 import SignUp from "./screens/SignUp";
 import { websocketManager } from "./services/websocketService";
 import { formlessSignIn } from "./services/authService";
+import { BikeManagementContextProvider } from "./context/BikeManagementContext";
 
 
 
@@ -32,32 +33,33 @@ export default function Root() {
 
   // If you still need these (you had them before)
 
-    
-    useEffect(() => {
-      const checkExistingSession = async () => {
-        try {
-          // Try formless sign-in if session ID exists
-          const response = await formlessSignIn();
-  
-          if (response) {
-            globalContext.setIsAuth(true);
-          } else {
-            globalContext.setIsAuth(false);
-          }
-        } catch (error) {
+
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        console.log("Loggin In.....")
+        // Try formless sign-in if session ID exists
+        const response = await formlessSignIn();
+
+        if (response) {
+          globalContext.setIsAuth(true);
+        } else {
           globalContext.setIsAuth(false);
-        } finally {
-          globalContext.setIsCheckingAuth(false);
         }
-      };
-  
-      checkExistingSession();
-  
-    }, []);
-    
-  
-    useEffect(() => {
-      if (!globalContext.isAuth) return;
+      } catch (error) {
+        globalContext.setIsAuth(false);
+      } finally {
+        globalContext.setIsCheckingAuth(false);
+      }
+    };
+
+    checkExistingSession();
+
+  }, []);
+
+
+  useEffect(() => {
+    if (!globalContext.isAuth) return;
     websocketManager.connect();
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
@@ -86,7 +88,7 @@ export default function Root() {
         Loading...
       </div>
     );
-  } 
+  }
 
   return (
     <Router>
@@ -111,9 +113,9 @@ export default function Root() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
+            <BikeManagementContextProvider>
               <Bikes />
-            </ProtectedRoute>
+            </BikeManagementContextProvider>
           }
         />
         {/*         <Route

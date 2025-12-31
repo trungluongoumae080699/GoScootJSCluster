@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Header from "../../components/Header";
 import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -78,6 +78,11 @@ const {
   bikeApi.getBikes
 );
 
+useEffect(() => {
+  applyFilters(); // fetch group 0 + set display list
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
   const pageInputRef = useRef<string>("");
 
   const handleBikeClick = (bikeId: string) => navigate(`/bike/${bikeId}`);
@@ -116,7 +121,7 @@ const {
     <div className="bike-details-container">
       <Header title="Bikes" />
       <div className="main-content">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="content-area bikes-content">
           {/* Stats */}
           <div className="bikes-stats">

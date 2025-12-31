@@ -61,11 +61,11 @@ export function authorizeFromCookie(
 ): RequestHandler {
   return async (req, res, next) => {
     console.log("🔐 Authorizing (cookie-based)...");
-
     let session: SessionObject | null = null;
 
     // 1️⃣ Lấy sessionId từ cookie
     const sessionId = req.cookies?.GO_SCOOT_SESSION_ID as string | undefined;
+    console.log("No cookie found....")
 
     if (!sessionId) {
       return res.status(401).json({

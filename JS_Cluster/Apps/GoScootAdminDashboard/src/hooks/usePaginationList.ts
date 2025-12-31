@@ -120,6 +120,7 @@ export function usePaginationList<T, F>(
             withTotalCount: changed,
             filter: filterPayload,
         });
+        console.log(res)
 
         setList(res.data);
         slicePageFromGroupList(1, res.data, 1);

@@ -1,6 +1,10 @@
 /* Bikes Page Styles */
+.bike-details-container {
+  background-color: #1976d2;
+}
 .bikes-content {
   padding: 1.5rem 2rem;
+  background-color: #666;
 }
 
 /* Stats Section */

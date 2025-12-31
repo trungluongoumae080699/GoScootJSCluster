@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signIn } from '../services/authService';
 import './Auth.css';
+import { useGlobalContext } from '../context/GlobalContext';
 
 interface LoginProps {
   onLoginSuccess?: () => void;
 }
 
-const Login = ({ onLoginSuccess }: LoginProps) => {
+const Login = () => {
+  const globalContext = useGlobalContext()
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,8 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
       const response = await signIn({ email, password });
       
       // Notify App that login succeeded
-      onLoginSuccess?.();
+      globalContext.setIsAuth(true);
+  
       
       // Navigate to dashboard on successful login
       navigate('/');
