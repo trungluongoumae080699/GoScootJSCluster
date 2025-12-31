@@ -11,6 +11,8 @@ import BikeInfoCard from './components/bikeDetails/BikeInfoCard';
 import TripsTable from './components/bikeDetails/TripsTable';
 import TelemetryTable from './components/bikeDetails/TelemetryTable';
 import BikeMap from './components/bikeDetails/BikeMap';
+import Breadcrumb from './components/common/Breadcrumb';
+import { FaBicycle } from 'react-icons/fa';
 import './BikeDetails.css';
 
 const DEFAULT_BIKE_ID = 'bike-vin-123456';
@@ -378,8 +380,16 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
         <Header title="Bike Details" />
         <div className="main-content">
           <Sidebar />
-          <div className="content-area" style={{ padding: '20px', textAlign: 'center' }}>
-            <p>Loading bike details...</p>
+          <div className="content-area">
+            <Breadcrumb
+              items={[
+                { label: 'Bikes', path: '/bikes', icon: <FaBicycle /> },
+                { label: bikeId || 'Loading...' }
+              ]}
+            />
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+              <p>Loading bike details...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -392,13 +402,21 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
         <Header title="Bike Details" />
         <div className="main-content">
           <Sidebar />
-          <div className="content-area" style={{ padding: '20px' }}>
-            <div className="error-message" style={{ color: 'red', padding: '20px', background: '#fee', borderRadius: '8px' }}>
-              <h3>Error Loading Bike Data</h3>
-              <p>{error}</p>
-              <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '8px 16px' }}>
-                Retry
-              </button>
+          <div className="content-area">
+            <Breadcrumb
+              items={[
+                { label: 'Bikes', path: '/bikes', icon: <FaBicycle /> },
+                { label: bikeId || 'Error' }
+              ]}
+            />
+            <div style={{ padding: '20px' }}>
+              <div className="error-message" style={{ color: 'red', padding: '20px', background: '#fee', borderRadius: '8px' }}>
+                <h3>Error Loading Bike Data</h3>
+                <p>{error}</p>
+                <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '8px 16px' }}>
+                  Retry
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -412,8 +430,16 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
         <Header title="Bike Details" />
         <div className="main-content">
           <Sidebar />
-          <div className="content-area" style={{ padding: '20px' }}>
-            <p>Bike not found</p>
+          <div className="content-area">
+            <Breadcrumb
+              items={[
+                { label: 'Bikes', path: '/bikes', icon: <FaBicycle /> },
+                { label: 'Not Found' }
+              ]}
+            />
+            <div style={{ padding: '20px' }}>
+              <p>Bike not found</p>
+            </div>
           </div>
         </div>
       </div>
@@ -426,6 +452,12 @@ function BikeDetails({ onNavigate, bikeId = DEFAULT_BIKE_ID }: BikeDetailsProps)
       <div className="main-content">
         <Sidebar />
         <div className="content-area">
+          <Breadcrumb
+            items={[
+              { label: 'Bikes', path: '/bikes', icon: <FaBicycle /> },
+              { label: bike.vin_number || bikeId }
+            ]}
+          />
           <BikeInfoCard 
             bike={bike} 
             liveBattery={liveBattery}
