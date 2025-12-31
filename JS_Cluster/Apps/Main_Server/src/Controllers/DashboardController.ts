@@ -396,23 +396,32 @@ export const fetchBikesController = async (
     const withTotalCount = req.query.withTotalCount === "true";
     const search = req.query.search?.trim() || undefined;
 
-    const batteryNum =
-      req.query.battery?.trim() === "" ? undefined : Number(req.query.battery);
-    console.log("battery num", batteryNum)
+    let batteryNum = undefined
+    let operationStatus = undefined
+    let bikeStatus = undefined
+
+    if (req.query.battery) {
+      batteryNum = req.query.battery?.trim() === "" ? undefined : Number(req.query.battery);
+    }
+
+    if (req.query.operationStatus) {
+      operationStatus = req.query.operationStatus?.trim() === "" ? undefined : Object.values(OperationStatus).includes(req.query.operationStatus as OperationStatus)
+        ? (req.query.operationStatus as OperationStatus)
+        : undefined;
+    }
+
+    if (req.query.status) {
+      bikeStatus = req.query.status?.trim() === "" ? undefined : Object.values(BikeStatus).includes(req.query.status as BikeStatus)
+        ? (req.query.status as BikeStatus)
+        : undefined;
+    }
+
 
     if (batteryNum !== undefined && !Number.isFinite(batteryNum)) {
       return res.status(400).json({ error: "battery must be a number" });
     }
 
-    const operationStatus =
-      Object.values(OperationStatus).includes(req.query.operationStatus as OperationStatus)
-        ? (req.query.operationStatus as OperationStatus)
-        : undefined;
 
-    const bikeStatus =
-      Object.values(BikeStatus).includes(req.query.status as BikeStatus)
-        ? (req.query.status as BikeStatus)
-        : undefined;
 
     // ✅ nếu có filter liên quan telemetry => lấy IDs từ Redis trước
     const needsRedisFilter =
