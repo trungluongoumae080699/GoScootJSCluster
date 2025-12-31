@@ -9,7 +9,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Bike, BikeTelemetry } from '@trungthao/admin_dashboard_dto';
 
-const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoidHJ1bmdsdW9uZ291bWFlMDgwNjk5IiwiYSI6ImNtaG9rbDJ5dDBjMWQya3NlcGxjaHNmMTcifQ.YIh29cJOIa6Ut2NEeoOHQg';
 
 // Default center location (Ho Chi Minh City, Vietnam) when no telemetry data
 const DEFAULT_CENTER: [number, number] = [106.6297, 10.8231];

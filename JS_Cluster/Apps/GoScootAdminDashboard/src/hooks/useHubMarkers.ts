@@ -1,7 +1,7 @@
 
 import { useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl'; // Mapbox GL JS for interactive map markers
-import { Hub } from '../services/apiClient'; // Type definition for hub data
+import { Hub } from '../services/ApiClient/apiClient'; // Type definition for hub data
 
 /**
  * HUB MARKERS HOOK

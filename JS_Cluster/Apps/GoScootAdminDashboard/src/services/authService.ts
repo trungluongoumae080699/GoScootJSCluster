@@ -164,6 +164,7 @@ export async function formlessSignIn(): Promise<Response_DashboardLogInDTO | nul
   try {
     const response = await fetch(`${API_BASE_URL}/dashboard/auth/signIn/session`, {
       method: 'GET',
+      credentials: "include",
       headers: {
         'authorization': sessionId,
         'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels

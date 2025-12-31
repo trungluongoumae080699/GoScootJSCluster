@@ -1,9 +1,9 @@
 import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Response } from "express";
 import { redisClient } from "../RedisConfig.js";
-import { fetchBikeIdsAndBatteries } from "../Repositories/RedisRepo/BikeRepo.js";
-import { getBikesByFilter, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
-import { BikeTelemetry, TripStatus } from "@trungthao/admin_dashboard_dto";
+import { fetchBikeIdsAndBatteries, fetchBikeUpdates } from "../Repositories/RedisRepo/BikeRepo.js";
+import { fetchBikesNoCount, fetchBikesWithCount, getBikesByFilter, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
+import { Bike, BikeStatus, BikeTelemetry, OperationStatus, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { getTrips } from "../Repositories/MySqlRepo/TripRepo.js";
 import { getBikeTelemetry } from "../Repositories/ClickhouseRepo/TelemetryRepo.js";
 import { getAlerts } from "../Repositories/MySqlRepo/AlertRepo.js";
@@ -54,27 +54,27 @@ export const fetchBikesByHub = async (
 ) => {
   const { hubId } = request.params;
 
-   // 1. Fetch base bike data from MySQL
-    const bikes = await getMobileAppBikesByHub(hubId);
-    // 2. For each bike, get telemetry from Redis
-    for (const b of bikes) {
-      const redisKey = `bike:${b.id}:telemetry`;
+  // 1. Fetch base bike data from MySQL
+  const bikes = await getMobileAppBikesByHub(hubId);
+  // 2. For each bike, get telemetry from Redis
+  for (const b of bikes) {
+    const redisKey = `bike:${b.id}:telemetry`;
 
-      // HGETALL returns Record<string, string>
-      const tele = await redisClient.hGetAll(redisKey);
+    // HGETALL returns Record<string, string>
+    const tele = await redisClient.hGetAll(redisKey);
 
-      const batteryStatus = tele.battery_status
-        ? Number(tele.battery_status)
-        : null;
-      b.battery_status = batteryStatus
-    }
+    const batteryStatus = tele.battery_status
+      ? Number(tele.battery_status)
+      : null;
+    b.battery_status = batteryStatus
+  }
 
-    const result: Response_BikeListDTO = {
-        bikes: bikes,
-        total: bikes.length
-    }
+  const result: Response_BikeListDTO = {
+    bikes: bikes,
+    total: bikes.length
+  }
 
-    return response.status(200).json(result);
+  return response.status(200).json(result);
 };
 
 export interface GetTripsOptions {
@@ -375,4 +375,113 @@ export const fetchBikes = async (
   }
 
   return response.json(sqlResult);
+};
+
+
+type Query = {
+  page?: string; // ✅ startPage: 1,6,11...
+  withTotalCount?: string; // "true" | undefined
+  search?: string;
+  battery?: string;
+  operationStatus?: string; // enum string hoặc code (tuỳ bạn)
+  status?: string; // usage status
+};
+
+export const fetchBikesController = async (
+  req: CustomRequest<{}, {}, {}, Query>,
+  res: Response
+) => {
+  try {
+    const startPageNum = Math.max(Number(req.query.page) || 1, 1);
+    const withTotalCount = req.query.withTotalCount === "true";
+    const search = req.query.search?.trim() || undefined;
+
+    const batteryNum =
+      req.query.battery?.trim() === "" ? undefined : Number(req.query.battery);
+
+    if (batteryNum !== undefined && !Number.isFinite(batteryNum)) {
+      return res.status(400).json({ error: "battery must be a number" });
+    }
+
+    const operationStatus =
+      Object.values(OperationStatus).includes(req.query.operationStatus as OperationStatus)
+        ? (req.query.operationStatus as OperationStatus)
+        : undefined;
+
+    const bikeStatus =
+      Object.values(BikeStatus).includes(req.query.status as BikeStatus)
+        ? (req.query.status as BikeStatus)
+        : undefined;
+
+    // ✅ nếu có filter liên quan telemetry => lấy IDs từ Redis trước
+    const needsRedisFilter =
+      batteryNum !== undefined || operationStatus !== undefined || bikeStatus !== undefined;
+
+    let ids: string[] | undefined = undefined;
+    let telemetryMap: Map<string, any> | null = null;
+
+    if (needsRedisFilter) {
+      const updates = await fetchBikeUpdates({
+        battery: batteryNum,
+        operationStatus,
+        bikeStatus,
+      });
+
+      ids = updates.map((u) => u.id);
+
+      // nếu không có match thì trả về rỗng luôn
+      if (ids.length === 0) {
+        const payload: any = { data: [] as Bike[] };
+        if (withTotalCount) payload.totalCount = 0;
+        return res.json(payload);
+      }
+
+      // map để enrich output
+      telemetryMap = new Map(updates.map((u) => [u.id, u]));
+    }
+
+    // ✅ MySQL fetch (LIMIT cố định 50, offset theo groupIndex)
+    if (withTotalCount) {
+      const { bikes, totalCount } = await fetchBikesWithCount(startPageNum, ids, search);
+
+      // ✅ enrich telemetry fields (nếu Bike DTO có field tương ứng)
+      if (telemetryMap) {
+        for (const b of bikes as any[]) {
+          const tele = telemetryMap.get(b.id);
+          if (!tele) continue;
+
+          // add the fields you actually expose in Bike DTO
+          b.battery_status = tele.battery_status;
+          b.longitude = tele.longitude;
+          b.latitude = tele.latitude;
+          b.operationStatus = tele.operationStatus;
+          b.usageStatus = tele.usageStatus;
+          b.currentHub = tele.currentHub;
+        }
+      }
+
+      return res.json({ data: bikes, totalCount });
+    } else {
+      const bikes = await fetchBikesNoCount(startPageNum, ids, search);
+
+      if (telemetryMap) {
+        for (const b of bikes as any[]) {
+          const tele = telemetryMap.get(b.id);
+          if (!tele) continue;
+
+          b.battery_status = tele.battery_status;
+          b.longitude = tele.longitude;
+          b.latitude = tele.latitude;
+          b.operationStatus = tele.operationStatus;
+          b.usageStatus = tele.usageStatus;
+          b.currentHub = tele.currentHub;
+        }
+      }
+
+      return res.json({ data: bikes });
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to fetch bikes";
+    return res.status(500).json({ error: msg });
+  }
 };

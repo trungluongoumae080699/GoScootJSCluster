@@ -1,7 +1,7 @@
 import { BikeStatus } from "./Bike.js";
 export declare enum OperationStatus {
-    NORMAL = "Normal",
-    OUT_OF_BOUND = "Out of bound",
+    NORMAL = "Normal",//0
+    OUT_OF_BOUND = "Out of bound",//1
     LOW_BATTERY = "Low battery"
 }
 export type BikeTelemetry = {

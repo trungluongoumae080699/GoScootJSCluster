@@ -18,7 +18,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
 import { websocketManager, ViewportBounds } from '../services/websocketService';
-import { hubApi, Hub } from '../services/apiClient';
+import { hubApi, Hub } from '../services/ApiClient/apiClient';
 import mapboxgl from 'mapbox-gl';
 
 // /**
@@ -187,7 +187,7 @@ export function useMapRealtime(
     onHubUpdate: (hubs: Hub[]) => void,
     onError: (error: string) => void,
     map?: mapboxgl.Map | null,
-
+    onMapLoad?: () => void,
 ) {
     // Register callbacks
     useEffect(() => {
@@ -196,7 +196,7 @@ export function useMapRealtime(
     }, [onBikeUpdate, onError]);
 
     // Initial viewport
-    /*
+
     useEffect(() => {
         if (!map) return;
         const sendInitialViewport = async () => {
@@ -211,19 +211,25 @@ export function useMapRealtime(
             }
         };
 
-        if (map.loaded()) sendInitialViewport();
-        else map.on('load', sendInitialViewport);
+        const handleMapLoad = () => {
+            onMapLoad?.();          // báo cho UI map đã load
+            sendInitialViewport(); // gửi viewport + fetch hubs
+        };
 
-        map.on('load', sendInitialViewport);
-
+        if (map.loaded()) {
+            handleMapLoad();
+        } else {
+            map.on("load", handleMapLoad);
+        }
 
         return () => {
             map.off("load", sendInitialViewport); // ✅
         };
 
     }, [map]);
-    */
 
+
+    /*
     useEffect(() => {
         if (!map) return;
 
@@ -260,6 +266,7 @@ export function useMapRealtime(
             map.off("load", sendInitialViewport);
         };
     }, [map, onHubUpdate, onError]);
+    */
 
     // Track map movement
     useEffect(() => {

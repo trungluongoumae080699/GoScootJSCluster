@@ -1,13 +1,12 @@
 export enum BikeStatus {
-    IDLE = "Idle",
-    RESERVED = "Reserved",
-    INUSED = "Inused",
+    IDLE = "Idle", //0
+    RESERVED = "Reserved", //1
+    INUSED = "Inused", //2
 }
 
 export interface Bike  {
     id: string,
     name: string,
-    isAvailable: boolean,
     status: BikeStatus,
     maximum_speed: number,
     maximum_functional_distance: number,
@@ -17,4 +16,5 @@ export interface Bike  {
     deleted: boolean,
     created_at: Date,
     battery_status?: number | null
+    operationStatus?: number | null
 }

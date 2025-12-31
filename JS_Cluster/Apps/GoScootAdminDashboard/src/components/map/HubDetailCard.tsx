@@ -1,5 +1,5 @@
 import React from 'react';
-import { Hub } from '../../services/apiClient'; // Type definition for hub data
+import { Hub } from '../../services/ApiClient/apiClient'; // Type definition for hub data
 
 /**
  * Props for HubDetailCard component

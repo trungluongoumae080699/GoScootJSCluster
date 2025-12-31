@@ -4,9 +4,9 @@
  * Sends viewport updates when map moves and receives bike telemetry
  */
 
-import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { decodeBikeUpdates, decodeBinaryPayload } from '../utlities/BindaryDecoder';
-import { getSessionId } from './apiClient';
+import { BikeTelemetry, BikeUpdate } from '@trungthao/admin_dashboard_dto';
+import { decodeAlertBinary, decodeBikeUpdates, decodeBinaryPayload, decodeTelemetry } from '../utlities/BindaryDecoder';
+import { getSessionId } from './ApiClient/apiClient';
 import { Alert } from '../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts';
 
 /** WebSocket base URL from environment variables */
@@ -22,6 +22,7 @@ export interface ViewportBounds {
 
 /** WebSocket message types */
 export enum WSMessageType {
+  BIKE_TELEMETRY = 2,
   VIEWPORT_UPDATE = 0,
   BIKE_REQUEST = 1
 }
@@ -38,6 +39,8 @@ export type BikeUpdateCallback = (bikes: BikeUpdate[]) => void;
 export type ErrorCallback = (error: string) => void;
 
 export type AlertCallback = (alert: Alert) => void;
+
+export type BikeTelemetryCallback = (telemetry: BikeTelemetry) => void;
 
 /**
  * WebSocket Manager Class
@@ -77,6 +80,9 @@ export class WebSocketManager {
   /** Callback function to handle error messages */
   private onError: ErrorCallback | null = null;
 
+  /** Callback function to handle bike telemetry */
+  private onBikeTelemetry: BikeTelemetryCallback | null = null;
+
   /** Flag to prevent reconnection when user intentionally closes connection */
   private isIntentionallyClosed = false;
 
@@ -106,6 +112,10 @@ export class WebSocketManager {
 
   public setOnError(cb: ErrorCallback | null): void {
     this.onError = cb;
+  }
+
+  public setOnBikeTelemetry(cb: BikeTelemetryCallback | null): void {
+    this.onBikeTelemetry = cb;
   }
 
   /**
@@ -211,6 +221,19 @@ export class WebSocketManager {
           this.onBikeUpdate(bikeUpdates);
         }
       }
+      else if (protocol === 0) {
+        const alertData = decodeAlertBinary(payload);
+        if (this.onAlert) {
+          this.onAlert(alertData);
+        }
+      }
+
+      else if (protocol === 2) {
+        const telemetry = decodeTelemetry(payload);
+        if (this.onBikeTelemetry) {
+          this.onBikeTelemetry(telemetry);
+        }
+      }
       /*
       else if (protocol == 0){
         const alertData = new TextDecoder().decode(payload);
@@ -232,9 +255,25 @@ export class WebSocketManager {
         const { protocol, payload } = decodeBinaryPayload(bytes);
 
         if (protocol === 1) {
+          console.log('🚨 Received alert:');
           const bikeUpdates = decodeBikeUpdates(payload);
           console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
-          this.onBikeUpdate?.(bikeUpdates);
+          console.log(bikeUpdates);
+          if (this.onBikeUpdate) {
+            this.onBikeUpdate(bikeUpdates);
+          }
+        } else if (protocol === 0) {
+          const alertData = decodeAlertBinary(payload);
+          if (this.onAlert) {
+            this.onAlert(alertData);
+          }
+        }
+        else if (protocol === 2) {
+          console.log('🚨 Received telemetry:');
+          const telemetry = decodeTelemetry(payload);
+          if (this.onBikeTelemetry) {
+            this.onBikeTelemetry(telemetry);
+          }
         }
       });
       return;
@@ -384,6 +423,25 @@ export class WebSocketManager {
     this.ws.send(JSON.stringify(message));
     console.log('📤 Requested bike:', bikeId);
   }
+
+  requestBikeTelemetry(bikeId: string): void {
+    // Guard: Only send if connection is open
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket not open, cannot request bike telemetry');
+      return;
+    }
+
+    // Build bike telemetry request message
+    const message = {
+      msgType: WSMessageType.BIKE_TELEMETRY,
+      bike_id: bikeId
+    };
+
+    // Send as JSON string
+    this.ws.send(JSON.stringify(message));
+    console.log('📤 Requested bike telemetry:', bikeId);
+  }
+
 
   /**
    * Check if WebSocket is connected

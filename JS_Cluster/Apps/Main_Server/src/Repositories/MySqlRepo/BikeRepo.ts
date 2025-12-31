@@ -4,7 +4,7 @@ import { MobileAppBike } from "@trungthao/mobile_app_dto";
 import { RowDataPacket } from "mysql2";
 import { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
 
-
+const GROUP_LIMIT = 50;
 
 export async function getMobileAppBikesByHub(
   hubId: string
@@ -145,4 +145,136 @@ export async function getBikesByFilter(
     total,
     totalPages,
   };
+}
+
+
+export async function fetchBikesWithCount(
+  page: number,
+  ids?: string[],
+  search?: string
+): Promise<{ bikes: Bike[]; totalCount: number }> {
+  const safePage = Math.max(page, 1);
+  const offset = (safePage - 1) * GROUP_LIMIT;
+
+  const whereClauses: string[] = [];
+  const params: any[] = [];
+
+  if (ids?.length) {
+    whereClauses.push(`id IN (${ids.map(() => "?").join(",")})`);
+    params.push(...ids);
+  }
+
+  if (search?.trim()) {
+    whereClauses.push(`id LIKE ?`);
+    params.push(`%${search.trim()}%`);
+  }
+
+  const whereSql =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  // 1️⃣ total count (NO limit / offset)
+  const [countRows] = await pool.execute<CountRow[]>(
+    `SELECT COUNT(*) AS totalCount FROM bikes ${whereSql}`,
+    params
+  );
+
+  const totalCount = Number(countRows[0]?.totalCount ?? 0);
+
+  // 2️⃣ fetch exactly ONE GROUP (max 50)
+  const [rows] = await pool.execute<BikeRow[]>(
+    `
+    SELECT
+      id,
+      name,
+      status,
+      maximum_speed,
+      maximum_functional_distance,
+      purchase_date,
+      last_service_date,
+      current_hub,
+      deleted,
+      created_at
+    FROM bikes
+    ${whereSql}
+    ORDER BY id
+    LIMIT ${GROUP_LIMIT}
+    OFFSET ${offset}
+    `,
+    params
+  );
+
+  const bikes: Bike[] = rows.map((row) => ({
+    id: row.id,
+    name: row.name ?? "",
+    status: row.status,
+    maximum_speed: Number(row.maximum_speed),
+    maximum_functional_distance: Number(row.maximum_functional_distance),
+    purchase_date: Number(row.purchase_date),
+    last_service_date: Number(row.last_service_date),
+    current_hub: row.current_hub ?? null,
+    deleted: row.deleted === 1,
+    created_at: new Date(row.created_at),
+  }));
+
+  return { bikes, totalCount };
+}
+
+export async function fetchBikesNoCount(
+  page: number,
+  ids?: string[],
+  search?: string
+): Promise<Bike[]> {
+  const safePage = Math.max(page, 1);
+  const offset = (safePage - 1) * GROUP_LIMIT;
+
+  const whereClauses: string[] = [];
+  const params: any[] = [];
+
+  if (ids?.length) {
+    whereClauses.push(`id IN (${ids.map(() => "?").join(",")})`);
+    params.push(...ids);
+  }
+
+  if (search?.trim()) {
+    whereClauses.push(`id LIKE ?`);
+    params.push(`%${search.trim()}%`);
+  }
+
+  const whereSql =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  const [rows] = await pool.execute<BikeRow[]>(
+    `
+    SELECT
+      id,
+      name,
+      status,
+      maximum_speed,
+      maximum_functional_distance,
+      purchase_date,
+      last_service_date,
+      current_hub,
+      deleted,
+      created_at
+    FROM bikes
+    ${whereSql}
+    ORDER BY id
+    LIMIT ${GROUP_LIMIT}
+    OFFSET ${offset}
+    `,
+    params
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name ?? "",
+    status: row.status,
+    maximum_speed: Number(row.maximum_speed),
+    maximum_functional_distance: Number(row.maximum_functional_distance),
+    purchase_date: Number(row.purchase_date),
+    last_service_date: Number(row.last_service_date),
+    current_hub: row.current_hub ?? null,
+    deleted: row.deleted === 1,
+    created_at: new Date(row.created_at),
+  }));
 }
