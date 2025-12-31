@@ -415,7 +415,7 @@ export const fetchBikesController = async (
         ? (req.query.status as BikeStatus)
         : undefined;
     }
-
+    console.log(req.query.status)
   console.log(bikeStatus)
 
 
