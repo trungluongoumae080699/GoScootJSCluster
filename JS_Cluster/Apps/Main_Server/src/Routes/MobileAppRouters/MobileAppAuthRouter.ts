@@ -1,5 +1,5 @@
 import express, { Router, NextFunction, Request, Response } from "express";
-import { authenticateAdmin, formlessAuthenticateDashboard, authenticateCustomer, formlessAuthenticateCustomer, registerCustomer } from "../../Controllers/AuthenticationController.js";
+import {formlessAuthenticateDashboard, authenticateCustomer, formlessAuthenticateCustomer, registerCustomer } from "../../Controllers/AuthenticationController.js";
 import { CustomRequest } from "../../Middlewares/Authorization.js";
 import { authenticationRouter } from "../AuthenticationRouter.js";
 
