@@ -398,6 +398,7 @@ export const fetchBikesController = async (
 
     const batteryNum =
       req.query.battery?.trim() === "" ? undefined : Number(req.query.battery);
+    console.log("battery num", batteryNum)
 
     if (batteryNum !== undefined && !Number.isFinite(batteryNum)) {
       return res.status(400).json({ error: "battery must be a number" });
