@@ -416,6 +416,8 @@ export const fetchBikesController = async (
         : undefined;
     }
 
+  console.log(bikeStatus)
+
 
     if (batteryNum !== undefined && !Number.isFinite(batteryNum)) {
       return res.status(400).json({ error: "battery must be a number" });
