@@ -183,3 +183,51 @@ export const fetchBikeUpdates = async (
 
     return matched;
 };
+
+type TeleHash = Record<string, string>; // hGetAll result
+
+export async function fetchBikeUpdatesByIds(
+    redisClient: any,
+    bikeIds: string[],
+    batchSize = 200
+): Promise<Map<string, BikeUpdate>> {
+    const result = new Map<string, BikeUpdate>();
+    if (!bikeIds.length) return result;
+
+    for (let i = 0; i < bikeIds.length; i += batchSize) {
+        const chunk = bikeIds.slice(i, i + batchSize);
+
+        const multi = redisClient.multi();
+        for (const id of chunk) {
+            multi.hGetAll(`bike:${id}:telemetry`);
+        }
+
+        // node-redis v4: exec() trả array các results theo thứ tự
+        const replies: TeleHash[] = await multi.exec();
+
+        for (let j = 0; j < chunk.length; j++) {
+            const id = chunk[j];
+            const tele = replies[j];
+
+            if (!tele || Object.keys(tele).length === 0) continue;
+
+            const operationStatus = mapOperationStatus(tele.operation_state);
+            const usageStatus = mapBikeStatus(tele.usage_state);
+
+            // ✅ assert theo yêu cầu bạn
+            if (!operationStatus || !usageStatus) continue;
+
+            result.set(id, {
+                id,
+                battery_status: Number(tele.battery_status ?? "0"),
+                longitude: Number(tele.longitude ?? "0"),
+                latitude: Number(tele.latitude ?? "0"),
+                operationStatus,
+                usageStatus,
+                currentHub: tele.current_hub ?? null,
+            });
+        }
+    }
+
+    return result;
+}

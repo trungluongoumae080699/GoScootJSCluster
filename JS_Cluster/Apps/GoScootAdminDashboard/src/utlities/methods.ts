@@ -25,3 +25,19 @@ import { BikeStatus } from "@trungthao/admin_dashboard_dto";
         return status;
     }
   };
+
+  function timestampToDateInput(ts: number): string {
+  return new Date(ts).toISOString().slice(0, 10); // yyyy-mm-dd
+}
+
+export function dateToStartOfDay(dateStr: string): number {
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+export function dateToEndOfDay(dateStr: string): number {
+  const d = new Date(dateStr);
+  d.setHours(23, 59, 59, 999);
+  return d.getTime();
+}

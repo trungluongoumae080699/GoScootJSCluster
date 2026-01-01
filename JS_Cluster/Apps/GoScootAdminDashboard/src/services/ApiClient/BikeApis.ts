@@ -1,7 +1,8 @@
 import { Bike } from "@trungthao/admin_dashboard_dto";
-import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationList";
-import { BikeFilterPayload } from "../../context/BikeManagementContext";
+
 import { apiRequest } from "./apiClient";
+import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
+import { BikeFilterPayload } from "../../hooks/useBikeListing";
 
 /**
  * Bike API
@@ -17,11 +18,6 @@ export const bikeApi = {
 
     // ✅ your paging is "group start page" (1, 6, 11...)
     params.append("page", options.startPage.toString());
-
-    // ✅ only ask server for totalCount when needed
-    if (options.withTotalCount) {
-      params.append("withTotalCount", "true");
-    }
 
     // ✅ filters come from options.filter
     const { search, battery, operationStatus, status } = options.filter;

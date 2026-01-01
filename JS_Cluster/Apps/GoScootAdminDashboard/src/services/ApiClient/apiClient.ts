@@ -13,8 +13,6 @@ import type {
 } from "@trungthao/admin_dashboard_dto";
 
 import { getSessionId, clearAuth, getApiBaseUrl } from "../authService";
-import { FetchApiArgs, FetchResult, } from "../../hooks/usePaginationList";
-import { BikeFilterPayload } from "../../context/BikeManagementContext";
 import { UnauthenticatedException } from "../../models/Exceptions/ApiExceptions";
 
 // Re-export auth functions for backward compatibility

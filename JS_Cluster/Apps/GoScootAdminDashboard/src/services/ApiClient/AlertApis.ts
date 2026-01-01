@@ -1,32 +1,44 @@
-// /**
-//  * Alert API
-//  */
-// export const alertApi = {
-//   /**
-//    * Get all alerts
-//    * Returns Response_DashboardGetAlertsDTO with pagination
-//    */
-//   async getAllAlerts(page: number): Promise<Response_DashboardGetAlertsDTO> {
-//     const response = await apiRequest<Response_DashboardGetAlertsDTO>(
-//       `/dashboard/use/alerts?page=${page}`
-//     );
+import { Alert } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
+import { AlertFilterPayload } from "../../hooks/useAlertListing";
+import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
+import { apiRequest } from "./apiClient";
 
-//     return response;
-//   },
 
-//   /**
-//    * Get alerts for a specific bike
-//    * Note: Using the general alerts endpoint with bikeId filter
-//    */
-//   async getAlertsByBike(
-//     bikeId: string,
-//     page: number = 1,
-//     pageSize: number = 50
-//   ): Promise<Alert[]> {
-//     const response = await apiRequest<any>(
-//       `/dashboard/use/alerts?bikeId=${bikeId}&page=${page}&pageSize=${pageSize}`
-//     );
-//     // Extract alerts array from response
-//     return response.alerts || response;
-//   },
-// };
+/**
+ * Alert API
+ */
+export const alertApi = {
+  /**
+   * Get all alerts
+   * Returns Response_DashboardGetAlertsDTO with pagination
+   */
+
+
+    async getAlerts(options: FetchApiArgs<AlertFilterPayload>): Promise<FetchResult<Alert>> {
+      const params = new URLSearchParams();
+  
+      // ✅ your paging is "group start page" (1, 6, 11...)
+      params.append("page", options.startPage.toString());
+    
+      // ✅ filters come from options.filter
+      const { search, from, to } = options.filter;
+  
+    if (search?.trim()) params.append("search", search.trim());
+    if (from?.trim()) params.append("from", search.trim());
+    if (to?.trim()) params.append("to", search.trim());
+      
+  
+      const queryString = params.toString();
+      const endpoint = queryString
+        ? `/dashboard/use/bikes?${queryString}`
+        : "/dashboard/use/bikes";
+  
+      const response = await apiRequest<FetchResult<Alert>>(endpoint, {
+        signal: options.signal, // ✅ THIS is the key line
+      });
+      return response
+  
+    },
+
+
+};
