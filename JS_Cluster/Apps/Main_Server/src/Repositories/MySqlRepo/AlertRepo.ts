@@ -29,10 +29,9 @@ interface CountRow extends RowDataPacket {
 }
 
 export interface GetAlertsOptions {
-  bikeId?: string;          // optional if later you want per-bike alerts
+  search?: string;          // optional if later you want per-bike alerts
   from?: number;            // time >= from  (BIGINT)
   to?: number;              // time <= to    (BIGINT)
-  sortDirection?: SortDirection; // "asc" | "desc", default "desc" (latest first)
   page?: number;            // default: 1
   pageSize?: number;        // default: 10, max: 10
 }
@@ -57,10 +56,9 @@ export async function getAlerts(
   options: GetAlertsOptions = {}
 ): Promise<Response_DashboardGetAlertsDTO> {
   const {
-    bikeId,
+    search,
     from,
     to,
-    sortDirection = "desc",
     page = 1,
     pageSize = 10,
   } = options;
@@ -72,9 +70,9 @@ export async function getAlerts(
   const conditions: string[] = [];
   const params: any[] = [];
 
-  if (bikeId) {
+  if (search) {
     conditions.push("bike_id = ?");
-    params.push(bikeId);
+    params.push(search);
   }
 
   if (from !== undefined) {
@@ -125,7 +123,7 @@ export async function getAlerts(
       time
     FROM alerts
     ${whereClause}
-    ORDER BY time ${sortDirection === "asc" ? "ASC" : "DESC"}
+    ORDER BY time DESC
     LIMIT ? OFFSET ?
   `;
 

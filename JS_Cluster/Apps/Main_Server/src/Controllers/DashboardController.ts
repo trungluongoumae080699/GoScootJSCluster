@@ -233,7 +233,7 @@ export const fetchTelemetryByBike = async (
 
 
 type AlertQuery = {
-  bikeId?: string;
+  search?: string;
   from?: string;
   to?: string;
   sortDirection?: string; // "asc" | "desc"
@@ -245,7 +245,7 @@ export const fetchAlerts = async (
   response: Response
 ) => {
   try {
-    const { bikeId, from, to, sortDirection, page } = request.query;
+    const { search, from, to, sortDirection, page } = request.query;
 
     // ---- Parse and validate time filters ----
     let fromNum: number | undefined;
@@ -267,21 +267,14 @@ export const fetchAlerts = async (
       toNum = n;
     }
 
-    // ---- Parse sort direction ----
-    let sortDir: SortDirection = "desc"; // default: latest first
-    if (sortDirection === "asc" || sortDirection === "desc") {
-      sortDir = sortDirection;
-    }
-
     // ---- Parse page ----
     const pageNum = Math.max(Number(page) || 1, 1);
 
     // ---- Call repository ----
     const result = await getAlerts({
-      bikeId,
+      search,
       from: fromNum,
       to: toNum,
-      sortDirection: sortDir,
       page: pageNum,
       pageSize: 10, // enforce max 10 per your requirement
     });
