@@ -7,9 +7,11 @@ import "./Bikes.css";
 import type { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
 
 
-import { useBikeManagementContext, BikeFilterPayload } from "../../context/BikeManagementContext";
+import { useBikeManagementContext, BikeFilterPayload, BikeManagementContext } from "../../context/BikeManagementContext";
 import { usePaginationList } from "../../hooks/usePaginationList"; // path đúng dự án bạn
 import { bikeApi } from "../../services/ApiClient/BikeApis";
+import { useGlobalContext } from "../../context/GlobalContext";
+import Pagination from "../../components/module/pagination";
 
 const BIKE_TYPES = ["VINFAST EVO200", "VINFAST KLARA", "VINFAST VENTO"];
 
@@ -22,66 +24,71 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 export default function Bikes() {
   const navigate = useNavigate();
+  const globalContext = useGlobalContext()
 
   // ✅ shared state from context
-const {
-  bikeList,
-  setBikeList,
+  const {
+    bikeList,
+    setBikeList,
 
-  displayBikeList,
-  setDisplayBikeList,
+    displayBikeList,
+    setDisplayBikeList,
 
-  currentPage,
-  setCurrentPage,
+    currentPage,
+    setCurrentPage,
 
-  currentPageGroupIndexForFetch,   // RefObject<number>
-  prefetchedNextGroupRef,          // RefObject<PrefetchGroupPayload<Bike> | null>
+    currentPageGroupIndexForFetch,   // RefObject<number>
+    prefetchedNextGroupRef,          // RefObject<PrefetchGroupPayload<Bike> | null>
 
-  bikeCount,
-  setBikeCount,
+    bikeCount,
+    setBikeCount,
 
-  bikeFilterPayload,
-  setBikeFilterPayload,
+    bikeFilterPayload,
+    setBikeFilterPayload,
 
-  prevBikeFilterPayload,
-} = useBikeManagementContext();
+    prevBikeFilterPayload,
+  } = useBikeManagementContext();
 
 
 
-const {
-  isLoading,
-  totalPages,
-  applyFilters,
-  goToPage,
-} = usePaginationList<Bike, BikeFilterPayload>(
-  displayBikeList,
-  setDisplayBikeList,
+  const {
+    isLoading,
+    totalPages,
+    applyFilters,
+    goToPage,
+  } = usePaginationList<Bike, BikeFilterPayload>(
+    displayBikeList,
+    setDisplayBikeList,
 
-  bikeList,
-  setBikeList,
+    bikeList,
+    setBikeList,
 
-  prefetchedNextGroupRef,
+    prefetchedNextGroupRef,
 
-  currentPage,
-  setCurrentPage,
+    currentPage,
+    setCurrentPage,
 
-  currentPageGroupIndexForFetch,
+    currentPageGroupIndexForFetch,
 
-  bikeCount,
-  setBikeCount,
+    bikeCount,
+    setBikeCount,
 
-  bikeFilterPayload,
-  setBikeFilterPayload,
+    bikeFilterPayload,
+    setBikeFilterPayload,
 
-  prevBikeFilterPayload,
+    prevBikeFilterPayload,
 
-  bikeApi.getBikes
-);
+    bikeApi.getBikes
+  );
 
-useEffect(() => {
-  applyFilters(); // fetch group 0 + set display list
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  useEffect(() => {
+    setBikeCount(globalContext.bikeCount)
+  }, [])
+
+  useEffect(() => {
+    applyFilters(); // fetch group 0 + set display list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pageInputRef = useRef<string>("");
 
@@ -113,10 +120,6 @@ useEffect(() => {
     }
   };
 
-  const availableCountOnPage = useMemo(() => {
-    return displayBikeList.filter((b) => b.status === "Idle").length;
-  }, [displayBikeList]);
-
   return (
     <div className="bike-details-container">
       <Header title="Bikes" />
@@ -124,13 +127,13 @@ useEffect(() => {
         {/* <Sidebar /> */}
         <div className="content-area bikes-content">
           {/* Stats */}
+
+          {/* Pagination */}
           <div className="bikes-stats">
             <p>Total: {bikeCount || 0}</p>
-            <p>Available (on page): {availableCountOnPage}</p>
+            <p>Displayed (on page): {displayBikeList.length}</p>
 
-            <button className="refresh-btn" onClick={applyFilters} disabled={isLoading} title="Apply filters & fetch group 0">
-              ✅ Apply
-            </button>
+
 
             {isLoading && (
               <span className="background-loading-indicator">
@@ -176,6 +179,15 @@ useEffect(() => {
                 ))}
               </select>
             </div>
+
+            <button className="refresh-btn" onClick={applyFilters} disabled={isLoading} title="Apply filters & fetch group 0">
+              ✅ Apply
+            </button>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              goToPage={goToPage}>
+            </Pagination>
           </div>
 
           {/* Table */}
@@ -210,57 +222,7 @@ useEffect(() => {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="pagination">
-            <button className="pagination-btn" onClick={() => goToPage(1)} disabled={currentPage === 1} title="First page">
-              «
-            </button>
-            <button
-              className="pagination-btn"
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              title="Previous page"
-            >
-              ‹
-            </button>
 
-            <span className="pagination-info">
-              Page{" "}
-              <input
-                type="text"
-                defaultValue={String(currentPage)}
-                onChange={(e) => (pageInputRef.current = e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  const page = parseInt(pageInputRef.current, 10);
-                  if (!isNaN(page)) goToPage(page);
-                }}
-                className="page-input"
-                title="Enter page number and press Enter"
-              />{" "}
-              of {Number.isFinite(totalPages) ? totalPages : "?"}
-            </span>
-
-            <button
-              className="pagination-btn"
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={Number.isFinite(totalPages) ? currentPage === totalPages : false}
-              title="Next page"
-            >
-              ›
-            </button>
-
-            <button
-              className="pagination-btn"
-              onClick={() => Number.isFinite(totalPages) && goToPage(totalPages)}
-              disabled={!Number.isFinite(totalPages) || currentPage === totalPages}
-              title="Last page"
-            >
-              »
-            </button>
-
-            <span className="total-bikes">({bikeCount || 0} bikes)</span>
-          </div>
         </div>
       </div>
     </div>

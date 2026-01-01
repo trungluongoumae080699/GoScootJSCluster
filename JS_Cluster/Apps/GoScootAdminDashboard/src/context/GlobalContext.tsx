@@ -24,6 +24,8 @@ export type GlobalContextType = {
     setIsCheckingAuth: Dispatch<SetStateAction<boolean>>;
     currentPage: WebScreen;
     setCurrentPage: Dispatch<SetStateAction<WebScreen>>;
+    bikeCount: number,
+    setBikeCount: Dispatch<SetStateAction<number>>
     
     
 };
@@ -38,6 +40,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     const [isAuth, setIsAuth] = useState<boolean>(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<WebScreen>(WebScreen.DASHBOARD);
+    const [bikeCount, setBikeCount] = useState<number>(0)
     const [selectedBikeLocation, setSelectedBikeLocation] = useState<
     [number, number] | null
   >(null);
@@ -57,6 +60,8 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
                 setIsCheckingAuth,
                 currentPage,
                 setCurrentPage,
+                bikeCount,
+                setBikeCount
             }}
         >
             {children}

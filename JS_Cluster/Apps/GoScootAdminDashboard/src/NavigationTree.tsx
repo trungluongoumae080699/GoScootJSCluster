@@ -54,6 +54,8 @@ export default function Root() {
         console.log("Sent Log In Request")
         if (response) {
           console.log("Use has been authenticated")
+          globalContext.setAlertCount(response.totalAlerts)
+          globalContext.setBikeCount(response.totalBikes)
           globalContext.setIsAuth(true);
         } else {
           console.log("User has not been authenticated")
