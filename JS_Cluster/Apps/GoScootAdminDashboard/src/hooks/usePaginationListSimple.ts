@@ -40,6 +40,7 @@ export function usePaginationList<T, F>(
     useEffect(() => {
         const execute = async () => {
             if (isLoading) {
+                console.log("Fetching...")
                 abortRef.current?.abort();
                 const controller = new AbortController();
                 abortRef.current = controller;

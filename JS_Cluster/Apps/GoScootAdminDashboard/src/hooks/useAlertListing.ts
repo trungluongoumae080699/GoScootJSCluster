@@ -14,7 +14,6 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
 
   // ✅ this MUST be an array because your pagination hook expects T[]
   const [displayList, setDisplayList] = useState<Alert[]>([]);
-
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);

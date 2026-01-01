@@ -279,7 +279,10 @@ export const fetchAlerts = async (
       pageSize: 10, // enforce max 10 per your requirement
     });
 
-    return response.json(result);
+    return response.json({
+      data: result.alerts,
+      totalCount: result.total
+    });
   } catch (err) {
     console.error("fetchAlerts error:", err);
     return response.status(500).json({ error: "Internal server error" });

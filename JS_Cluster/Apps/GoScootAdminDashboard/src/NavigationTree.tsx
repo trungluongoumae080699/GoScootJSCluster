@@ -8,6 +8,7 @@ import SignUp from "./screens/SignUp";
 import { websocketManager } from "./services/websocketService";
 import { formlessSignIn } from "./services/authService";
 import { BikeManagementContextProvider } from "./context/BikeManagementContext";
+import Alert from "./screens/Alert";
 
 
 
@@ -126,7 +127,7 @@ export default function Root() {
           }
         /> */}
         <Route
-          path="/"
+          path="/bikes"
           element={
             <BikeManagementContextProvider>
               <Bikes />
@@ -165,14 +166,14 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        {/*         <Route
-          path="/alert"
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <Alert />
             </ProtectedRoute>
           }
-        /> */}
+        /> 
       </Routes>
     </>
   );

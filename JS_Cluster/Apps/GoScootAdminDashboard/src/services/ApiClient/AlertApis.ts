@@ -30,8 +30,8 @@ export const alertApi = {
   
       const queryString = params.toString();
       const endpoint = queryString
-        ? `/dashboard/use/bikes?${queryString}`
-        : "/dashboard/use/bikes";
+        ? `/dashboard/use/alerts?${queryString}`
+        : "/dashboard/use/alerts";
   
       const response = await apiRequest<FetchResult<Alert>>(endpoint, {
         signal: options.signal, // ✅ THIS is the key line
