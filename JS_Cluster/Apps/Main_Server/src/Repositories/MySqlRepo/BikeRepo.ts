@@ -6,6 +6,38 @@ import { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
 
 const GROUP_LIMIT = 50;
 
+export async function getBikeMetadata(
+  ids?: string[],
+  search?: string
+): Promise<number> {
+  const whereClauses: string[] = ["deleted = 0"];
+  const params: any[] = [];
+
+  if (ids?.length) {
+    whereClauses.push(`id IN (${ids.map(() => "?").join(",")})`);
+    params.push(...ids);
+  }
+
+  if (search?.trim()) {
+    whereClauses.push(`id LIKE ?`);
+    params.push(`%${search.trim()}%`);
+  }
+
+  const whereSql =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `
+    SELECT COUNT(*) AS totalCount
+    FROM bikes
+    ${whereSql}
+    `,
+    params
+  );
+
+  return Number(rows[0]?.totalCount ?? 0)
+}
+
 export async function getMobileAppBikesByHub(
   hubId: string
 ): Promise<MobileAppBike[]> {
@@ -22,8 +54,6 @@ export async function getMobileAppBikesByHub(
   const [rows] = await pool.query<(RowDataPacket & MobileAppBike)[]>(sql, [hubId]);
   return rows;
 }
-
-
 
 // Kiểu row lấy từ MySQL
 interface BikeRow extends RowDataPacket {

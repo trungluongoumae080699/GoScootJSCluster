@@ -12,6 +12,7 @@ import type {
   Response_DashboardLogInDTO,
   DashboardStaff,
 } from '@trungthao/admin_dashboard_dto';
+import { UnauthenticatedException } from '../models/Exceptions/ApiExceptions';
 
 /** Storage keys */
 const SESSION_KEY = 'goscoot_session_id';
@@ -155,18 +156,12 @@ export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Re
  * This should be called on app load to check if the user has a valid session
  */
 export async function formlessSignIn(): Promise<Response_DashboardLogInDTO | null> {
-  const sessionId = getSessionId();
-  
-  if (!sessionId) {
-    return null;
-  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/dashboard/auth/signIn/session`, {
       method: 'GET',
       credentials: "include",
       headers: {
-        'authorization': sessionId,
         'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
       },
     });
@@ -174,9 +169,7 @@ export async function formlessSignIn(): Promise<Response_DashboardLogInDTO | nul
     if (!response.ok) {
       // Session is invalid or expired
       if (response.status === 401) {
-        console.log('⚠️ Session expired, clearing stored credentials');
-        clearAuth();
-        return null;
+        throw new UnauthenticatedException("Session expired. Please log in again.");
       }
       throw new Error(`Formless sign in failed: ${response.status}`);
     }

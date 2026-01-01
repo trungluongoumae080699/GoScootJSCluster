@@ -38,6 +38,15 @@ export interface GetAlertsOptions {
 }
 
 
+export async function getAlertMetadata(): Promise<number> {
+  const [rows] = await pool.execute<CountRow[]>(
+    `SELECT COUNT(*) AS total FROM alerts`
+  );
+
+  return Number(rows[0]?.total ?? 0)
+}
+
+
 
 /**
  * Returns a paginated list of alerts (max 10 per page),

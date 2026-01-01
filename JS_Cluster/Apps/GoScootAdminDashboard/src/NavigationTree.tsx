@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import ToastContainer from "./components/alert/Toast";
 import { useGlobalContext, WebScreen } from "./context/GlobalContext";
 import Bikes from "./screens/BikeMangement/Bikes";
@@ -29,9 +29,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
  */
 export default function Root() {
-  const globalContext = useGlobalContext();
 
-  // If you still need these (you had them before)
+
+  const globalContext = useGlobalContext();
+  const navigate = useNavigate();
+
+  const handleNavigate = (page: WebScreen, bikeLocation?: [number, number]) => {
+
+    // if you actually use these somewhere, keep them;
+    // otherwise you can remove
+    globalContext.setCurrentPage(page);
+    //if (bikeLocation) setSelectedBikeLocation(bikeLocation);
+    // you had currentPage too; remove unless you use it
+  };
+
 
 
   useEffect(() => {
@@ -40,13 +51,16 @@ export default function Root() {
         console.log("Loggin In.....")
         // Try formless sign-in if session ID exists
         const response = await formlessSignIn();
-
+        console.log("Sent Log In Request")
         if (response) {
+          console.log("Use has been authenticated")
           globalContext.setIsAuth(true);
         } else {
+          console.log("User has not been authenticated")
           globalContext.setIsAuth(false);
         }
-      } catch (error) {
+      }
+      catch (error) {
         globalContext.setIsAuth(false);
       } finally {
         globalContext.setIsCheckingAuth(false);
@@ -57,6 +71,11 @@ export default function Root() {
 
   }, []);
 
+  useEffect(() => {
+    if (!globalContext.isAuth) {
+       navigate("/login", { replace: true });
+    }
+  }, [globalContext.isAuth])
 
   useEffect(() => {
     if (!globalContext.isAuth) return;
@@ -64,14 +83,8 @@ export default function Root() {
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
 
-  const handleNavigate = (page: WebScreen, bikeLocation?: [number, number]) => {
 
-    // if you actually use these somewhere, keep them;
-    // otherwise you can remove
-    globalContext.setCurrentPage(page);
-    //if (bikeLocation) setSelectedBikeLocation(bikeLocation);
-    // you had currentPage too; remove unless you use it
-  };
+
 
   if (globalContext.isCheckingAuth) {
     return (
@@ -91,7 +104,7 @@ export default function Root() {
   }
 
   return (
-    <Router>
+    <>
       <ToastContainer />
       <Routes>
         {/* Public routes */}
@@ -159,6 +172,6 @@ export default function Root() {
           }
         /> */}
       </Routes>
-    </Router>
+    </>
   );
 }

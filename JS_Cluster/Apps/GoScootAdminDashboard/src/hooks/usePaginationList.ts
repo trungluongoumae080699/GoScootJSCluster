@@ -1,6 +1,8 @@
 
 import { Dispatch, MutableRefObject, RefObject, SetStateAction, useCallback, useMemo, useRef, useState } from "react";
 import { BikeFilterPayload } from "../context/BikeManagementContext";
+import { UnauthenticatedException } from "../models/Exceptions/ApiExceptions";
+import { useGlobalContext } from "../context/GlobalContext";
 
 export type PrefetchGroupPayload<T> = {
     data: T[];
@@ -35,6 +37,7 @@ export function usePaginationList<T, F>(
     prevFilterPayload: RefObject<F>,
     fetchApi: (args: FetchApiArgs<F>) => Promise<FetchResult<T>>
 ) {
+    const globalContext = useGlobalContext()
     const ITEMS_PER_PAGE = 10;
     const PAGES_PER_GROUP = 5;
 
@@ -49,10 +52,14 @@ export function usePaginationList<T, F>(
         const controller = new AbortController();
         abortRef.current = controller;
 
-        return fetchApi({
+        const result = await fetchApi({
             ...args,
             signal: controller.signal,
+
         });
+        return result
+
+
     };
 
     const totalPages = useMemo(() => {
@@ -89,13 +96,19 @@ export function usePaginationList<T, F>(
             // already prefetched
             if (prefetchList.current?.group === nextGroup) return;
 
-            const res = await fetchGroup({
-                startPage: nextStartPage,
-                withTotalCount: false,
-                filter: filterPayload,
-            });
+            try {
+                const res = await fetchGroup({
+                    startPage: nextStartPage,
+                    withTotalCount: false,
+                    filter: filterPayload,
+                });
+                prefetchList.current = { group: nextGroup, data: res.data };
+            } catch (err) {
+                if (err instanceof UnauthenticatedException) {
+                    globalContext.setIsAuth(false)
+                }
+            }
 
-            prefetchList.current = { group: nextGroup, data: res.data };
         },
         [fetchApi, filterPayload, prefetchList, totalPages]
     );
@@ -115,21 +128,31 @@ export function usePaginationList<T, F>(
         currentGroupIndex.current = 0;
         setCurrentPage(1);
 
-        const res = await fetchGroup({
-            startPage: 1,
-            withTotalCount: changed,
-            filter: filterPayload,
-        });
-        console.log(res)
+        try {
+            const res = await fetchGroup({
+                startPage: 1,
+                withTotalCount: changed,
+                filter: filterPayload,
+            });
+            console.log(res)
+            setList(res.data);
+            slicePageFromGroupList(1, res.data, 1);
 
-        setList(res.data);
-        slicePageFromGroupList(1, res.data, 1);
+            if (changed && typeof res.totalCount === "number") {
+                setTotalCount(res.totalCount);
+            }
 
-        if (changed && typeof res.totalCount === "number") {
-            setTotalCount(res.totalCount);
+
+        } catch (err) {
+            if (err instanceof UnauthenticatedException) {
+                globalContext.setIsAuth(false)
+            }
+        } finally {
+            setIsLoading(false);
         }
 
-        setIsLoading(false);
+
+
     }, [
         fetchApi,
         filterPayload,
@@ -178,23 +201,27 @@ export function usePaginationList<T, F>(
                 return;
             }
 
-            // otherwise fetch that group
-            const res = await fetchGroup({
-                startPage: getGroupStartPage(targetGroup),
-                withTotalCount: false,
-                filter: filterPayload,
-            });
+            try {
+                const res = await fetchGroup({
+                    startPage: getGroupStartPage(targetGroup),
+                    withTotalCount: false,
+                    filter: filterPayload,
+                });
 
-            setList(res.data);
-            setCurrentPage(page);
-            slicePageFromGroupList(page, res.data, firstPageOfTargetGroup);
+                setList(res.data);
+                setCurrentPage(page);
+                slicePageFromGroupList(page, res.data, firstPageOfTargetGroup);
+                currentGroupIndex.current = targetGroup;
+                prefetchList.current = null;
+                setIsLoading(false);
+                await maybePrefetchNextGroup(page, targetGroup);
+            } catch (err) {
+                if (err instanceof UnauthenticatedException) {
+                    globalContext.setIsAuth(false)
+                }
+            }
 
-            currentGroupIndex.current = targetGroup;
-            prefetchList.current = null;
 
-            setIsLoading(false);
-
-            await maybePrefetchNextGroup(page, targetGroup);
         },
         [
             totalPages,

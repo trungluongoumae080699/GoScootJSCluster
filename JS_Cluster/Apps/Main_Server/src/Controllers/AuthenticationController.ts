@@ -33,6 +33,8 @@ import {
 import { createTempUser, rotatePassword } from "../Repositories/mqttRepo/mqttDynamicSecurity.js";
 import { Staff } from "../Models/Staff.js";
 import { error } from "console";
+import { getBikeMetadata } from "../Repositories/MySqlRepo/BikeRepo.js";
+import { getAlertMetadata } from "../Repositories/MySqlRepo/AlertRepo.js";
 
 export const authenticateCustomer = async (
   request: CustomRequest<{}, {}, Request_MobileAppLogInDTO>,
@@ -300,7 +302,8 @@ export const authenticateAdminSecured = async (
     maxAge: sessionObject.validPeriod,
   });
 
-
+    const totalBikes = await getBikeMetadata()
+  const totalAlerts = await getAlertMetadata()
 
   // 4) Response body: only non-sensitive data
   const responseObject = {
@@ -309,6 +312,8 @@ export const authenticateAdminSecured = async (
       full_name: user.full_name,
       email: user.email,
     },
+    totalBikes: totalBikes,
+    totalAlerts: totalAlerts
   };
 
   return response.status(200).json(responseObject);
@@ -358,6 +363,9 @@ export const formlessAuthenticateDashboard = async (
     });
   }
 
+  const totalBikes = await getBikeMetadata()
+  const totalAlerts = await getAlertMetadata()
+
   // 7️⃣ Trả response KHÔNG chứa secret
   const res: Response_DashboardLogInDTO = {
     staffProfile: {
@@ -365,6 +373,8 @@ export const formlessAuthenticateDashboard = async (
       full_name: user.full_name,
       email: user.email,
     },
+    totalBikes: totalBikes,
+    totalAlerts: totalAlerts
   };
 
   return response.status(200).json(res);

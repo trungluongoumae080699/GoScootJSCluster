@@ -15,6 +15,7 @@ import type {
 import { getSessionId, clearAuth, getApiBaseUrl } from "../authService";
 import { FetchApiArgs, FetchResult, } from "../../hooks/usePaginationList";
 import { BikeFilterPayload } from "../../context/BikeManagementContext";
+import { UnauthenticatedException } from "../../models/Exceptions/ApiExceptions";
 
 // Re-export auth functions for backward compatibility
 export { getSessionId, clearAuth as clearSession } from "../authService";
@@ -81,7 +82,7 @@ const API_BASE_URL = getApiBaseUrl();
  */
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: RequestInit = {}
   //requiresAuth: boolean = true
 ): Promise<T> {
   const headers: Record<string, string> = {
@@ -102,8 +103,7 @@ export async function apiRequest<T>(
 
   // Handle 401 Unauthorized - session expired
   if (response.status === 401) {
-    clearAuth();
-    throw new Error("Session expired. Please log in again.");
+    throw new UnauthenticatedException("Session expired. Please log in again.");
   }
 
   if (!response.ok) {
@@ -175,42 +175,43 @@ function addMockBatteryToBikes(bikes: Bike[]): Bike[] {
 /**
  * Hub API
  */
-export const hubApi = {
-  /**
-   * Get hubs in a specific area
-   */
-  async getHubsInArea(bounds: GetHubsOptions): Promise<HubsResponse> {
-    const params = new URLSearchParams();
 
-    if (bounds.maxLong !== undefined) {
-      params.append('maxLong', bounds.maxLong.toString());
-    }
-    if (bounds.minLong !== undefined) {
-      params.append('minLong', bounds.minLong.toString());
-    }
-    if (bounds.maxLat !== undefined) {
-      params.append('maxLat', bounds.maxLat.toString());
-    }
-    if (bounds.minLat !== undefined) {
-      params.append('minLat', bounds.minLat.toString());
-    }
+// export const hubApi = {
+//   /**
+//    * Get hubs in a specific area
+//    */
+//   async getHubsInArea(bounds: GetHubsOptions): Promise<HubsResponse> {
+//     const params = new URLSearchParams();
 
-    const queryString = params.toString();
-    const endpoint = queryString ? `/dashboard/use/hubs?${queryString}` : '/dashboard/use/hubs';
+//     if (bounds.maxLong !== undefined) {
+//       params.append('maxLong', bounds.maxLong.toString());
+//     }
+//     if (bounds.minLong !== undefined) {
+//       params.append('minLong', bounds.minLong.toString());
+//     }
+//     if (bounds.maxLat !== undefined) {
+//       params.append('maxLat', bounds.maxLat.toString());
+//     }
+//     if (bounds.minLat !== undefined) {
+//       params.append('minLat', bounds.minLat.toString());
+//     }
 
-    return apiRequest<HubsResponse>(endpoint);
-  },
+//     const queryString = params.toString();
+//     const endpoint = queryString ? `/dashboard/use/hubs?${queryString}` : '/dashboard/use/hubs';
 
-  /**
-   * Get bikes in a specific hub
-   */
+//     return apiRequest<HubsResponse>(endpoint);
+//   },
+
+//   /**
+//    * Get bikes in a specific hub
+//    */
   
-  /*
-  async getBikesInHub(hubId: string): Promise<BikesResponse> {
-    // Use the regular bikes endpoint with hub filter parameter
-    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
-    return bikeApi.getBikes({ hub: hubId });
-  },
-  */
+//   /*
+//   async getBikesInHub(hubId: string): Promise<BikesResponse> {
+//     // Use the regular bikes endpoint with hub filter parameter
+//     console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
+//     return bikeApi.getBikes({ hub: hubId });
+//   },
+//   */
   
-};
+// };
