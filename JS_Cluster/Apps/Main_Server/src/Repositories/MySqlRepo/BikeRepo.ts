@@ -140,7 +140,7 @@ export async function fetchBikesWithCount(
     FROM bikes
     ${whereSql}
     ORDER BY id
-    LIMIT ${GROUP_LIMIT}
+    LIMIT ${limit}
     OFFSET ${offset}
     `,
     params

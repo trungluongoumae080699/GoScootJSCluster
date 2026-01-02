@@ -222,9 +222,6 @@ export async function fetchBikeUpdatesByIds(
             const operationStatus = mapOperationStatus(tele.operation_state);
             const usageStatus = tele.usage_state as BikeStatus
 
-            // ✅ assert theo yêu cầu bạn
-            if (!operationStatus || !usageStatus) continue;
-
             result.set(id, {
                 id,
                 battery_status: Number(tele.battery_status ?? "0"),
@@ -253,12 +250,7 @@ export async function fetchBikeUpdateById(
     if (!tele || Object.keys(tele).length === 0) {
         return null;
     }
-
-
     const usageStatus = tele.usage_state as BikeStatus;
-
-
-
     return {
         id: bikeId,
         battery_status: Number(tele.battery_status ?? "0"),

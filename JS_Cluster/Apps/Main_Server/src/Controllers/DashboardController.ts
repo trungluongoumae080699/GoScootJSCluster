@@ -382,7 +382,7 @@ export const fetchBikesController = async (
         b.isCrashed = tele.isCrashed;
         b.isToppled = tele.isToppled
         b.status = tele.usageStatus;
-        b.latitude = tele.longitude;
+        b.longitude = tele.longitude;
         b.latitude = tele.latitude
 
       }
@@ -412,7 +412,7 @@ export const fetchBikeById = async (
         bike.isCrashed = bikeUpdate.isCrashed;
         bike.isToppled = bikeUpdate.isToppled
         bike.status = bikeUpdate.usageStatus;
-        bike.latitude = bikeUpdate.longitude;
+        bike.longitude = bikeUpdate.longitude;
         bike.latitude = bikeUpdate.latitude
       }
 
