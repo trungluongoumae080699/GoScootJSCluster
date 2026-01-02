@@ -10,9 +10,6 @@ import Input, { Option } from "../../components/module/Input";
 import { formatDate } from "../../utlities/convert";
 import { tripApi } from "../../services/ApiClient/TripApis";
 
-
-const PAGE_SIZE = 10;
-
 const TRIP_STATUS_OPTION: Option[] = [
     { value: "", label: "Tất Cả" },
     { value: TripStatus.PENDING, label: "Đang Chờ" },

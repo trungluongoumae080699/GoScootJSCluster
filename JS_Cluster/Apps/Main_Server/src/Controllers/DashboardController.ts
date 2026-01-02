@@ -90,7 +90,7 @@ export interface GetTripsOptions {
 
 export const fetchTrips = async (
   request: CustomRequest<
-    { bikeId: string }, // params
+    {},
     {}, // body
     {}, // headers
     {
@@ -140,7 +140,7 @@ export const fetchTrips = async (
 
   const result = await getTrips(options);
 
-  return response.json(result);
+  return response.json({data: result.trips, totalCount: result.total});
 };
 
 export type BikeTelemetrySortField = "time";
