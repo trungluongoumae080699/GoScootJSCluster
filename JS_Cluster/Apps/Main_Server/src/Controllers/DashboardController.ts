@@ -323,7 +323,6 @@ export const fetchBikesController = async (
       return res.status(400).json({ error: "battery must be a number" });
     }
 
-
     // ✅ nếu có filter liên quan telemetry => lấy IDs từ Redis trước
     const needsRedisFilter =
       batteryNum !== undefined || operationStatus !== undefined || bikeStatus !== undefined;
@@ -369,7 +368,7 @@ export const fetchBikesController = async (
     else {
       const ids = bikes.map(b => b.id);
       const telemetryMap = await fetchBikeUpdatesByIds(redisClient, ids);
-
+      console.log(telemetryMap)
       for (const b of bikes) {
         const tele = telemetryMap.get(b.id);
         if (!tele) continue;
