@@ -34,13 +34,14 @@ export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>)
   // you should update this ref when Apply is pressed (see below).
   const prevFilterPayload = useRef<BikeFilterPayload>(filterPayload);
 
-  const { resetFilter, applyFilters, goToPage } = usePaginationList<Bike, BikeFilterPayload>(
+  const { totalPages, resetFilter, applyFilters, goToPage } = usePaginationList<Bike, BikeFilterPayload>(
     displayList,
     setDisplayList,
     isLoading,
     setIsLoading,
     currentPage,
     setCurrentPage,
+    totalCount,
     setTotalCount,
     filterPayload,
     setFilterPayload,
@@ -53,6 +54,7 @@ export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>)
     // state
     isLoading,
     displayList,
+    totalPages,
     totalCount,
     currentPage,
     // actions

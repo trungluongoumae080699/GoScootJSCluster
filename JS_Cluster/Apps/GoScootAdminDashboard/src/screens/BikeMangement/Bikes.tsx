@@ -7,6 +7,7 @@ import Pagination from "../../components/module/pagination";
 import { useBikeListing } from "../../hooks/PageHooks/useBikeListing";
 import { bikeApi } from "../../services/ApiClient/BikeApis";
 import Input, { Option } from "../../components/module/Input";
+import { BikeManagementContext, useBikeManagementContext } from "../../context/BikeManagementContext";
 
 
 const STATUS_OPTIONS: Option[] = [
@@ -19,6 +20,7 @@ const STATUS_OPTIONS: Option[] = [
 export default function Bikes() {
   const navigate = useNavigate();
   const globalContext = useGlobalContext()
+  const bikeManagementContext = useBikeManagementContext()
 
   useEffect(() => {
     globalContext.setCurrentHeader("Bikes")
@@ -35,6 +37,7 @@ export default function Bikes() {
     // actions
     applyFilters, // use snapshot version
     resetFilter,
+    totalPages,
     goToPage,
     // filters
     filterPayload,
@@ -163,7 +166,12 @@ export default function Bikes() {
               {displayList.map((bike) => (
                 <tr
                   key={bike.id}
-                  onClick={() => handleBikeClick(bike.id)}
+                  onClick={
+                    () => {
+                  
+                      bikeManagementContext.setCurrentBike(bike)
+                      navigate("/bike")
+                  }}
                   className={bike.status === "Inused" ? "row-highlighted" : ""}
                 >
                   <td className="vin-cell">{bike.id}</td>
@@ -181,6 +189,7 @@ export default function Bikes() {
         </div>
 
         <Pagination
+          totalPages={totalPages}
           currentPage={currentPage}
           totalItems={totalCount}
           goToPage={goToPage}>

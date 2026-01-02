@@ -30,6 +30,7 @@ export default function Alerts() {
         isLoading,
         displayList,
         totalCount,
+        totalPages,
         currentPage,
         // actions
         applyFilters, // use snapshot version
@@ -150,10 +151,11 @@ export default function Alerts() {
                     ))}
 
                     <Pagination
-                        currentPage={currentPage}
-                        totalItems={totalCount}
-                        goToPage={goToPage}>
-                    </Pagination>
+                              totalPages={totalPages}
+                              currentPage={currentPage}
+                              totalItems={totalCount}
+                              goToPage={goToPage}>
+                            </Pagination>
 
 
                 </div>

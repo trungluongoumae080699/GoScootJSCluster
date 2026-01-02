@@ -11,6 +11,7 @@ import { dateToEndOfDay, dateToStartOfDay } from '../../utlities/methods';
 import { formatDate } from '../../utlities/convert';
 import { useState } from 'react';
 import Pagination from '../module/pagination';
+import "./TripTable.css"
 
 type TripsTableProps = {
   bike: Bike,
@@ -25,6 +26,7 @@ function TripsTable({
     isLoading,
     displayList,
     totalCount,
+    totalPages,
     currentPage,
     // actions
     applyFilters, // use snapshot version
@@ -85,85 +87,60 @@ function TripsTable({
           </div>
         </div>
       </div>
-      <table className="trips-table">
-        <thead>
-          <tr>
-            <th>Customer ID</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayList.length > 0 ? (
-            displayList.map((trip) => {
-              const hasLocation = trip.trip_end_long != null && trip.trip_end_lat != null;
-              return (
-                <tr
-                  key={trip.id}
-                  className={`${selectedTrip?.id === trip.id ? 'selected' : ''} ${!hasLocation ? 'no-location' : ''}`}
-                  onClick={
-                    () => {
-                      onSelectTrip(trip)
-                      selectTrip(trip)
-                    }
-
-                  }
-                  title={hasLocation ? 'Click to view trip end location' : 'No location data available'}
-                >
-                  <td>{trip.customer_id}</td>
-                  <td>
-                    <span className={`trip-status ${trip.trip_status?.toLowerCase()}`}>
-                      {trip.trip_status}
-                    </span>
-                  </td>
-                  <td>{formatDate(trip.reservation_date)}</td>
-                </tr>
-              );
-            })
-          ) : (
+      <div className="trip-table-wrapper">
+        <table className="trips-table">
+          <thead>
             <tr>
-              <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
-                No trips found
-              </td>
+              <th>Customer ID</th>
+              <th>Status</th>
+              <th>Date</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {displayList.length > 0 ? (
+              displayList.map((trip) => {
+                const hasLocation = trip.trip_end_long != null && trip.trip_end_lat != null;
+                return (
+                  <tr
+                    key={trip.id}
+                    className={`${selectedTrip?.id === trip.id ? 'selected' : ''} ${!hasLocation ? 'no-location' : ''}`}
+                    onClick={
+                      () => {
+                        onSelectTrip(trip)
+                        selectTrip(trip)
+                      }
 
-              <Pagination
-                currentPage={currentPage}
-                totalItems={totalCount}
-                goToPage={goToPage}>
-              </Pagination>
-      
+                    }
+                    title={hasLocation ? 'Click to view trip end location' : 'No location data available'}
+                  >
+                    <td>{trip.customer_id}</td>
+                    <td>
+                      <span className={`trip-status ${trip.trip_status?.toLowerCase()}`}>
+                        {trip.trip_status}
+                      </span>
+                    </td>
+                    <td>{formatDate(trip.reservation_date)}</td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
+                  No trips found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
 
-
-      {/*
-              {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="pagination-btn"
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            aria-label="Previous page"
-          >
-            ◀
-          </button>
-          <span className="pagination-info">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            className="pagination-btn"
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages}
-            aria-label="Next page"
-          >
-            ▶
-          </button>
-        </div>
-      )}
-      */}
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}>
+      </Pagination>
 
     </div>
   );

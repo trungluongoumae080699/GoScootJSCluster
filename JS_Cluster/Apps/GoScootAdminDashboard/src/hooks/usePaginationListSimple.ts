@@ -27,6 +27,7 @@ export function usePaginationList<T, F>(
     setIsLoading: Dispatch<SetStateAction<boolean>>,
     currentPage: number,
     setCurrentPage: Dispatch<SetStateAction<number>>,
+    totalCount: number,
     setTotalCount: Dispatch<SetStateAction<number>>,
     filterPayload: F,
     setFilterPayload: Dispatch<SetStateAction<F>>,
@@ -68,6 +69,10 @@ export function usePaginationList<T, F>(
         execute()
     }, [isLoading])
 
+    const totalPages = useMemo(() => {
+        if (totalCount === 0) return 1;
+        return Math.ceil(totalCount / pageSize);
+    }, [totalCount, pageSize]);
 
     // Apply = defines snapshot
     const applyFilters = useCallback(() => {
@@ -90,6 +95,7 @@ export function usePaginationList<T, F>(
     );
 
     return {
+        totalPages,
         resetFilter,
         applyFilters,
         goToPage,

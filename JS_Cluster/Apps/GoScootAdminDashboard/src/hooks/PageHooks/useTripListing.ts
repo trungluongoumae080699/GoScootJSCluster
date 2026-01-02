@@ -23,7 +23,7 @@ export function useTripListing(bikeId: string, fetchApi: (args: FetchApiArgs<Tri
   // ✅ Filters packed as payload
   const [filterPayload, setFilterPayload] = useState<TripFilterPayload>({
     search: "",
-    bikeId: "",
+    bikeId: bikeId,
     status: "",
     from: "",
     to: "",
@@ -34,13 +34,14 @@ export function useTripListing(bikeId: string, fetchApi: (args: FetchApiArgs<Tri
   // you should update this ref when Apply is pressed (see below).
   const prevFilterPayload = useRef<TripFilterPayload>(filterPayload);
 
-  const { resetFilter, applyFilters, goToPage } = usePaginationList<Trip, TripFilterPayload>(
+  const { totalPages, resetFilter, applyFilters, goToPage } = usePaginationList<Trip, TripFilterPayload>(
     displayList,
     setDisplayList,
     isLoading,
     setIsLoading,
     currentPage,
     setCurrentPage,
+    totalCount,
     setTotalCount,
     filterPayload,
     setFilterPayload,
@@ -55,6 +56,7 @@ export function useTripListing(bikeId: string, fetchApi: (args: FetchApiArgs<Tri
     displayList,
     totalCount,
     currentPage,
+    totalPages,
     // actions
     applyFilters, // use snapshot version
     resetFilter,

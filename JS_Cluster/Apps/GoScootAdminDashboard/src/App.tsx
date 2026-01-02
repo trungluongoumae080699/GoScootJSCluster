@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { GlobalProvider } from "./context/GlobalContext";
 import Root from "./NavigationTree";
+import { BikeManagementContextProvider } from "./context/BikeManagementContext";
 
 /**
  * Protected Route wrapper
@@ -42,7 +43,10 @@ function App() {
 
   return (
     <GlobalProvider>
-      <Root></Root>
+      <BikeManagementContextProvider>
+        <Root></Root>
+      </BikeManagementContextProvider>
+
     </GlobalProvider>
   );
 }

@@ -32,13 +32,14 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
   // you should update this ref when Apply is pressed (see below).
   const prevFilterPayload = useRef<AlertFilterPayload>(filterPayload);
 
-  const { resetFilter, applyFilters, goToPage } = usePaginationList<Alert, AlertFilterPayload>(
+  const { totalPages, resetFilter, applyFilters, goToPage } = usePaginationList<Alert, AlertFilterPayload>(
     displayList,
     setDisplayList,
     isLoading,
     setIsLoading,
     currentPage,
     setCurrentPage,
+    totalCount,
     setTotalCount,
     filterPayload,
     setFilterPayload,
@@ -52,6 +53,7 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
     isLoading,
     displayList,
     totalCount,
+      totalPages,
     currentPage,
     // actions
     applyFilters, // use snapshot version

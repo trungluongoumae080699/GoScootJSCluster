@@ -29,6 +29,7 @@ export default function Trips() {
         displayList,
         totalCount,
         currentPage,
+        totalPages,
         // actions
         applyFilters, // use snapshot version
         resetFilter,
@@ -192,11 +193,12 @@ export default function Trips() {
                 ) : (
                     <>
                         {/* Trips Table */}
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalCount}
-                            goToPage={goToPage}>
-                        </Pagination>
+<Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          totalItems={totalCount}
+          goToPage={goToPage}>
+        </Pagination>
                         <div className="trips-table-container">
                             <table className="trips-table">
                                 <thead>
@@ -246,10 +248,11 @@ export default function Trips() {
 
                         {/* Pagination */}
                         <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalCount}
-                            goToPage={goToPage}>
-                        </Pagination>
+                                  totalPages={totalPages}
+                                  currentPage={currentPage}
+                                  totalItems={totalCount}
+                                  goToPage={goToPage}>
+                                </Pagination>
                     </>
                 )}
             </div>

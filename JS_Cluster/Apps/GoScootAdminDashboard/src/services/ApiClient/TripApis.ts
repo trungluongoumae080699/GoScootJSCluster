@@ -36,7 +36,6 @@ export const tripApi = {
 
     async getTrips(options: FetchApiArgs<TripFilterPayload>): Promise<FetchResult<Trip>> {
         const params = new URLSearchParams();
-
         // ✅ your paging is "group start page" (1, 6, 11...)
         params.append("page", options.startPage.toString());
         params.append("limit", options.pageSize.toString());
@@ -45,6 +44,7 @@ export const tripApi = {
         const { search, bikeId, from, to, status } = options.filter;
 
         if (search?.trim()) params.append("search", search.trim());
+        console.log(bikeId)
         if (bikeId?.trim()) params.append("bikeId", bikeId.trim());
         if (status?.trim()) params.append("status", status.trim());
         if (from?.trim()) params.append("from", from.trim());

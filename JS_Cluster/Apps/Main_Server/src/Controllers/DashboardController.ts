@@ -219,7 +219,7 @@ export const fetchTelemetryByBike = async (
     pageSize: pageSizeNum,
   });
 
-  return response.json(result);
+  return response.json({data: result.data, totalCount: result.total});
 };
 
 

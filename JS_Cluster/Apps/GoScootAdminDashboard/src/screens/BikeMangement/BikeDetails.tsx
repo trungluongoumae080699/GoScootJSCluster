@@ -23,7 +23,7 @@ function BikeDetails() {
     // Bike data state
     const globalContext = useGlobalContext()
     const bikeManagementContext = useBikeManagementContext()
-   
+
     // Export state
     const [isExporting, setIsExporting] = useState(false);
     const [isLoading, setIsLoading] = useState(false)
@@ -51,37 +51,38 @@ function BikeDetails() {
     }, []);
 
     useEffect(() => {
-        if (bikeManagementContext.currentBike){
+        console.log("Current bike", bikeManagementContext.currentBike)
+        if (bikeManagementContext.currentBike) {
             websocketManager.requestBikeTelemetry(bikeManagementContext.currentBike.id);
             websocketManager.setOnBikeTelemetry(handleOnTelemetryReception)
         }
-       
+
     }, [bikeManagementContext.currentBike]);
 
     // Fetch bike details
     useEffect(() => {
         const fetchBikeData = async () => {
-            if (bikeManagementContext.currentBikeId){
-            try {
-                abortRef.current?.abort();
-                const controller = new AbortController();
-                abortRef.current = controller;
-                setIsLoading(true);
-                const bikeData = await bikeApi.getBikeId(bikeManagementContext.currentBikeId, controller.signal);
-                bikeManagementContext.setCurrentBike(bikeData);
-            } catch (err) {
-                if (err instanceof UnauthenticatedException) {
-                    globalContext.setIsAuth(false)
+            if (bikeManagementContext.currentBikeId) {
+                try {
+                    abortRef.current?.abort();
+                    const controller = new AbortController();
+                    abortRef.current = controller;
+                    setIsLoading(true);
+                    const bikeData = await bikeApi.getBikeId(bikeManagementContext.currentBikeId, controller.signal);
+                    bikeManagementContext.setCurrentBike(bikeData);
+                } catch (err) {
+                    if (err instanceof UnauthenticatedException) {
+                        globalContext.setIsAuth(false)
+                    }
+                    console.error('Failed to fetch bike data:', err);
+                    //setError(err instanceof Error ? err.message : 'Failed to load bike data');
+                } finally {
+                    setIsLoading(false);
                 }
-                console.error('Failed to fetch bike data:', err);
-                //setError(err instanceof Error ? err.message : 'Failed to load bike data');
-            } finally {
-                setIsLoading(false);
-            }
             }
 
         };
-        
+
         fetchBikeData();
     }, [bikeManagementContext.currentBikeId]);
 

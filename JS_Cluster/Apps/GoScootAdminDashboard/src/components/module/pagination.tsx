@@ -3,6 +3,7 @@ import "./pagination.css"
 
 type PaginationProps = {
   currentPage: number;
+  totalPages: number;
   totalItems: number; // nếu chưa biết, bạn có thể truyền 1 hoặc NaN tuỳ logic
   goToPage: (page: number) => void | Promise<void>;
   isLoading?: boolean;
@@ -11,14 +12,14 @@ type PaginationProps = {
 
 export default function Pagination({
   currentPage,
+  totalPages,
   totalItems,
   goToPage,
   isLoading = false,
   className,
 }: PaginationProps) {
   const [pageInput, setPageInput] = useState<string>(String(currentPage));
-  const totalPages = totalItems === 0 ? 1 : Math.floor((totalItems + 9) / 10)
-
+  
   // sync input mỗi khi currentPage đổi (bấm nút, fetch xong, v.v.)
   useEffect(() => {
     setPageInput(String(currentPage));

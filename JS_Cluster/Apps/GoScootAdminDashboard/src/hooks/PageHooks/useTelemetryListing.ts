@@ -31,13 +31,14 @@ export function useTelemetryListing(bikeId: string, fetchApi: (args: FetchApiArg
     // you should update this ref when Apply is pressed (see below).
     const prevFilterPayload = useRef<TelemetryFilterPayload>(filterPayload);
 
-    const { resetFilter, applyFilters, goToPage } = usePaginationList<BikeTelemetry, TelemetryFilterPayload>(
+    const { totalPages, resetFilter, applyFilters, goToPage } = usePaginationList<BikeTelemetry, TelemetryFilterPayload>(
         displayList,
         setDisplayList,
         isLoading,
         setIsLoading,
         currentPage,
         setCurrentPage,
+        totalCount,
         setTotalCount,
         filterPayload,
         setFilterPayload,
@@ -51,6 +52,7 @@ export function useTelemetryListing(bikeId: string, fetchApi: (args: FetchApiArg
         isLoading,
         displayList,
         totalCount,
+        totalPages,
         currentPage,
         // actions
         applyFilters, // use snapshot version

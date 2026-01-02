@@ -11,6 +11,7 @@ import Input from '../module/Input';
 import { formatDate } from '../../utlities/convert';
 import Pagination from '../module/pagination';
 import { bikeApi } from '../../services/ApiClient/BikeApis';
+import "./TelemetryTable.css"
 
 /** Get CSS class for operation status badge */
 function getOperationStatusClass(status: OperationStatus): string {
@@ -64,10 +65,11 @@ function TelemetryTable({
     applyFilters, // use snapshot version
     resetFilter,
     goToPage,
+    totalPages,
     // filters
     filterPayload,
     setFilterPayload,
-  } = useTelemetryListing(bike.id, bikeApi.);
+  } = useTelemetryListing(bike.id, bikeApi.getBikeTelemetry);
 
   return (
     <div className="movement-history-section">
@@ -135,61 +137,68 @@ function TelemetryTable({
           </button>
         </div>
       </div>
-      <table className="trips-table telemetry-table">
-        <thead>
-          <tr>
-            <th>Battery</th>
-            <th>Longitude</th>
-            <th>Latitude</th>
-            <th>Last GPS Long</th>
-            <th>Last GPS Lat</th>
-            <th>GPS Contact</th>
-            <th>Operation</th>
-            <th>Usage</th>
-            <th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayList.length > 0 ? (
-            displayList.map((t) => (
-              <tr key={t.id}>
-                <td>
-                  <span style={{
-                    color: t.battery > 20 ? '#4CAF50' : '#F44336',
-                    fontWeight: 'bold'
-                  }}>
-                    {t.battery}%
-                  </span>
-                </td>
-                <td>{t.longitude.toFixed(6)}</td>
-                <td>{t.latitude.toFixed(6)}</td>
-                <td>{t.last_gps_long?.toFixed(6) ?? 'N/A'}</td>
-                <td>{t.last_gps_lat?.toFixed(6) ?? 'N/A'}</td>
-                <td>{t.last_gps_contact_time ? formatDate(t.last_gps_contact_time) : 'N/A'}</td>
-                <td>
+      <div className="telemetry-table-wrapper">
+        <table className="trips-table telemetry-table">
+          <thead>
+            <tr>
+              <th>Battery</th>
+              <th>Longitude</th>
+              <th>Latitude</th>
+              <th>Last GPS Long</th>
+              <th>Last GPS Lat</th>
+              <th>GPS Contact</th>
+              {/*<th>Operation</th>*/}
+              <th>Usage</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayList.length > 0 ? (
+              displayList.map((t) => (
+                <tr key={t.id}>
+                  <td>
+                    <span style={{
+                      color: t.battery > 20 ? '#4CAF50' : '#F44336',
+                      fontWeight: 'bold'
+                    }}>
+                      {t.battery}%
+                    </span>
+                  </td>
+                  <td>{t.longitude.toFixed(6)}</td>
+                  <td>{t.latitude.toFixed(6)}</td>
+                  <td>{t.last_gps_long?.toFixed(6) ?? 'N/A'}</td>
+                  <td>{t.last_gps_lat?.toFixed(6) ?? 'N/A'}</td>
+                  <td>{t.last_gps_contact_time ? formatDate(t.last_gps_contact_time) : 'N/A'}</td>
+
+                  {/*<td>
                   <span className={`telemetry-status ${getOperationStatusClass(t.operationStatus)}`}>
                     {t.operationStatus}
                   </span>
+                </td>*/}
+
+                  <td>
+                    <span className={`telemetry-status ${getUsageStatusClass(t.usageStatus)}`}>
+                      {t.usageStatus}
+                    </span>
+                  </td>
+                  <td>{formatDate(t.time)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
+                  No telemetry data found for the selected date range
                 </td>
-                <td>
-                  <span className={`telemetry-status ${getUsageStatusClass(t.usageStatus)}`}>
-                    {t.usageStatus}
-                  </span>
-                </td>
-                <td>{formatDate(t.time)}</td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
-                No telemetry data found for the selected date range
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+
+      </div>
+
 
       <Pagination
+        totalPages={totalPages}
         currentPage={currentPage}
         totalItems={totalCount}
         goToPage={goToPage}>

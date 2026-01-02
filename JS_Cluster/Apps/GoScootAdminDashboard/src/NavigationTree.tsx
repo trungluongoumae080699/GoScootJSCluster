@@ -14,6 +14,7 @@ import "./index.css"
 import Sidebar from "./components/module/Sidebar";
 import Header from "./components/module/Header";
 import Trips from "./screens/TripManagement/Trips";
+import BikeDetails from "./screens/BikeMangement/BikeDetails";
 
 
 
@@ -136,22 +137,21 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
+
           <Route
             path="/"
             element={
-              <BikeManagementContextProvider>
-                <Bikes />
-              </BikeManagementContextProvider>
+              <Bikes />
             }
           />
-          {/*         <Route
-          path="/bike-detail"
+        <Route
+          path="/bike"
           element={
             <ProtectedRoute>
-              <BikeDetails onNavigate={handleNavigate} />
+              <BikeDetails />
             </ProtectedRoute>
           }
-        /> */}
+        /> 
           {/*         <Route
           path="/bike/:bikeId"
           element={
