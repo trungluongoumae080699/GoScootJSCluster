@@ -47,6 +47,10 @@ export default function Trips() {
     })
 
 
+    useEffect(() => {
+        globalContext.setCurrentHeader("Bikes")
+        globalContext.setCurrentPage(WebScreen.BIKES)
+    }, [])
 
     const handleTripClick = (bikeId: string, tripId: string) => {
         navigate(`/trips/${bikeId}/${tripId}`);

@@ -47,7 +47,7 @@ const menuItems = [
       },
     ],
   },
-  { id: "alert", icon: MdWarning, label: "Alert", route: "/alert" },
+  { id: "alert", icon: MdWarning, label: "Alert", route: "/alerts" },
 ];
 
 /**

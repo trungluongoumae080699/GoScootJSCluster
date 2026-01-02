@@ -25,7 +25,7 @@ dashboardNonAuthenticationRouter.get("/bikes/hub/:hubId", (request: Request, res
     fetchHubs(customerRequest, response).catch(next)
 })
 
-dashboardNonAuthenticationRouter.get("/trips/:bikeId", (request: Request, response: Response, next: NextFunction) => {
+dashboardNonAuthenticationRouter.get("/trips", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
     fetchTrips(customerRequest, response).catch(next)
 });

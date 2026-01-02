@@ -13,6 +13,7 @@ import "./index.css"
 
 import Sidebar from "./components/module/Sidebar";
 import Header from "./components/module/Header";
+import Trips from "./screens/TripManagement/Trips";
 
 
 
@@ -113,10 +114,10 @@ export default function Root() {
         globalContext.currentPage === WebScreen.LOGIN ? undefined : <Header title={globalContext.currentHeader}></Header>
       }
       {
-          globalContext.currentPage === WebScreen.LOGIN ? undefined : <Sidebar></Sidebar>
-        }
+        globalContext.currentPage === WebScreen.LOGIN ? undefined : <Sidebar></Sidebar>
+      }
       <div className="main-content-container">
-        
+
         <ToastContainer />
         <Routes>
           {/* Public routes */}
@@ -136,7 +137,7 @@ export default function Root() {
           }
         /> */}
           <Route
-            path="/bikes"
+            path="/"
             element={
               <BikeManagementContextProvider>
                 <Bikes />
@@ -159,14 +160,14 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-          {/*         <Route
-          path="/trips"
-          element={
-            <ProtectedRoute>
-              <Trips />
-            </ProtectedRoute>
-          }
-        /> */}
+          <Route
+            path="/trips"
+            element={
+              <ProtectedRoute>
+                <Trips />
+              </ProtectedRoute>
+            }
+          />
           {/*         <Route
           path="/trips/:bikeId/:tripId"
           element={
@@ -176,7 +177,7 @@ export default function Root() {
           }
         /> */}
           <Route
-            path="/"
+            path="/alerts"
             element={
               <ProtectedRoute>
                 <Alert />
