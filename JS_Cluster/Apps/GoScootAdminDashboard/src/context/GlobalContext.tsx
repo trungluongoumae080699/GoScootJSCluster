@@ -12,6 +12,8 @@ export enum WebScreen {
 }   
 
 export type GlobalContextType = {
+    currentHeader: string,
+    setCurrentHeader: Dispatch<SetStateAction<string>>
     alerts: Alert[];
     setAlerts: Dispatch<SetStateAction<Alert[]>>;
     alertCount: number;
@@ -34,6 +36,7 @@ export const GlobalContext = createContext<GlobalContextType | undefined>(
 );
 
 export function GlobalProvider({ children }: { children: React.ReactNode }) {
+    const [currentHeader, setCurrentHeader] = useState<string>("")
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [newAlerts, setNewAlerts] = useState<Alert[]>([]);
     const [alertCount, setAlertCount] = useState<number>(0);
@@ -48,6 +51,8 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     return (
         <GlobalContext.Provider
             value={{
+                currentHeader,
+                setCurrentHeader,
                 alerts,
                 setAlerts,
                 alertCount,

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signIn } from '../services/authService';
 import './Auth.css';
-import { useGlobalContext } from '../context/GlobalContext';
+import { useGlobalContext, WebScreen } from '../context/GlobalContext';
 
 interface LoginProps {
   onLoginSuccess?: () => void;
@@ -15,6 +15,10 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(()=>{
+    globalContext.setCurrentPage(WebScreen.LOGIN)
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

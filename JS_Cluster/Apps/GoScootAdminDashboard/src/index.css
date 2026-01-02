@@ -5,7 +5,9 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
@@ -15,17 +17,26 @@ body {
 }
 
 #root {
-  width: 100vw;
-  height: 100vh;
-  overflow-y: auto;
+  width: 100%;
+  height: 100%;
 }
 
 /* App Container */
 .app-container {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   position: relative;
-  overflow: hidden;
+  min-height: 0;
+}
+
+.main-content-container{
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  padding-top: 14vh;
+  padding-left: 15vw;
+  background-color: gainsboro;
+
 }
 
 .map {

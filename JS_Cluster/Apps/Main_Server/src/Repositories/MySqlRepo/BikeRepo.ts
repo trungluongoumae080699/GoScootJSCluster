@@ -88,103 +88,16 @@ export type PagedBikesResult = {
   totalPages: number;
 };
 
-export async function getBikesByFilter(
-  options: GetBikesOptions = {}
-): Promise<PagedBikesResult> {
-  const {
-    ids,
-    hubId,
-    limit = 10,
-    offset = 0,
-  } = options;
-
-  const conditions: string[] = ["deleted = 0"]; // bắt buộc
-  const filterParams: any[] = [];
-
-  // Optional hub filter
-  if (hubId) {
-    conditions.push("current_hub = ?");
-    filterParams.push(hubId);
-  }
-
-  // Optional ID array filter
-  if (ids && ids.length > 0) {
-    const placeholders = ids.map(() => "?").join(",");
-    conditions.push(`id IN (${placeholders})`);
-    filterParams.push(...ids);
-  }
-
-  let whereClause = "";
-  if (conditions.length > 0) {
-    whereClause = " WHERE " + conditions.join(" AND ");
-  }
-
-  // ----- 1) COUNT tổng -----
-  const countSql = `
-    SELECT COUNT(*) AS total
-    FROM bikes
-    ${whereClause}
-  `;
-
-  const [countRows] = await pool.query<CountRow[]>(countSql, filterParams);
-  const total = Number(countRows[0]?.total ?? 0);
-
-  // ----- 2) SELECT dữ liệu với LIMIT/OFFSET -----
-  const selectSql = `
-    SELECT
-      id,
-      name,
-      status,
-      maximum_speed,
-      maximum_functional_distance,
-      purchase_date,
-      last_service_date,
-      current_hub,
-      deleted,
-      created_at
-    FROM bikes
-    ${whereClause}
-    LIMIT ? OFFSET ?
-  `;
-
-  const selectParams = [...filterParams, limit, offset];
-
-  const [rows] = await pool.query<BikeRow[]>(selectSql, selectParams);
-
-  const bikes: Bike[] = rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    status: row.status,
-    maximum_speed: Number(row.maximum_speed),
-    maximum_functional_distance: Number(row.maximum_functional_distance),
-    purchase_date: Number(row.purchase_date),
-    last_service_date: Number(row.last_service_date),
-    current_hub: row.current_hub ?? null,
-    deleted: row.deleted === 1,
-    created_at: new Date(row.created_at),
-  }));
-
-  const pageSize = limit;
-  const page = pageSize > 0 ? Math.floor(offset / pageSize) + 1 : 1;
-  const totalPages = pageSize > 0 && total > 0 ? Math.ceil(total / pageSize) : 0;
-
-  return {
-    bikes,
-    page,
-    pageSize,
-    total,
-    totalPages,
-  };
-}
-
-
 export async function fetchBikesWithCount(
-  page: number,
+  page?: number,
+  limit?: number,
   ids?: string[],
   search?: string
 ): Promise<{ bikes: Bike[]; totalCount: number }> {
-  const safePage = Math.max(page, 1);
-  const offset = (safePage - 1) * GROUP_LIMIT;
+
+  const safePage = Math.max(page || 1, 1);
+  const safePageSize = Math.max(limit || 10, 10)
+  const offset = (safePage - 1) * safePageSize;
 
   const whereClauses: string[] = [];
   const params: any[] = [];

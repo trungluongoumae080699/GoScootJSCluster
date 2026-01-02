@@ -1,5 +1,5 @@
 import { Alert } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
-import { AlertFilterPayload } from "../../hooks/useAlertListing";
+import { AlertFilterPayload } from "../../hooks/PageHooks/useAlertListing";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
 import { apiRequest } from "./apiClient";
 
@@ -19,6 +19,7 @@ export const alertApi = {
   
       // ✅ your paging is "group start page" (1, 6, 11...)
       params.append("page", options.startPage.toString());
+      params.append("limit", options.pageSize.toString());
     
       // ✅ filters come from options.filter
       const { search, from, to } = options.filter;

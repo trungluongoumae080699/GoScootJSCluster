@@ -9,6 +9,10 @@ import { websocketManager } from "./services/websocketService";
 import { formlessSignIn } from "./services/authService";
 import { BikeManagementContextProvider } from "./context/BikeManagementContext";
 import Alert from "./screens/Alert";
+import "./index.css"
+
+import Sidebar from "./components/module/Sidebar";
+import Header from "./components/module/Header";
 
 
 
@@ -76,7 +80,7 @@ export default function Root() {
 
   useEffect(() => {
     if (!globalContext.isAuth) {
-       navigate("/login", { replace: true });
+      navigate("/login", { replace: true });
     }
   }, [globalContext.isAuth])
 
@@ -85,9 +89,6 @@ export default function Root() {
     websocketManager.connect();
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
-
-
-
 
   if (globalContext.isCheckingAuth) {
     return (
@@ -107,18 +108,26 @@ export default function Root() {
   }
 
   return (
-    <>
-      <ToastContainer />
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={globalContext.isAuth ? <Navigate to="/" replace /> : <Login />}
-        />
-        <Route path="/signup" element={globalContext.isAuth ? <Navigate to="/" replace /> : <SignUp />} />
+    <div className="app-container">
+      {
+        globalContext.currentPage === WebScreen.LOGIN ? undefined : <Header title={globalContext.currentHeader}></Header>
+      }
+      {
+          globalContext.currentPage === WebScreen.LOGIN ? undefined : <Sidebar></Sidebar>
+        }
+      <div className="main-content-container">
+        
+        <ToastContainer />
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={globalContext.isAuth ? <Navigate to="/" replace /> : <Login />}
+          />
+          <Route path="/signup" element={globalContext.isAuth ? <Navigate to="/" replace /> : <SignUp />} />
 
-        {/* Protected routes */}
-        {/*  <Route
+          {/* Protected routes */}
+          {/*  <Route
           path="/"
           element={
             <ProtectedRoute>
@@ -126,15 +135,15 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        <Route
-          path="/bikes"
-          element={
-            <BikeManagementContextProvider>
-              <Bikes />
-            </BikeManagementContextProvider>
-          }
-        />
-        {/*         <Route
+          <Route
+            path="/bikes"
+            element={
+              <BikeManagementContextProvider>
+                <Bikes />
+              </BikeManagementContextProvider>
+            }
+          />
+          {/*         <Route
           path="/bike-detail"
           element={
             <ProtectedRoute>
@@ -142,7 +151,7 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        {/*         <Route
+          {/*         <Route
           path="/bike/:bikeId"
           element={
             <ProtectedRoute>
@@ -150,7 +159,7 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        {/*         <Route
+          {/*         <Route
           path="/trips"
           element={
             <ProtectedRoute>
@@ -158,7 +167,7 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        {/*         <Route
+          {/*         <Route
           path="/trips/:bikeId/:tripId"
           element={
             <ProtectedRoute>
@@ -166,15 +175,17 @@ export default function Root() {
             </ProtectedRoute>
           }
         /> */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Alert />
-            </ProtectedRoute>
-          }
-        /> 
-      </Routes>
-    </>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Alert />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+
+    </div>
   );
 }

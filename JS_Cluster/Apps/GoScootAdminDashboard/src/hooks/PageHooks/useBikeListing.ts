@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { useGlobalContext } from "../context/GlobalContext";
-import { FetchApiArgs, FetchResult, usePaginationList } from "./usePaginationListSimple";
+import { useGlobalContext } from "../../context/GlobalContext";
+import { FetchApiArgs, FetchResult, usePaginationList } from "../usePaginationListSimple";
 import { Bike } from "@trungthao/admin_dashboard_dto";
 
 
@@ -45,7 +45,8 @@ export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>)
     filterPayload,
     setFilterPayload,
     prevFilterPayload,
-    fetchApi
+    fetchApi,
+    30
   );
 
   return {

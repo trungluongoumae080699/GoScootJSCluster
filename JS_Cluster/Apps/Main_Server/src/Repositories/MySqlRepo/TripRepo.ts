@@ -11,28 +11,28 @@ import { TripRervationPayload } from "../../Controllers/BkeController.js";
 
 
 export async function getMyTrips(
-    customer_id: string,
-    page: number
+  customer_id: string,
+  page: number
 ): Promise<Response_MyTripsListingDTO> {
-    const LIMIT = 10;
-    const offset = (page - 1) * LIMIT;
+  const LIMIT = 10;
+  const offset = (page - 1) * LIMIT;
 
-    // 1. Count total trips
-    const [countRows] = await pool.query(
-        `
+  // 1. Count total trips
+  const [countRows] = await pool.query(
+    `
         SELECT COUNT(*) AS total
         FROM trips
         WHERE customer_id = ?
           AND deleted = 0
         `,
-        [customer_id]
-    );
-    const total = (countRows as any)[0].total as number;
-    const totalPages = Math.ceil(total / LIMIT);
+    [customer_id]
+  );
+  const total = (countRows as any)[0].total as number;
+  const totalPages = Math.ceil(total / LIMIT);
 
-    // 2. Fetch page data (same query as before)
-    const [rows] = await pool.query(
-        `
+  // 2. Fetch page data (same query as before)
+  const [rows] = await pool.query(
+    `
         SELECT
             t.id,
             t.bike_id,
@@ -71,49 +71,49 @@ export async function getMyTrips(
         ORDER BY t.reservation_date DESC
         LIMIT ? OFFSET ?
         `,
-        [customer_id, LIMIT, offset]
-    );
+    [customer_id, LIMIT, offset]
+  );
 
-    const trips: Response_TripDTO[] = (rows as any[]).map(r => ({
-        trip: {
-            id: r.id,
-            bike_id: r.bike_id,
-            hub_id: r.hub_id,
-            customer_id: r.customer_id,
-            trip_status: r.trip_status,
-            reservation_date: Number(r.reservation_date),
-            reservation_expiry: Number(r.reservation_expiry),
-            trip_start_date: r.trip_start_date ? Number(r.trip_start_date) : undefined,
-            trip_end_date: r.trip_end_date ? Number(r.trip_end_date) : undefined,
-            trip_end_long: r.trip_end_long ?? undefined,
-            trip_end_lat: r.trip_end_lat ?? undefined,
-            trip_start_lat: r.trip_start_lat ?? undefined,
-            trip_start_long: r.trip_start_long ?? undefined,
-            trip_secret: r.trip_secret ?? undefined,
-            isPaid: r.isPaid === 0 ? false : true,
-            price: r.price ?? undefined
-        },
-        bike: {
-            id: r.bike_id2,
-            name: r.name,
-            maximum_speed: r.maximum_speed,
-            maximum_functional_distance: r.maximum_functional_distance,
-        },
-        hub: {
-            id: r.hub_id,
-            longitude: r.longitude,
-            latitude: r.latitude,
-            address: r.address
-        },
-    }));
+  const trips: Response_TripDTO[] = (rows as any[]).map(r => ({
+    trip: {
+      id: r.id,
+      bike_id: r.bike_id,
+      hub_id: r.hub_id,
+      customer_id: r.customer_id,
+      trip_status: r.trip_status,
+      reservation_date: Number(r.reservation_date),
+      reservation_expiry: Number(r.reservation_expiry),
+      trip_start_date: r.trip_start_date ? Number(r.trip_start_date) : undefined,
+      trip_end_date: r.trip_end_date ? Number(r.trip_end_date) : undefined,
+      trip_end_long: r.trip_end_long ?? undefined,
+      trip_end_lat: r.trip_end_lat ?? undefined,
+      trip_start_lat: r.trip_start_lat ?? undefined,
+      trip_start_long: r.trip_start_long ?? undefined,
+      trip_secret: r.trip_secret ?? undefined,
+      isPaid: r.isPaid === 0 ? false : true,
+      price: r.price ?? undefined
+    },
+    bike: {
+      id: r.bike_id2,
+      name: r.name,
+      maximum_speed: r.maximum_speed,
+      maximum_functional_distance: r.maximum_functional_distance,
+    },
+    hub: {
+      id: r.hub_id,
+      longitude: r.longitude,
+      latitude: r.latitude,
+      address: r.address
+    },
+  }));
 
-    return {
-        trips,
-        total,
-        page,
-        pageSize: LIMIT,
-        totalPages,
-    };
+  return {
+    trips,
+    total,
+    page,
+    pageSize: LIMIT,
+    totalPages,
+  };
 }
 
 function pickFirstResultSet(callResult: any): RowDataPacket[] {
@@ -200,7 +200,7 @@ export async function reserveBikeForCustomer(
     conn.release();
   }
 }
-  
+
 
 interface TripRow extends RowDataPacket {
   id: string;
@@ -236,7 +236,7 @@ function mapTripRow(row: TripRow): Trip {
     trip_end_long: row.trip_end_long !== null ? Number(row.trip_end_long) : null,
     trip_end_lat: row.trip_end_lat !== null ? Number(row.trip_end_lat) : null,
     trip_secret: row.trip_secret,
-    deleted: row.deleted === 1 ,
+    deleted: row.deleted === 1,
     price: row.price !== null ? Number(row.price) : null,
     isPaid: row.isPaid === 1,
     created_at: new Date(row.created_at),
@@ -252,17 +252,16 @@ export async function getTrips(
 ): Promise<Response_DashboardGetTripsByBikeDTO> {
   const {
     bikeId,
+    search,
     status,
     reservationFrom,
     reservationTo,
-    sortBy = "reservation_date",
-    sortDirection = "desc",
-    page = 1,
-    pageSize = 10,
+    page,
+    limit,
   } = options;
 
   const safePage = Math.max(Number(page) || 1, 1);
-  const safePageSize = Math.max(Number(pageSize) || 20, 1);
+  const safePageSize = Math.max(Number(limit) || 10, 0);
   const offset = (safePage - 1) * safePageSize;
 
   const conditions: string[] = ["deleted = 0"];
@@ -272,6 +271,14 @@ export async function getTrips(
   if (bikeId) {
     conditions.push("bike_id = ?");
     params.push(bikeId);
+  }
+
+  if (search && search.trim() !== "") {
+    conditions.push(`
+    MATCH(bike_id, customer_id)
+    AGAINST (? IN BOOLEAN MODE)
+  `);
+    params.push(search + "*");
   }
 
   // Optional status filter
@@ -320,10 +327,6 @@ export async function getTrips(
     };
   }
 
-  // --- 2) Data query ---
-  const orderField = sortBy === "price" ? "price" : "reservation_date";
-  const dir = sortDirection.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
   let dataSql = `
     SELECT
       id,
@@ -344,7 +347,7 @@ export async function getTrips(
       created_at
     FROM trips
     ${whereClause}
-    ORDER BY ${orderField} ${dir}, id ${dir}
+    ORDER BY reservation_date DESC
     LIMIT ? OFFSET ?
   `;
 

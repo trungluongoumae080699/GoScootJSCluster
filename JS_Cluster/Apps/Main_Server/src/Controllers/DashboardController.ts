@@ -2,7 +2,7 @@ import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Response } from "express";
 import { redisClient } from "../RedisConfig.js";
 import { fetchBikeIdsAndBatteries, fetchBikeUpdates, fetchBikeUpdatesByIds } from "../Repositories/RedisRepo/BikeRepo.js";
-import { fetchBikesNoCount, fetchBikesWithCount, getBikesByFilter, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
+import { fetchBikesNoCount, fetchBikesWithCount, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { Bike, BikeStatus, BikeTelemetry, OperationStatus, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { getTrips } from "../Repositories/MySqlRepo/TripRepo.js";
 import { getBikeTelemetry } from "../Repositories/ClickhouseRepo/TelemetryRepo.js";
@@ -80,15 +80,15 @@ export const fetchBikesByHub = async (
 export interface GetTripsOptions {
   bikeId?: string;
   status?: TripStatus;
+  search?: string
   reservationFrom?: number;
   reservationTo?: number;
-  sortBy?: TripSortField;
-  sortDirection?: SortDirection; // default: "desc"
-  page?: number; // default: 1
-  pageSize?: number; // default: 20
+  page?: number; 
+  limit?: number;
+
 }
 
-export const fetchTripsByBike = async (
+export const fetchTrips = async (
   request: CustomRequest<
     { bikeId: string }, // params
     {}, // body
@@ -96,23 +96,16 @@ export const fetchTripsByBike = async (
     {
       from?: string;
       to?: string;
+      search?: string;
+      bikeId?: string;
       status?: TripStatus;
-      sortBy?: TripSortField;
-      sortDirection?: SortDirection;
       page?: string;
-      pageSize?: string;
+      limit?: string;
     }
   >,
   response: Response
 ) => {
-  const { bikeId } = request.params;
-  if (!bikeId) {
-    return response
-      .status(400)
-      .json({ error: "bikeId path parameter is required" });
-  }
-
-  const { from, to, status, sortBy, sortDirection, page, pageSize } =
+  const { from, to, bikeId, search, status, page, limit } =
     request.query;
 
   // Parse from/to -> numbers (BIGINT)
@@ -138,12 +131,11 @@ export const fetchTripsByBike = async (
   const options: GetTripsOptions = {
     bikeId,
     status,
+    search,
     reservationFrom,
     reservationTo,
-    sortBy,
-    sortDirection,
     page: page ? Number(page) : undefined,
-    pageSize: pageSize ? Number(pageSize) : undefined,
+    limit: limit ? Number(limit) : undefined,
   };
 
   const result = await getTrips(options);
@@ -236,8 +228,8 @@ type AlertQuery = {
   search?: string;
   from?: string;
   to?: string;
-  sortDirection?: string; // "asc" | "desc"
   page?: string;
+  limit?: string
 };
 
 export const fetchAlerts = async (
@@ -245,7 +237,7 @@ export const fetchAlerts = async (
   response: Response
 ) => {
   try {
-    const { search, from, to, sortDirection, page } = request.query;
+    const { search, from, to, limit, page } = request.query;
 
     // ---- Parse and validate time filters ----
     let fromNum: number | undefined;
@@ -269,6 +261,7 @@ export const fetchAlerts = async (
 
     // ---- Parse page ----
     const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.max(Number(limit) || 10, 10);
 
     // ---- Call repository ----
     const result = await getAlerts({
@@ -276,7 +269,7 @@ export const fetchAlerts = async (
       from: fromNum,
       to: toNum,
       page: pageNum,
-      pageSize: 10, // enforce max 10 per your requirement
+      limit: limitNum, 
     });
 
     return response.json({
@@ -289,93 +282,10 @@ export const fetchAlerts = async (
   }
 };
 
-export const fetchBikes = async (
-  request: CustomRequest<
-    {},
-    {},
-    {},
-    { battery?: string; hub?: string; page?: string }
-  >,
-  response: Response
-) => {
-  const { battery, hub, page } = request.query;
-
-  const PAGE_SIZE = 10;
-  const pageNum = Math.max(Number(page) || 1, 1);
-  const offset = (pageNum - 1) * PAGE_SIZE;
-
-  // ---------------------------------------------------------
-  //  CASE 1: battery is NOT provided -> MySQL only
-  // ---------------------------------------------------------
-  if (battery === undefined) {
-    const sqlResult = await getBikesByFilter({
-      hubId: hub,
-      limit: PAGE_SIZE,
-      offset,
-    });
-
-    for (const b of sqlResult.bikes) {
-      const redisKey = `bike:${b.id}:telemetry`;
-
-      // HGETALL returns Record<string, string>
-      const tele = await redisClient.hGetAll(redisKey);
-
-      const batteryStatus = tele.battery_status
-        ? Number(tele.battery_status)
-        : null;
-      b.battery_status = batteryStatus;
-    }
-
-    return response.json(sqlResult);
-  }
-
-  // ---------------------------------------------------------
-  //  CASE 2: battery IS provided -> Redis + MySQL
-  // ---------------------------------------------------------
-  const maxBattery = Number(battery);
-  if (Number.isNaN(maxBattery)) {
-    return response.status(400).json({
-      error: "battery must be a number",
-    });
-  }
-
-  // Step 1: fetch all bikes from Redis with battery <= maxBattery
-  const redisBikes = await fetchBikeIdsAndBatteries(maxBattery);
-  const ids = redisBikes.map((b) => b.id);
-
-  if (ids.length === 0) {
-    return response.json({
-      bikes: [],
-      page: pageNum,
-      pageSize: PAGE_SIZE,
-      total: 0,
-      totalPages: 0,
-    });
-  }
-
-  // Step 2: fetch paginated bikes from MySQL
-  const sqlResult = await getBikesByFilter({
-    ids,
-    hubId: hub,
-    limit: PAGE_SIZE,
-    offset,
-  });
-
-  for (const b of sqlResult.bikes) {
-    for (const ba_id of redisBikes) {
-      if (ba_id.id === b.id) {
-        b.battery_status = ba_id.battery;
-        break;
-      }
-    }
-  }
-
-  return response.json(sqlResult);
-};
-
 
 type Query = {
   page?: string; // ✅ startPage: 1,6,11...
+  limit?: string;
   search?: string;
   battery?: string;
   operationStatus?: string; // enum string hoặc code (tuỳ bạn)
@@ -388,6 +298,7 @@ export const fetchBikesController = async (
 ) => {
   try {
     const startPageNum = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 10)
     const search = req.query.search?.trim() || undefined;
 
     let batteryNum = undefined
@@ -412,7 +323,6 @@ export const fetchBikesController = async (
     if (batteryNum !== undefined && !Number.isFinite(batteryNum)) {
       return res.status(400).json({ error: "battery must be a number" });
     }
-
 
 
     // ✅ nếu có filter liên quan telemetry => lấy IDs từ Redis trước
@@ -441,7 +351,7 @@ export const fetchBikesController = async (
       telemetryMap = new Map(updates.map((u) => [u.id, u]));
     }
 
-    const { bikes, totalCount } = await fetchBikesWithCount(startPageNum, ids, search);
+    const { bikes, totalCount } = await fetchBikesWithCount(startPageNum,limit, ids, search);
 
     // ✅ enrich telemetry fields (nếu Bike DTO có field tương ứng)
     if (telemetryMap) {

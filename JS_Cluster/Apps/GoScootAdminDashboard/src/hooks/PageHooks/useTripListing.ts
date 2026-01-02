@@ -1,26 +1,30 @@
 import { useRef, useState } from "react";
-import { useGlobalContext } from "../context/GlobalContext";
-import { FetchApiArgs, FetchResult, usePaginationList } from "./usePaginationListSimple";
-import { Alert } from "../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
+import { useGlobalContext } from "../../context/GlobalContext";
+import { FetchApiArgs, FetchResult, usePaginationList } from "../usePaginationListSimple";
+import { Trip } from "@trungthao/admin_dashboard_dto";
 
-export type AlertFilterPayload = {
+export type TripFilterPayload = {
+  status: string;
+  bikeId: string;
   search: string;
   from: string; // timestamp ms
   to: string;   // timestamp ms
 };
 
-export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload>) => Promise<FetchResult<Alert>>) {
+export function useTripListing(bikeId: string, fetchApi: (args: FetchApiArgs<TripFilterPayload>) => Promise<FetchResult<Trip>>) {
   const globalContext = useGlobalContext();
 
   // ✅ this MUST be an array because your pagination hook expects T[]
-  const [displayList, setDisplayList] = useState<Alert[]>([]);
+  const [displayList, setDisplayList] = useState<Trip[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // ✅ Filters packed as payload
-  const [filterPayload, setFilterPayload] = useState<AlertFilterPayload>({
+  const [filterPayload, setFilterPayload] = useState<TripFilterPayload>({
     search: "",
+    bikeId: "",
+    status: "",
     from: "",
     to: "",
   });
@@ -28,9 +32,9 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
   // ✅ prev snapshot (no rerender)
   // If you want "Reset" to reset to the last applied snapshot,
   // you should update this ref when Apply is pressed (see below).
-  const prevFilterPayload = useRef<AlertFilterPayload>(filterPayload);
+  const prevFilterPayload = useRef<TripFilterPayload>(filterPayload);
 
-  const { resetFilter, applyFilters, goToPage } = usePaginationList<Alert, AlertFilterPayload>(
+  const { resetFilter, applyFilters, goToPage } = usePaginationList<Trip, TripFilterPayload>(
     displayList,
     setDisplayList,
     isLoading,
@@ -41,7 +45,8 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
     filterPayload,
     setFilterPayload,
     prevFilterPayload,
-    fetchApi
+    fetchApi,
+    100
   );
 
   return {

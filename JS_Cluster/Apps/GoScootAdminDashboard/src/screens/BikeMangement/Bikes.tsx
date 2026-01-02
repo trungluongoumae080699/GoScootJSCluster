@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import Header from "../../components/Header";
-import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./Bikes.css";
-import type { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
+import { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
 import { useGlobalContext } from "../../context/GlobalContext";
 import Pagination from "../../components/module/pagination";
-import { useBikeListing } from "../../hooks/useBikeListing";
+import { useBikeListing } from "../../hooks/PageHooks/useBikeListing";
 import { bikeApi } from "../../services/ApiClient/BikeApis";
+import Input, { Option } from "../../components/module/Input";
 
 
-const STATUS_OPTIONS: { value: string; label: string }[] = [
+const STATUS_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
-  { value: "Idle", label: "Available" },
-  { value: "Inused", label: "Inused" },
-  { value: "Reserved", label: "Reserved" },
+  { value: BikeStatus.IDLE, label: "Available" },
+  { value: BikeStatus.INUSED, label: "Inused" },
+  { value: BikeStatus.RESERVED, label: "Reserved" },
 ];
 
 export default function Bikes() {
@@ -23,7 +22,7 @@ export default function Bikes() {
 
   // ✅ shared state from context
   const {
-   // state
+    // state
     isLoading,
     displayList,
     totalCount,
@@ -73,9 +72,7 @@ export default function Bikes() {
 
   return (
     <div className="bike-details-container">
-      <Header title="Bikes" />
       <div className="main-content">
-        {/* <Sidebar /> */}
         <div className="content-area bikes-content">
           {/* Stats */}
 
@@ -93,27 +90,43 @@ export default function Bikes() {
 
           {/* Filters */}
           <div className="bikes-filters">
-            <input
-              type="text"
-              placeholder="Search Bike's VIN"
+            <Input
+              kind="input"
+              type={"text"}
               value={filterPayload.search}
-              onChange={(e) => setFilterPayload((p) => ({ ...p, search: e.target.value }))}
-              className="search-input"
-            />
+              placeHolder="Nhập xe bạn muốn tìm"
+              label={"Tìm Kiếm"}
+              onChange={
+                (e) => setFilterPayload((p) => ({ ...p, search: e.target.value }))
+              }
+            >
+            </Input>
 
-            <div className="filter-dropdown">
-              <span className="filter-icon">🔋</span>
-              <input
-                type="number"
-                placeholder="Max Battery %"
-                value={filterPayload.battery}
-                onChange={(e) => setFilterPayload((p) => ({ ...p, battery: e.target.value }))}
-                className="filter-input"
-                min="0"
-                max="100"
-              />
-            </div>
+            <Input
+              kind="input"
+              type={"text"}
+              value={filterPayload.battery}
+              placeHolder="Nhập lượng pin"
+              label={"Dung Lượng Pin"}
+              onChange={
+                (e) => setFilterPayload((p) => ({ ...p, battery: e.target.value }))
+              }
+            >
+            </Input>
 
+            <Input
+              kind="select"
+              value={filterPayload.status}
+              placeHolder="Chọn trạng thái"
+              options={STATUS_OPTIONS}
+              label={"Trạng Thái Hoạt Động"}
+              onChange={
+                (e) => setFilterPayload((p) => ({ ...p, status: e.target.value }))
+              }
+            >
+            </Input>
+
+           
             <div className="filter-dropdown">
               <span className="filter-icon">☰</span>
               <select

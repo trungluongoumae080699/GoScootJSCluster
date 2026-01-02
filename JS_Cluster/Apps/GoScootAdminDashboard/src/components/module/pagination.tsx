@@ -17,7 +17,7 @@ export default function Pagination({
   className,
 }: PaginationProps) {
   const [pageInput, setPageInput] = useState<string>(String(currentPage));
-  const totalPages = totalItems === 0 ? 1 : (totalItems + 9) / 10
+  const totalPages = totalItems === 0 ? 1 : Math.floor((totalItems + 9) / 10)
 
   // sync input mỗi khi currentPage đổi (bấm nút, fetch xong, v.v.)
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function Pagination({
   };
 
   return (
-    <div className={`pagination ${className ?? ""}`}>
+    <div className={`pagination`}>
       <button
         className="pagination-btn"
         onClick={() => goToPage(1)}

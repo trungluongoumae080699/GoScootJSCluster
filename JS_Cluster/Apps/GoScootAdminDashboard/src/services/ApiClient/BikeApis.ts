@@ -2,7 +2,7 @@ import { Bike } from "@trungthao/admin_dashboard_dto";
 
 import { apiRequest } from "./apiClient";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
-import { BikeFilterPayload } from "../../hooks/useBikeListing";
+import { BikeFilterPayload } from "../../hooks/PageHooks/useBikeListing";
 
 /**
  * Bike API
@@ -18,6 +18,7 @@ export const bikeApi = {
 
     // ✅ your paging is "group start page" (1, 6, 11...)
     params.append("page", options.startPage.toString());
+    params.append("limit", options.pageSize.toString());
 
     // ✅ filters come from options.filter
     const { search, battery, operationStatus, status } = options.filter;
@@ -50,96 +51,96 @@ export const bikeApi = {
    * Get bike telemetry (location and battery data) with optional date filtering
    * Returns TelemetryResponse with pagination
    */
-//   async getBikeTelemetry(
-//     bikeId: string,
-//     options: GetTelemetryOptions = {}
-//   ): Promise<TelemetryResponse> {
-//     const params = new URLSearchParams();
+  //   async getBikeTelemetry(
+  //     bikeId: string,
+  //     options: GetTelemetryOptions = {}
+  //   ): Promise<TelemetryResponse> {
+  //     const params = new URLSearchParams();
 
-//     if (options.page) {
-//       params.append("page", options.page.toString());
-//     }
-//     if (options.pageSize) {
-//       params.append("pageSize", options.pageSize.toString());
-//     }
-//     if (options.from !== undefined) {
-//       params.append("from", options.from.toString());
-//     }
-//     if (options.to !== undefined) {
-//       params.append("to", options.to.toString());
-//     }
-//     if (options.sortDirection) {
-//       params.append("sortDirection", options.sortDirection);
-//     }
+  //     if (options.page) {
+  //       params.append("page", options.page.toString());
+  //     }
+  //     if (options.pageSize) {
+  //       params.append("pageSize", options.pageSize.toString());
+  //     }
+  //     if (options.from !== undefined) {
+  //       params.append("from", options.from.toString());
+  //     }
+  //     if (options.to !== undefined) {
+  //       params.append("to", options.to.toString());
+  //     }
+  //     if (options.sortDirection) {
+  //       params.append("sortDirection", options.sortDirection);
+  //     }
 
-//     const queryString = params.toString();
-//     const endpoint = queryString
-//       ? `/dashboard/use/telemetry/${bikeId}?${queryString}`
-//       : `/dashboard/use/telemetry/${bikeId}`;
+  //     const queryString = params.toString();
+  //     const endpoint = queryString
+  //       ? `/dashboard/use/telemetry/${bikeId}?${queryString}`
+  //       : `/dashboard/use/telemetry/${bikeId}`;
 
-//     const response = await apiRequest<any>(endpoint);
+  //     const response = await apiRequest<any>(endpoint);
 
-//     // Handle both old format (array) and new format (object with pagination)
-//     if (Array.isArray(response)) {
-//       return {
-//         telemetry: response,
-//         page: 1,
-//         pageSize: response.length,
-//         total: response.length,
-//         totalPages: 1,
-//       };
-//     }
+  //     // Handle both old format (array) and new format (object with pagination)
+  //     if (Array.isArray(response)) {
+  //       return {
+  //         telemetry: response,
+  //         page: 1,
+  //         pageSize: response.length,
+  //         total: response.length,
+  //         totalPages: 1,
+  //       };
+  //     }
 
-//     // Server returns 'data' field, not 'telemetry'
-//     return {
-//       telemetry: response.data || response.telemetry || [],
-//       page: response.page || 1,
-//       pageSize: response.pageSize || 50,
-//       total: response.total || 0,
-//       totalPages: response.totalPages || 1,
-//     };
-//   },
+  //     // Server returns 'data' field, not 'telemetry'
+  //     return {
+  //       telemetry: response.data || response.telemetry || [],
+  //       page: response.page || 1,
+  //       pageSize: response.pageSize || 50,
+  //       total: response.total || 0,
+  //       totalPages: response.totalPages || 1,
+  //     };
+  //   },
 
   /**
    * Export all telemetry data for a bike with date filters (no pagination limit)
    * Used for Excel export - fetches all records matching the filter
    */
-//   async exportBikeTelemetry(
-//     bikeId: string,
-//     options: Omit<GetTelemetryOptions, "page" | "pageSize"> = {}
-//   ): Promise<BikeTelemetry[]> {
-//     const params = new URLSearchParams();
+  //   async exportBikeTelemetry(
+  //     bikeId: string,
+  //     options: Omit<GetTelemetryOptions, "page" | "pageSize"> = {}
+  //   ): Promise<BikeTelemetry[]> {
+  //     const params = new URLSearchParams();
 
-//     // Large page size to get all data for export
-//     params.append("pageSize", "10000");
+  //     // Large page size to get all data for export
+  //     params.append("pageSize", "10000");
 
-//     if (options.from !== undefined) {
-//       params.append("from", options.from.toString());
-//     }
-//     if (options.to !== undefined) {
-//       params.append("to", options.to.toString());
-//     }
-//     if (options.sortDirection) {
-//       params.append("sortDirection", options.sortDirection);
-//     }
+  //     if (options.from !== undefined) {
+  //       params.append("from", options.from.toString());
+  //     }
+  //     if (options.to !== undefined) {
+  //       params.append("to", options.to.toString());
+  //     }
+  //     if (options.sortDirection) {
+  //       params.append("sortDirection", options.sortDirection);
+  //     }
 
-//     const queryString = params.toString();
-//     const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
+  //     const queryString = params.toString();
+  //     const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
 
-//     const response = await apiRequest<any>(endpoint);
+  //     const response = await apiRequest<any>(endpoint);
 
-//     if (Array.isArray(response)) {
-//       return response;
-//     }
+  //     if (Array.isArray(response)) {
+  //       return response;
+  //     }
 
-//     // Server returns 'data' field, not 'telemetry'
-//     return response.data || response.telemetry || [];
-//   },
+  //     // Server returns 'data' field, not 'telemetry'
+  //     return response.data || response.telemetry || [];
+  //   },
 
-//   /**
-//    * Get latest telemetry for all bikes
-//    */
-//   async getAllBikesTelemetry(): Promise<BikeTelemetry[]> {
-//     return apiRequest<BikeTelemetry[]>('/dashboard/use/telemetry');
-//   },
+  //   /**
+  //    * Get latest telemetry for all bikes
+  //    */
+  //   async getAllBikesTelemetry(): Promise<BikeTelemetry[]> {
+  //     return apiRequest<BikeTelemetry[]>('/dashboard/use/telemetry');
+  //   },
 };

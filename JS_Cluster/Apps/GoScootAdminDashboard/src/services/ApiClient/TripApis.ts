@@ -1,102 +1,63 @@
-// /** Trip Filter Options */
-// export interface GetTripsOptions {
-//   from?: number; // Start timestamp (reservation_date)
-//   to?: number; // End timestamp (reservation_date)
-//   status?: string; // Trip status filter
-//   sortBy?: "reservation_date" | "price";
-//   sortDirection?: "asc" | "desc";
-//   page?: number; // Page number
-//   pageSize?: number; // Items per page
-// }
+import { Trip } from "@trungthao/admin_dashboard_dto";
+import { TripFilterPayload } from "../../hooks/PageHooks/useTripListing";
+import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
+import { apiRequest } from "./apiClient";
 
-// /** Trips API Response */
-// export interface TripsResponse {
-//   trips: Trip[];
-//   page: number;
-//   pageSize: number;
-//   total: number;
-//   totalPages: number;
-// }
+/** Trip Filter Options */
+export interface GetTripsOptions {
+    from?: number; // Start timestamp (reservation_date)
+    to?: number; // End timestamp (reservation_date)
+    status?: string; // Trip status filter
+    sortBy?: "reservation_date" | "price";
+    sortDirection?: "asc" | "desc";
+    page?: number; // Page number
+    pageSize?: number; // Items per page
+}
 
-// export const tripApi = {
-//   /**
-//    * Get trips for a specific bike with optional date filtering
-//    * Returns TripsResponse with pagination
-//    */
-//   async getTripsByBike(
-//     bikeId: string,
-//     options: GetTripsOptions = {}
-//   ): Promise<TripsResponse> {
-//     const params = new URLSearchParams();
+/** Trips API Response */
+export interface TripsResponse {
+    trips: Trip[];
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+}
 
-//     if (options.page) {
-//       params.append("page", options.page.toString());
-//     }
-//     if (options.pageSize) {
-//       params.append("pageSize", options.pageSize.toString());
-//     }
-//     if (options.from !== undefined) {
-//       params.append("from", options.from.toString());
-//     }
-//     if (options.to !== undefined) {
-//       params.append("to", options.to.toString());
-//     }
-//     if (options.status) {
-//       params.append("status", options.status);
-//     }
-//     if (options.sortBy) {
-//       params.append("sortBy", options.sortBy);
-//     }
-//     if (options.sortDirection) {
-//       params.append("sortDirection", options.sortDirection);
-//     }
+export const tripApi = {
+    /**
+     * Get trips for a specific bike with optional date filtering
+     * Returns TripsResponse with pagination
+     */
 
-//     const queryString = params.toString();
-//     const endpoint = queryString
-//       ? `/dashboard/use/trips/${bikeId}?${queryString}`
-//       : `/dashboard/use/trips/${bikeId}`;
 
-//     const response = await apiRequest<any>(endpoint);
+    /**
+     * Get all trips
+     */
 
-//     // Handle both old format (array) and new format (object with pagination)
-//     if (Array.isArray(response)) {
-//       return {
-//         trips: response,
-//         page: 1,
-//         pageSize: response.length,
-//         total: response.length,
-//         totalPages: 1,
-//       };
-//     }
+    async getTrips(options: FetchApiArgs<TripFilterPayload>): Promise<FetchResult<Trip>> {
+        const params = new URLSearchParams();
 
-//     return {
-//       trips: response.trips || [],
-//       page: response.page || 1,
-//       pageSize: response.pageSize || 50,
-//       total: response.total || 0,
-//       totalPages: response.totalPages || 1,
-//     };
-//   },
+        // ✅ your paging is "group start page" (1, 6, 11...)
+        params.append("page", options.startPage.toString());
+        params.append("limit", options.pageSize.toString());
 
-//   /**
-//    * Get all trips
-//    */
-  
-//   async getAllTrips( // For fast testing, only fetches first 5 pages of bikes
-//     tripOptions: GetTripsOptions = {}
-//   ): Promise<Trip[]> {
-//     const MAX_PAGES = 3;
-//     const trips: Trip[] = [];
+        // ✅ filters come from options.filter
+        const { search, bikeId, from, to, status } = options.filter;
 
-//     for (let page = 1; page <= MAX_PAGES; page++) {
-//       const bikePage = await bikeApi.getBikes({ page });
+        if (search?.trim()) params.append("search", search.trim());
+        if (bikeId?.trim()) params.append("bikeId", bikeId.trim());
+        if (status?.trim()) params.append("status", status.trim());
+        if (from?.trim()) params.append("from", search.trim());
+        if (to?.trim()) params.append("to", search.trim());
+        const queryString = params.toString();
+        const endpoint = queryString
+            ? `/dashboard/use/trips?${queryString}`
+            : "/dashboard/use/trips";
 
-//       for (const bike of bikePage.bikes) {
-//         const tripResponse = await tripApi.getTripsByBike(bike.id, tripOptions);
-//         trips.push(...tripResponse.trips);
-//       }
-//     }
+        const response = await apiRequest<FetchResult<Trip>>(endpoint, {
+            signal: options.signal, // ✅ THIS is the key line
+        });
+        return response
 
-//     return trips;
-//   },
-// };
+    },
+};

@@ -14,6 +14,7 @@ import {
 import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useGlobalContext } from "../../context/GlobalContext";
 
 /** Configuration for navigation menu items */
 const menuItems = [
@@ -55,6 +56,7 @@ const menuItems = [
  */
 export default function Sidebar() {
   const location = useLocation();
+  const globalContext = useGlobalContext()
   const [openMenu, setOpenMenu] = useState<string | null>(null); // tracks which parent is open
 
   return (

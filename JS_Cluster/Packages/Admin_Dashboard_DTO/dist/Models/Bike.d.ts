@@ -1,6 +1,6 @@
 export declare enum BikeStatus {
-    IDLE = "Idle",//0
-    RESERVED = "Reserved",//1
+    IDLE = "Idle",
+    RESERVED = "Reserved",
     INUSED = "Inused"
 }
 export interface Bike {

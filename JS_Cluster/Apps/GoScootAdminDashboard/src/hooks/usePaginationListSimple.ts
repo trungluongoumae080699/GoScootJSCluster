@@ -15,6 +15,7 @@ export type FetchResult<T> = {
 
 export type FetchApiArgs<F> = {
     startPage: number;          // first page of group (1, 6, 11, ...)
+    pageSize: number;
     filter: F;
     signal?: AbortSignal;
 };
@@ -30,10 +31,10 @@ export function usePaginationList<T, F>(
     filterPayload: F,
     setFilterPayload: Dispatch<SetStateAction<F>>,
     prevFilterPayload: RefObject<F>,
-    fetchApi: (args: FetchApiArgs<F>) => Promise<FetchResult<T>>
+    fetchApi: (args: FetchApiArgs<F>) => Promise<FetchResult<T>>,
+    pageSize: number
 ) {
     const globalContext = useGlobalContext()
-    const ITEMS_PER_PAGE = 10;
     const abortRef = useRef<AbortController | null>(null);
 
 
@@ -47,6 +48,7 @@ export function usePaginationList<T, F>(
                 try {
                     const result = await fetchApi({
                         startPage: currentPage,
+                        pageSize: pageSize,
                         filter: filterPayload,
                         signal: controller.signal
                     });
@@ -69,16 +71,18 @@ export function usePaginationList<T, F>(
 
     // Apply = defines snapshot
     const applyFilters = useCallback(() => {
-       setIsLoading(true)
+        setCurrentPage(1)
+        setIsLoading(true)
     }, []);
 
     const resetFilter = useCallback(() => {
-    setFilterPayload(prevFilterPayload.current)
-       setIsLoading(true)
+        setFilterPayload(prevFilterPayload.current)
+        setCurrentPage(1)
+        setIsLoading(true)
     }, []);
 
     const goToPage = useCallback(
-         (page: number) => {
+        (page: number) => {
             setCurrentPage(page)
             setIsLoading(true)
         },

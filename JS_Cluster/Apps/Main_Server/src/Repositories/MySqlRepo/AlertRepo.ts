@@ -2,18 +2,9 @@ import { RowDataPacket } from "mysql2";
 import { pool } from "../../MySqlConfig.js";
 import { SortDirection } from "../../Controllers/DashboardController.js";
 import { Response_DashboardGetAlertsDTO } from "@trungthao/admin_dashboard_dto";
+import { Alert, AlertType } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts.js";
 
 
-
-export interface Alert {
-  id: string;
-  bike_id: string;
-  content: string;
-  type: string;
-  longitude: number;
-  latitude: number;
-  time: number;
-}
 
 interface AlertRow extends RowDataPacket {
   id: string;
@@ -33,7 +24,7 @@ export interface GetAlertsOptions {
   from?: number;            // time >= from  (BIGINT)
   to?: number;              // time <= to    (BIGINT)
   page?: number;            // default: 1
-  pageSize?: number;        // default: 10, max: 10
+  limit?: number;        // default: 10, max: 10
 }
 
 
@@ -59,12 +50,13 @@ export async function getAlerts(
     search,
     from,
     to,
-    page = 1,
-    pageSize = 10,
+    page,
+    limit,
   } = options;
 
-  const safePage = Math.max(Number(page) || 1, 1);
-  const safePageSize = Math.min(Math.max(Number(pageSize) || 10, 1), 10); // max 10
+  const safePage = Math.max(page || 1, 1);
+  const safePageSize = Math.max(limit || 10, 10)
+
   const offset = (safePage - 1) * safePageSize;
 
   const conditions: string[] = [];
@@ -135,14 +127,14 @@ export async function getAlerts(
     id: row.id,
     bike_id: row.bike_id,
     content: row.content,
-    type: row.type,
+    type: Object.values(AlertType).includes(row.type as AlertType) ? row.type as AlertType : AlertType.BOUNDARY_CROSS,
     longitude: Number(row.longitude),
     latitude: Number(row.latitude),
     time: Number(row.time),
   }));
 
   return {
-    alerts,
+    alerts: alerts,
     page: safePage,
     pageSize: safePageSize,
     total,

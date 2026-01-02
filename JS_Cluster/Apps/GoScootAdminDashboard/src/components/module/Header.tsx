@@ -6,9 +6,9 @@
 
 import { MdAccountCircle } from "react-icons/md";
 import { IoNotificationsOutline } from "react-icons/io5";
-import { useNotifications } from "../context/NotificationContext";
 import "./Header.css";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "../../context/NotificationContext";
 
 /** Props for the Header component */
 interface HeaderProps {
