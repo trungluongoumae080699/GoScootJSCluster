@@ -373,6 +373,9 @@ export const fetchBikesController = async (
       for (const b of bikes) {
         const tele = telemetryMap.get(b.id);
         if (!tele) continue;
+        if (b.id === "BIK-01NR0D1Q") {
+          console.log(tele)
+        }
 
         b.battery_status = tele.battery_status;
         b.batteryIsLow = tele.batteryIsLow;
