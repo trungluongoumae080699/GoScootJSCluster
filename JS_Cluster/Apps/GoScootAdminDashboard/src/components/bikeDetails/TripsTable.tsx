@@ -3,58 +3,85 @@
  * Displays bike trip history with date filtering and pagination
  */
 
-import { Trip } from '@trungthao/admin_dashboard_dto';
+import { Bike, Trip } from '@trungthao/admin_dashboard_dto';
+import { tripApi } from '../../services/ApiClient/TripApis';
+import { useTripListing } from '../../hooks/PageHooks/useTripListing';
+import Input from '../module/Input';
+import { dateToEndOfDay, dateToStartOfDay } from '../../utlities/methods';
+import { formatDate } from '../../utlities/convert';
+import { useState } from 'react';
+import Pagination from '../module/pagination';
 
-interface TripsTableProps {
-  trips: Trip[];
-  selectedTrip: string | null;
-  onTripSelect: (tripId: string) => void;
-  formatDate: (timestamp: number) => string;
-  startDate: string;
-  endDate: string;
-  onStartDateChange: (date: string) => void;
-  onEndDateChange: (date: string) => void;
-  page: number;
-  totalPages: number;
-  total: number;
-  onPageChange: (page: number) => void;
+type TripsTableProps = {
+  bike: Bike,
+  onSelectTrip: (trip: Trip) => void
 }
-
-function TripsTable({ 
-  trips, 
-  selectedTrip, 
-  onTripSelect, 
-  formatDate,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
-  page,
-  totalPages,
-  total,
-  onPageChange,
+function TripsTable({
+  bike, onSelectTrip
 }: TripsTableProps) {
+
+  const {
+    // state
+    isLoading,
+    displayList,
+    totalCount,
+    currentPage,
+    // actions
+    applyFilters, // use snapshot version
+    resetFilter,
+    goToPage,
+    // filters
+    filterPayload,
+    setFilterPayload,
+  } = useTripListing(bike.id, tripApi.getTrips);
+
+  const [selectedTrip, selectTrip] = useState<Trip | null>(null)
+
   return (
     <div className="trips-table-container">
       <div className="trips-header">
-        <h3>Last Trips ({total})</h3>
+        <h3>Last Trips ({totalCount})</h3>
         <div className="trips-filters">
           <div className="date-filters">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
-              placeholder="From"
-              className="date-input"
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => onEndDateChange(e.target.value)}
-              placeholder="To"
-              className="date-input"
-            />
+            <Input
+              kind="input"
+              type={"date"}
+              placeHolder="Tìm từ ngày"
+              label={"Tìm Đến Ngày"}
+              value={
+                filterPayload.from === ""
+                  ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 10)
+                  : new Date(filterPayload.from).toISOString().slice(0, 10)
+              }
+              onChange={(e) =>
+                setFilterPayload((p) => ({
+                  ...p,
+                  from: String(dateToStartOfDay(e.target.value)),
+                }))
+              }
+            >
+            </Input>
+
+            <Input
+              kind="input"
+              type={"date"}
+              placeHolder="Tìm đến ngày"
+              label={"Tìm Từ Ngày"}
+              value={
+                filterPayload.to === "" ? new Date().toISOString().slice(0, 10)
+                  : new Date(filterPayload.to).toISOString().slice(0, 10)
+              }
+              onChange={(e) =>
+                setFilterPayload((p) => ({
+                  ...p,
+                  to: String(dateToEndOfDay(e.target.value)),
+                }))
+              }
+            >
+
+            </Input>
           </div>
         </div>
       </div>
@@ -67,14 +94,20 @@ function TripsTable({
           </tr>
         </thead>
         <tbody>
-          {trips.length > 0 ? (
-            trips.map((trip) => {
+          {displayList.length > 0 ? (
+            displayList.map((trip) => {
               const hasLocation = trip.trip_end_long != null && trip.trip_end_lat != null;
               return (
                 <tr
                   key={trip.id}
-                  className={`${selectedTrip === trip.id ? 'selected' : ''} ${!hasLocation ? 'no-location' : ''}`}
-                  onClick={() => onTripSelect(trip.id)}
+                  className={`${selectedTrip?.id === trip.id ? 'selected' : ''} ${!hasLocation ? 'no-location' : ''}`}
+                  onClick={
+                    () => {
+                      onSelectTrip(trip)
+                      selectTrip(trip)
+                    }
+
+                  }
                   title={hasLocation ? 'Click to view trip end location' : 'No location data available'}
                 >
                   <td>{trip.customer_id}</td>
@@ -96,11 +129,20 @@ function TripsTable({
           )}
         </tbody>
       </table>
+
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalCount}
+                goToPage={goToPage}>
+              </Pagination>
       
-      {/* Pagination */}
-      {totalPages > 1 && (
+
+
+
+      {/*
+              {totalPages > 1 && (
         <div className="pagination">
-          <button 
+          <button
             className="pagination-btn"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
@@ -111,7 +153,7 @@ function TripsTable({
           <span className="pagination-info">
             Page {page} of {totalPages}
           </span>
-          <button 
+          <button
             className="pagination-btn"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
@@ -121,6 +163,8 @@ function TripsTable({
           </button>
         </div>
       )}
+      */}
+
     </div>
   );
 }

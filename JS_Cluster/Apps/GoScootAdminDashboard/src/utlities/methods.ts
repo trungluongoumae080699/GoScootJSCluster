@@ -41,3 +41,44 @@ export function dateToEndOfDay(dateStr: string): number {
   d.setHours(23, 59, 59, 999);
   return d.getTime();
 }
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in meters
+ */
+export function calculateDistance(
+  lat1: number, lon1: number, 
+  lat2: number, lon2: number
+): number {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Validate and return coordinates if valid for Mapbox, otherwise null
+ * Longitude: -180 to 180, Latitude: -90 to 90
+ */
+export function getValidLocation(location: { longitude: number; latitude: number } | null | undefined): { longitude: number; latitude: number } | null {
+  if (!location) return null;
+  const { longitude, latitude } = location;
+  if (
+    typeof longitude === 'number' &&
+    typeof latitude === 'number' &&
+    !isNaN(longitude) &&
+    !isNaN(latitude) &&
+    longitude >= -180 &&
+    longitude <= 180 &&
+    latitude >= -90 &&
+    latitude <= 90
+  ) {
+    return location;
+  }
+  return null;
+}

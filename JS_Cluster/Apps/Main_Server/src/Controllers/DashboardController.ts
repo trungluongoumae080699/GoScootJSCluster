@@ -1,8 +1,8 @@
 import { CustomRequest } from "../Middlewares/Authorization.js";
 import { Response } from "express";
 import { redisClient } from "../RedisConfig.js";
-import { fetchBikeIdsAndBatteries, fetchBikeUpdates, fetchBikeUpdatesByIds } from "../Repositories/RedisRepo/BikeRepo.js";
-import { fetchBikesNoCount, fetchBikesWithCount, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
+import { fetchBikeIdsAndBatteries, fetchBikeUpdateById, fetchBikeUpdates, fetchBikeUpdatesByIds } from "../Repositories/RedisRepo/BikeRepo.js";
+import { fetchBikesNoCount, fetchBikesWithCount, getBikeById, getMobileAppBikesByHub } from "../Repositories/MySqlRepo/BikeRepo.js";
 import { Bike, BikeStatus, BikeTelemetry, OperationStatus, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { getTrips } from "../Repositories/MySqlRepo/TripRepo.js";
 import { getBikeTelemetry } from "../Repositories/ClickhouseRepo/TelemetryRepo.js";
@@ -83,7 +83,7 @@ export interface GetTripsOptions {
   search?: string
   reservationFrom?: number;
   reservationTo?: number;
-  page?: number; 
+  page?: number;
   limit?: number;
 
 }
@@ -140,7 +140,7 @@ export const fetchTrips = async (
 
   const result = await getTrips(options);
 
-  return response.json({data: result.trips, totalCount: result.total});
+  return response.json({ data: result.trips, totalCount: result.total });
 };
 
 export type BikeTelemetrySortField = "time";
@@ -166,25 +166,25 @@ export interface GetBikeTelemetryResult {
 
 export const fetchTelemetryByBike = async (
   request: CustomRequest<
-    { bikeId: string }, // params
     {}, // body
     {}, // headers
     {
+      bikeId?: string;
       from?: string;
       to?: string;
       page?: string;
-      pageSize?: string;
-      sortDirection?: "asc" | "desc";
+      limit?: string;
     }
   >,
   response: Response
 ) => {
-  const { bikeId } = request.params;
+  const bikeId = request.query.bikeId as string;
+
   if (!bikeId) {
     return response.status(400).json({ error: "bikeId parameter is required" });
   }
 
-  const { from, to, page, pageSize, sortDirection } = request.query;
+  const { from, to, page, limit } = request.query;
 
   // ---- Parse filters (optional) ----
   let fromTime: number | undefined = undefined;
@@ -208,7 +208,7 @@ export const fetchTelemetryByBike = async (
 
   // ---- Pagination ----
   const pageNum = page ? Number(page) : undefined;
-  const pageSizeNum = pageSize ? Number(pageSize) : undefined;
+  const pageSizeNum = limit ? Number(limit) : undefined;
 
   // ---- Call ClickHouse repository ----
   const result = await getBikeTelemetry({
@@ -217,7 +217,6 @@ export const fetchTelemetryByBike = async (
     to: toTime,
     page: pageNum,
     pageSize: pageSizeNum,
-    sortDirection: sortDirection === "asc" ? "asc" : "desc", // default: desc
   });
 
   return response.json(result);
@@ -269,7 +268,7 @@ export const fetchAlerts = async (
       from: fromNum,
       to: toNum,
       page: pageNum,
-      limit: limitNum, 
+      limit: limitNum,
     });
 
     return response.json({
@@ -335,7 +334,6 @@ export const fetchBikesController = async (
     if (needsRedisFilter) {
       const updates = await fetchBikeUpdates({
         battery: batteryNum,
-        operationStatus,
         bikeStatus,
       });
 
@@ -351,7 +349,7 @@ export const fetchBikesController = async (
       telemetryMap = new Map(updates.map((u) => [u.id, u]));
     }
 
-    const { bikes, totalCount } = await fetchBikesWithCount(startPageNum,limit, ids, search);
+    const { bikes, totalCount } = await fetchBikesWithCount(startPageNum, limit, ids, search);
 
     // ✅ enrich telemetry fields (nếu Bike DTO có field tương ứng)
     if (telemetryMap) {
@@ -372,16 +370,19 @@ export const fetchBikesController = async (
       const ids = bikes.map(b => b.id);
       const telemetryMap = await fetchBikeUpdatesByIds(redisClient, ids);
 
-      for (const b of bikes as any[]) {
+      for (const b of bikes) {
         const tele = telemetryMap.get(b.id);
         if (!tele) continue;
 
         b.battery_status = tele.battery_status;
-        b.longitude = tele.longitude;
-        b.latitude = tele.latitude;
-        b.operationStatus = tele.operationStatus;
-        b.usageStatus = tele.usageStatus;
-        b.currentHub = tele.currentHub;
+        b.batteryIsLow = tele.batteryIsLow;
+        b.isOutOfBound = tele.isOutOfBound;
+        b.isCrashed = tele.isCrashed;
+        b.isToppled = tele.isToppled
+        b.status = tele.usageStatus;
+        b.latitude = tele.longitude;
+        b.latitude = tele.latitude
+
       }
     }
 
@@ -392,3 +393,34 @@ export const fetchBikesController = async (
     return res.status(500).json({ error: msg });
   }
 };
+
+export const fetchBikeById = async (
+  req: CustomRequest<{ bikeId: string }, {}, {}, {}>,
+  res: Response
+) => {
+  try {
+    const bikeId = req.params.bikeId
+    const bike = await getBikeById(bikeId)
+    if (bike) {
+      const bikeUpdate = await fetchBikeUpdateById(redisClient, bikeId)
+      if (bikeUpdate) {
+        bike.battery_status = bikeUpdate.battery_status;
+        bike.batteryIsLow = bikeUpdate.batteryIsLow;
+        bike.isOutOfBound = bikeUpdate.isOutOfBound;
+        bike.isCrashed = bikeUpdate.isCrashed;
+        bike.isToppled = bikeUpdate.isToppled
+        bike.status = bikeUpdate.usageStatus;
+        bike.latitude = bikeUpdate.longitude;
+        bike.latitude = bikeUpdate.latitude
+      }
+
+    }
+
+    return res.json(bike);
+
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to fetch bikes";
+    return res.status(500).json({ error: msg });
+  }
+};
+

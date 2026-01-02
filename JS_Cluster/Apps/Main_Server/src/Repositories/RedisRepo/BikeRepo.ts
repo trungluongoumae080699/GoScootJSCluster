@@ -5,6 +5,12 @@ export type BikeIdsAndBatteries = {
     battery: number;
 };
 
+const toBool01 = (v: any): boolean => {
+    if (v === undefined || v === null) return false;
+    if (typeof v === "boolean") return v;
+    const s = String(v).trim().toLowerCase();
+    return s === "1" || s === "true";
+};
 
 export const fetchBikeIdsAndBatteries = async (
     battery: number
@@ -102,8 +108,9 @@ function mapOperationStatus(value?: string): OperationStatus | null {
 export const fetchBikeUpdates = async (
     options?: {
         battery?: number;
-        operationStatus?: OperationStatus;
-        bikeStatus?: BikeStatus;
+        // operationStatus removed because redis no longer has operation_state
+        bikeStatus?: BikeStatus; // optional: if you still want it, map below
+        usageStatus?: string;    // optional: direct string filter
     }
 ): Promise<BikeUpdate[]> => {
     const matched: BikeUpdate[] = [];
@@ -117,30 +124,30 @@ export const fetchBikeUpdates = async (
 
         cursor = Number(scanResult.cursor);
         const keys = scanResult.keys;
-
         if (keys.length === 0) continue;
 
-        const hashes = await Promise.all(
-            keys.map((k) => redisClient.hGetAll(k))
-        );
+        const hashes = await Promise.all(keys.map((k) => redisClient.hGetAll(k)));
 
         hashes.forEach((hash, index) => {
-            if (!hash) return;
+            if (!hash || Object.keys(hash).length === 0) return;
 
             const key = keys[index]; // bike:{id}:telemetry
             const parts = key.split(":");
-            if (parts.length < 3) return;
+            if (parts.length !== 3) return;
 
             const id = parts[1];
 
-            const battery_status = Number(hash.battery_status);
-            const longitude = Number(hash.longitude);
-            const latitude = Number(hash.latitude);
+            const battery_status = Number(hash.battery_status ?? "0");
+            const longitude = Number(hash.longitude ?? "0");
+            const latitude = Number(hash.latitude ?? "0");
 
-            const operationStatus = mapOperationStatus(hash.operation_state);
-            const usageStatus = mapBikeStatus(hash.usage_state);
+            const batteryIsLow = toBool01(hash.battery_is_low);
+            const isToppled = toBool01(hash.is_toppled);
+            const isCrashed = toBool01(hash.is_crashed);
+            const isOutOfBound = toBool01(hash.is_out_of_bound);
 
-            const currentHub = hash.current_hub ?? null;
+            // usage_state is now a STRING in redis
+            const usageStatusStr: string = (hash.usage_state ?? "").toString();
 
             // ---------- FILTERS ----------
             if (
@@ -150,22 +157,19 @@ export const fetchBikeUpdates = async (
                 return;
             }
 
+            // Optional direct string filter
             if (
-                options?.operationStatus !== undefined &&
-                operationStatus !== options.operationStatus
+                options?.usageStatus !== undefined &&
+                usageStatusStr !== options.usageStatus
             ) {
                 return;
             }
 
-            if (
-                options?.bikeStatus !== undefined &&
-                usageStatus !== options.bikeStatus
-            ) {
-                return;
-            }
-
-            if (operationStatus === null || usageStatus === null) {
-                return; // bỏ record Redis bị lỗi / không hợp lệ
+            // Optional: if you still pass BikeStatus enum, you must map it to string
+            // Example mapping (adjust to your real BikeStatus values)
+            if (options?.bikeStatus !== undefined) {
+                const expected = String(options.bikeStatus); // or a mapBikeStatusToString(options.bikeStatus)
+                if (usageStatusStr !== expected) return;
             }
 
             // ---------- PUSH RESULT ----------
@@ -174,15 +178,19 @@ export const fetchBikeUpdates = async (
                 battery_status,
                 longitude,
                 latitude,
-                operationStatus, // ✅ from Redis document
-                usageStatus,     // ✅ from Redis document
-                currentHub
+                batteryIsLow,
+                isToppled,
+                isCrashed,
+                isOutOfBound,
+                usageStatus: usageStatusStr as BikeStatus,
+                currentHub: hash.current_hub ?? null,
             });
         });
     } while (cursor !== 0);
 
     return matched;
 };
+
 
 type TeleHash = Record<string, string>; // hGetAll result
 
@@ -212,7 +220,7 @@ export async function fetchBikeUpdatesByIds(
             if (!tele || Object.keys(tele).length === 0) continue;
 
             const operationStatus = mapOperationStatus(tele.operation_state);
-            const usageStatus = mapBikeStatus(tele.usage_state);
+            const usageStatus = tele.usage_state as BikeStatus
 
             // ✅ assert theo yêu cầu bạn
             if (!operationStatus || !usageStatus) continue;
@@ -222,7 +230,10 @@ export async function fetchBikeUpdatesByIds(
                 battery_status: Number(tele.battery_status ?? "0"),
                 longitude: Number(tele.longitude ?? "0"),
                 latitude: Number(tele.latitude ?? "0"),
-                operationStatus,
+                batteryIsLow: toBool01(tele.battery_is_low),
+                isToppled: toBool01(tele.is_toppled),
+                isCrashed: toBool01(tele.is_crashed),
+                isOutOfBound: toBool01(tele.is_out_of_bound),
                 usageStatus,
                 currentHub: tele.current_hub ?? null,
             });
@@ -230,4 +241,34 @@ export async function fetchBikeUpdatesByIds(
     }
 
     return result;
+}
+
+export async function fetchBikeUpdateById(
+    redisClient: any,
+    bikeId: string
+): Promise<BikeUpdate | null> {
+    // Direct fetch — no MULTI needed for one key
+    const tele: TeleHash = await redisClient.hGetAll(`bike:${bikeId}:telemetry`);
+
+    if (!tele || Object.keys(tele).length === 0) {
+        return null;
+    }
+
+
+    const usageStatus = tele.usage_state as BikeStatus;
+
+
+
+    return {
+        id: bikeId,
+        battery_status: Number(tele.battery_status ?? "0"),
+        longitude: Number(tele.longitude ?? "0"),
+        latitude: Number(tele.latitude ?? "0"),
+        batteryIsLow: toBool01(tele.battery_is_low),
+        isToppled: toBool01(tele.is_toppled),
+        isCrashed: toBool01(tele.is_crashed),
+        isOutOfBound: toBool01(tele.is_out_of_bound),
+        usageStatus,
+        currentHub: tele.current_hub ?? null,
+    };
 }

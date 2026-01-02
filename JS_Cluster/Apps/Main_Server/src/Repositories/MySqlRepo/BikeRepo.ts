@@ -157,6 +157,10 @@ export async function fetchBikesWithCount(
     current_hub: row.current_hub ?? null,
     deleted: row.deleted === 1,
     created_at: new Date(row.created_at),
+    batteryIsLow: false,
+    isCrashed: false,
+    isToppled: false,
+    isOutOfBound: false,
   }));
 
   return { bikes, totalCount };
@@ -218,6 +222,60 @@ export async function fetchBikesNoCount(
     last_service_date: Number(row.last_service_date),
     current_hub: row.current_hub ?? null,
     deleted: row.deleted === 1,
+    batteryIsLow: false,
+    isCrashed: false,
+    isToppled: false,
+    isOutOfBound: false,
     created_at: new Date(row.created_at),
   }));
+}
+
+export async function getBikeById(bikeId: string): Promise<Bike | null> {
+  const sql = `
+    SELECT
+      id,
+      name,
+      status,
+      maximum_speed,
+      maximum_functional_distance,
+      purchase_date,
+      last_service_date,
+      current_hub,
+      deleted,
+      created_at
+    FROM bikes
+    WHERE id = ?
+      AND deleted = 0
+    LIMIT 1
+  `;
+
+  const [rows] = await pool.query<BikeRow[]>(sql, [bikeId]);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const row = rows[0];
+
+  const bike: Bike = {
+    id: row.id,
+    name: row.name,
+    status: row.status,
+    maximum_speed: row.maximum_speed,
+    maximum_functional_distance: row.maximum_functional_distance,
+    purchase_date: row.purchase_date,
+    last_service_date: row.last_service_date,
+    current_hub: row.current_hub,
+    deleted: row.deleted === 0 ? false : true,
+    batteryIsLow: false,
+    isCrashed: false,
+    isToppled: false,
+    isOutOfBound: false,
+    created_at:
+      typeof row.created_at === "string"
+        ? new Date(row.created_at)
+        : row.created_at,
+  };
+
+  return bike;
 }

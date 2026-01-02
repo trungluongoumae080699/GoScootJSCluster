@@ -15,5 +15,10 @@ export interface Bike {
     deleted: boolean;
     created_at: Date;
     battery_status?: number | null;
-    operationStatus?: number | null;
+    longitude?: number;
+    latitude?: number;
+    batteryIsLow: boolean;
+    isToppled: boolean;
+    isCrashed: boolean;
+    isOutOfBound: boolean;
 }

@@ -6,7 +6,10 @@ export type BikeUpdate = {
     battery_status: number,
     longitude: number,
     latitude: number,
-    operationStatus: OperationStatus,
+    batteryIsLow: boolean,
+    isToppled: boolean,
+    isCrashed: boolean,
+    isOutOfBound: boolean,
     usageStatus: BikeStatus,
     currentHub: string | null,
 }

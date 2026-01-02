@@ -14,6 +14,8 @@ import { Bike } from "@trungthao/admin_dashboard_dto";
 export type BikeManagementContextType = {
   currentBike: Bike | null;
   setCurrentBike: Dispatch<SetStateAction<Bike | null>>;
+  currentBikeId: string 
+  setCurrentBikeId: Dispatch<SetStateAction<string>>
 };
 
 export const BikeManagementContext = createContext<BikeManagementContextType | undefined>(
@@ -26,6 +28,7 @@ export function BikeManagementContextProvider({
   children: React.ReactNode;
 }) {
   const [currentBike, setCurrentBike] = useState<Bike | null>(null);
+  const [currentBikeId, setCurrentBikeId] = useState<string>("")
 
 
   return (
@@ -33,6 +36,8 @@ export function BikeManagementContextProvider({
       value={{
         currentBike,
         setCurrentBike,
+        currentBikeId,
+        setCurrentBikeId
       }}
     >
       {children}

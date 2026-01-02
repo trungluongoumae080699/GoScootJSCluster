@@ -47,8 +47,8 @@ export const tripApi = {
         if (search?.trim()) params.append("search", search.trim());
         if (bikeId?.trim()) params.append("bikeId", bikeId.trim());
         if (status?.trim()) params.append("status", status.trim());
-        if (from?.trim()) params.append("from", search.trim());
-        if (to?.trim()) params.append("to", search.trim());
+        if (from?.trim()) params.append("from", from.trim());
+        if (to?.trim()) params.append("to", to.trim());
         const queryString = params.toString();
         const endpoint = queryString
             ? `/dashboard/use/trips?${queryString}`

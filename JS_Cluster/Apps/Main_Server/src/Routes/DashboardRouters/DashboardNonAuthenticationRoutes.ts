@@ -8,8 +8,6 @@ import { fetchAlerts, fetchBikesController, fetchHubs, fetchTelemetryByBike, fet
 
 export const dashboardNonAuthenticationRouter: Router = express.Router();
 
-
-
 dashboardNonAuthenticationRouter.get("/bikes", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
     fetchBikesController(customerRequest, response).catch(next)
@@ -30,7 +28,7 @@ dashboardNonAuthenticationRouter.get("/trips", (request: Request, response: Resp
     fetchTrips(customerRequest, response).catch(next)
 });
 
-dashboardNonAuthenticationRouter.get("/telemetry/:bikeId", (request: Request, response: Response, next: NextFunction) => {
+dashboardNonAuthenticationRouter.get("/telemetry", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
     fetchTelemetryByBike(customerRequest, response).catch(next)
 });

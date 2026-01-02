@@ -1,8 +1,9 @@
-import { Bike } from "@trungthao/admin_dashboard_dto";
+import { Bike, BikeTelemetry } from "@trungthao/admin_dashboard_dto";
 
 import { apiRequest } from "./apiClient";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
 import { BikeFilterPayload } from "../../hooks/PageHooks/useBikeListing";
+import { TelemetryFilterPayload } from "../../hooks/PageHooks/useTelemetryListing";
 
 /**
  * Bike API
@@ -46,6 +47,53 @@ export const bikeApi = {
     return response
 
   },
+
+  async getBikeId(bikeId: string, signal?: AbortSignal): Promise<Bike> {
+    const params = new URLSearchParams();
+
+    params.set("bikeId", bikeId); // 👈 add param here
+
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/dashboard/use/bike?${queryString}`
+      : "/dashboard/use/bike";
+
+    const response = await apiRequest<Bike>(endpoint, {
+      signal, // ✅ use the function param, not options.signal
+    });
+
+    return response;
+  },
+
+
+      async getBikeTelemetry(options: FetchApiArgs<TelemetryFilterPayload>): Promise<FetchResult<BikeTelemetry>> {
+        const params = new URLSearchParams();
+    
+        // ✅ your paging is "group start page" (1, 6, 11...)
+        params.append("page", options.startPage.toString());
+        params.append("limit", options.pageSize.toString());
+      
+        // ✅ filters come from options.filter
+        const { bikeId, from, to } = options.filter;
+    
+      if (bikeId?.trim()) params.append("bikeId", bikeId.trim());
+      if (from?.trim()) params.append("from", from.trim());
+      if (to?.trim()) params.append("to", to.trim());
+        
+    
+        const queryString = params.toString();
+        const endpoint = queryString
+          ? `/dashboard/use/alerts?${queryString}`
+          : "/dashboard/use/alerts";
+    
+        const response = await apiRequest<FetchResult<BikeTelemetry>>(endpoint, {
+          signal: options.signal, // ✅ THIS is the key line
+        });
+        return response
+    
+      },
+
+  
 
   /**
    * Get bike telemetry (location and battery data) with optional date filtering

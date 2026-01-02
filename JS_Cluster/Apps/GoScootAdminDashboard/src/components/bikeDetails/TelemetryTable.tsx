@@ -3,8 +3,14 @@
  * Displays bike telemetry/movement history with date filtering, pagination, and Excel export
  */
 
-import { BikeTelemetry, OperationStatus, BikeStatus } from '@trungthao/admin_dashboard_dto';
+import { BikeTelemetry, OperationStatus, BikeStatus, Bike } from '@trungthao/admin_dashboard_dto';
 import { MdFileDownload } from 'react-icons/md';
+import { useTelemetryListing } from '../../hooks/PageHooks/useTelemetryListing';
+import { dateToEndOfDay, dateToStartOfDay } from '../../utlities/methods';
+import Input from '../module/Input';
+import { formatDate } from '../../utlities/convert';
+import Pagination from '../module/pagination';
+import { bikeApi } from '../../services/ApiClient/BikeApis';
 
 /** Get CSS class for operation status badge */
 function getOperationStatusClass(status: OperationStatus): string {
@@ -35,41 +41,41 @@ function getUsageStatusClass(status: BikeStatus): string {
 }
 
 interface TelemetryTableProps {
-  telemetry: BikeTelemetry[];
-  startDate: string;
-  endDate: string;
-  onStartDateChange: (date: string) => void;
-  onEndDateChange: (date: string) => void;
-  onExportExcel: () => void;
-  isExporting: boolean;
-  formatDate: (timestamp: number) => string;
-  page: number;
-  totalPages: number;
-  total: number;
-  onPageChange: (page: number) => void;
+  bike: Bike,
+  onSelectTelemetry: (telemetry: BikeTelemetry) => void
+  isExportingExcel: boolean
+  onExportExcel: () => void
 }
 
-function TelemetryTable({ 
-  telemetry, 
-  startDate, 
-  endDate, 
-  onStartDateChange, 
-  onEndDateChange, 
+function TelemetryTable({
+  bike,
+  onSelectTelemetry,
+  isExportingExcel,
   onExportExcel,
-  isExporting,
-  formatDate,
-  page,
-  totalPages,
-  total,
-  onPageChange,
+
 }: TelemetryTableProps) {
+  const {
+    // state
+    isLoading,
+    displayList,
+    totalCount,
+    currentPage,
+    // actions
+    applyFilters, // use snapshot version
+    resetFilter,
+    goToPage,
+    // filters
+    filterPayload,
+    setFilterPayload,
+  } = useTelemetryListing(bike.id, bikeApi.);
+
   return (
     <div className="movement-history-section">
       <div className="movement-history-header">
-        <h3>Movement History ({total} records) 
-          <span style={{ 
-            fontSize: '12px', 
-            color: '#4CAF50', 
+        <h3>Movement History ({totalCount} records)
+          <span style={{
+            fontSize: '12px',
+            color: '#4CAF50',
             marginLeft: '8px',
             fontWeight: 'normal'
           }}>
@@ -78,30 +84,54 @@ function TelemetryTable({
         </h3>
         <div className="movement-history-controls">
           <div className="date-filters">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
-              placeholder="Start Date"
-              className="date-input"
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => onEndDateChange(e.target.value)}
-              placeholder="End Date"
-              className="date-input"
-            />
+            <Input
+              kind="input"
+              type={"date"}
+              placeHolder="Tìm từ ngày"
+              label={"Tìm Đến Ngày"}
+              value={
+                filterPayload.from === ""
+                  ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 10)
+                  : new Date(filterPayload.from).toISOString().slice(0, 10)
+              }
+              onChange={(e) =>
+                setFilterPayload((p) => ({
+                  ...p,
+                  from: String(dateToStartOfDay(e.target.value)),
+                }))
+              }
+            >
+            </Input>
+
+            <Input
+              kind="input"
+              type={"date"}
+              placeHolder="Tìm đến ngày"
+              label={"Tìm Từ Ngày"}
+              value={
+                filterPayload.to === "" ? new Date().toISOString().slice(0, 10)
+                  : new Date(filterPayload.to).toISOString().slice(0, 10)
+              }
+              onChange={(e) =>
+                setFilterPayload((p) => ({
+                  ...p,
+                  to: String(dateToEndOfDay(e.target.value)),
+                }))
+              }
+            >
+
+            </Input>
           </div>
-          <button 
-            onClick={onExportExcel} 
+          <button
+            onClick={onExportExcel}
             className="export-btn"
-            disabled={isExporting}
+            disabled={isExportingExcel}
             title="Export to Excel"
           >
             <MdFileDownload size={18} style={{ marginRight: '4px' }} />
-            {isExporting ? 'Exporting...' : 'Export Excel'}
+            {isExportingExcel ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
       </div>
@@ -120,8 +150,8 @@ function TelemetryTable({
           </tr>
         </thead>
         <tbody>
-          {telemetry.length > 0 ? (
-            telemetry.map((t) => (
+          {displayList.length > 0 ? (
+            displayList.map((t) => (
               <tr key={t.id}>
                 <td>
                   <span style={{
@@ -158,31 +188,13 @@ function TelemetryTable({
           )}
         </tbody>
       </table>
-      
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button 
-            className="pagination-btn"
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            aria-label="Previous page"
-          >
-            ◀
-          </button>
-          <span className="pagination-info">
-            Page {page} of {totalPages}
-          </span>
-          <button 
-            className="pagination-btn"
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages}
-            aria-label="Next page"
-          >
-            ▶
-          </button>
-        </div>
-      )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}>
+      </Pagination>
+
     </div>
   );
 }

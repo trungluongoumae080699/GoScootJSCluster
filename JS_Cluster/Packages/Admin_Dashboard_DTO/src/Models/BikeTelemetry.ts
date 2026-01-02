@@ -16,6 +16,9 @@ export type BikeTelemetry = {
     latitude: number
     time: number,
     last_gps_contact_time: number,
-    operationStatus: OperationStatus
+    batteryIsLow: boolean,
+    isToppled: boolean,
+    isCrashed: boolean,
+    isOutOfBound: boolean,
     usageStatus: BikeStatus
 }

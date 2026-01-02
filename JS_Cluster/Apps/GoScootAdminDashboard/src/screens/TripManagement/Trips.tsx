@@ -81,157 +81,177 @@ export default function Trips() {
 
 
     return (
-        <div className="bike-details-container">
-            <div className="main-content">
-                <div className="content-area trips-content">
-                    {/* Filters Section */}
-                    <div className="trips-filters">
-                        <Input
-                            kind="input"
-                            type={"text"}
-                            value={filterPayload.search}
-                            placeHolder="Tìm Kiếm"
-                            label={"Tìm Kiếm"}
-                            onChange={
-                                (e) => setFilterPayload((p) => ({ ...p, search: e.target.value }))
-                            }
-                        >
-                        </Input>
+        <div className="page-container">
+            <div className="content-area trips-content">
+                {/* Filters Section */}
+                <div className="trips-filters">
+                    <Input
+                        kind="input"
+                        type={"text"}
+                        value={filterPayload.search}
+                        placeHolder="Tìm Kiếm"
+                        label={"Tìm Kiếm"}
+                        onChange={
+                            (e) => setFilterPayload((p) => ({ ...p, search: e.target.value }))
+                        }
+                    >
+                    </Input>
 
-                        <Input
-                            kind="input"
-                            type={"text"}
-                            value={filterPayload.search}
-                            placeHolder="Nhập xe bạn muốn tìm"
-                            label={"Mã Xe"}
-                            onChange={
-                                (e) => setFilterPayload((p) => ({ ...p, bikeId: e.target.value }))
-                            }
-                        >
+                    <Input
+                        kind="input"
+                        type={"text"}
+                        value={filterPayload.search}
+                        placeHolder="Nhập xe bạn muốn tìm"
+                        label={"Mã Xe"}
+                        onChange={
+                            (e) => setFilterPayload((p) => ({ ...p, bikeId: e.target.value }))
+                        }
+                    >
 
 
-                        </Input>
+                    </Input>
 
-                        <Input
-                            kind="input"
-                            type={"date"}
-                            placeHolder="Tìm từ ngày"
-                            label={"Tìm Đến Ngày"}
-                            value={
-                                filterPayload.from === ""
-                                    ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
-                                        .toISOString()
-                                        .slice(0, 10)
-                                    : new Date(filterPayload.from).toISOString().slice(0, 10)
-                            }
-                            onChange={(e) =>
-                                setFilterPayload((p) => ({
-                                    ...p,
-                                    from: String(dateToStartOfDay(e.target.value)),
-                                }))
-                            }
-                        >
+                    <Input
+                        kind="input"
+                        type={"date"}
+                        placeHolder="Tìm từ ngày"
+                        label={"Tìm Đến Ngày"}
+                        value={
+                            filterPayload.from === ""
+                                ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
+                                    .toISOString()
+                                    .slice(0, 10)
+                                : new Date(filterPayload.from).toISOString().slice(0, 10)
+                        }
+                        onChange={(e) =>
+                            setFilterPayload((p) => ({
+                                ...p,
+                                from: String(dateToStartOfDay(e.target.value)),
+                            }))
+                        }
+                    >
 
-                        </Input>
+                    </Input>
 
-                        <Input
-                            kind="input"
-                            type={"date"}
-                            placeHolder="Tìm đến ngày"
-                            label={"Tìm Từ Ngày"}
-                            value={
-                                filterPayload.to === "" ? new Date().toISOString().slice(0, 10)
-                                    : new Date(filterPayload.to).toISOString().slice(0, 10)
-                            }
-                            onChange={(e) =>
-                                setFilterPayload((p) => ({
-                                    ...p,
-                                    to: String(dateToEndOfDay(e.target.value)),
-                                }))
-                            }
-                        >
+                    <Input
+                        kind="input"
+                        type={"date"}
+                        placeHolder="Tìm đến ngày"
+                        label={"Tìm Từ Ngày"}
+                        value={
+                            filterPayload.to === "" ? new Date().toISOString().slice(0, 10)
+                                : new Date(filterPayload.to).toISOString().slice(0, 10)
+                        }
+                        onChange={(e) =>
+                            setFilterPayload((p) => ({
+                                ...p,
+                                to: String(dateToEndOfDay(e.target.value)),
+                            }))
+                        }
+                    >
 
-                        </Input>
+                    </Input>
 
-                        <Input
-                            kind="select"
-                            value={filterPayload.status}
-                            placeHolder="Chọn trạng thái"
-                            options={TRIP_STATUS_OPTION}
-                            label={"Trạng Thái"}
-                            onChange={
-                                (e) => setFilterPayload((p) => ({ ...p, status: e.target.value }))
-                            }
-                        >
-                        </Input>
-                    </div>
+                    <Input
+                        kind="select"
+                        value={filterPayload.status}
+                        placeHolder="Chọn trạng thái"
+                        options={TRIP_STATUS_OPTION}
+                        label={"Trạng Thái"}
+                        onChange={
+                            (e) => setFilterPayload((p) => ({ ...p, status: e.target.value }))
+                        }
+                    >
+                    </Input>
+                    <button
+                        className="btn apply-btn"
+                        onClick={applyFilters}
+                        disabled={isLoading}
+                        title="Apply filters & fetch group 0">
+                        Apply
+                    </button>
 
-                    {/* Error Message */}
-                    {/*error && <div className="error-message">{error}</div>*/}
-
-                    {/* Loading State */}
-                    {isLoading ? (
-                        <div className="loading">
-                            "Loading Trip"
-                        </div>
-                    ) : (
-                        <>
-                            {/* Trips Table */}
-                            <div className="trips-table-container">
-                                <table className="trips-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Vin Number</th>
-                                            <th>Customer ID</th>
-                                            <th>Date Range</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {displayList.map((trip) => (
-                                            <tr
-                                                key={trip.id}
-                                                onClick={() => handleTripClick(trip.bike_id, trip.id)}
-                                                className={
-                                                    trip.trip_status === "in progress"
-                                                        ? "row-highlighted"
-                                                        : ""
-                                                }
-                                            >
-                                                <td className="vin-cell">{trip.id}</td>
-                                                <td>{trip.bike_id}</td>
-                                                <td>{trip.customer_id}</td>
-                                                <td>
-                                                    {formatDate(trip.trip_start_date!)} -{" "}
-                                                    {formatDate(trip.trip_end_date!)}
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className="status-badge-table"
-                                                        style={getStatusStyle(
-                                                            trip.trip_status.toLowerCase() as TripStatus
-                                                        )}
-                                                    >
-                                                        {getStatusLabel(
-                                                            trip.trip_status.toLowerCase() as TripStatus
-                                                        )}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            <Pagination
-                                currentPage={currentPage}
-                                totalItems={totalCount}
-                                goToPage={goToPage}></Pagination>
-                        </>
-                    )}
+                    <button
+                        className="btn clear-btn"
+                        onClick={applyFilters}
+                        disabled={isLoading}
+                        title="Apply filters & fetch group 0">
+                        Clear
+                    </button>
                 </div>
+
+
+                {/* Error Message */}
+                {/*error && <div className="error-message">{error}</div>*/}
+
+                {/* Loading State */}
+                {isLoading ? (
+                    <div className="loading">
+                        "Loading Trip"
+                    </div>
+                ) : (
+                    <>
+                        {/* Trips Table */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalCount}
+                            goToPage={goToPage}>
+                        </Pagination>
+                        <div className="trips-table-container">
+                            <table className="trips-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Vin Number</th>
+                                        <th>Customer ID</th>
+                                        <th>Date Range</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayList.map((trip) => (
+                                        <tr
+                                            key={trip.id}
+                                            onClick={() => handleTripClick(trip.bike_id, trip.id)}
+                                            className={
+                                                trip.trip_status === "in progress"
+                                                    ? "row-highlighted"
+                                                    : ""
+                                            }
+                                        >
+                                            <td className="vin-cell">{trip.id}</td>
+                                            <td>{trip.bike_id}</td>
+                                            <td>{trip.customer_id}</td>
+                                            <td>
+                                                {formatDate(trip.trip_start_date!)} -{" "}
+                                                {formatDate(trip.trip_end_date!)}
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className="status-badge-table"
+                                                    style={getStatusStyle(
+                                                        trip.trip_status.toLowerCase() as TripStatus
+                                                    )}
+                                                >
+                                                    {getStatusLabel(
+                                                        trip.trip_status.toLowerCase() as TripStatus
+                                                    )}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalCount}
+                            goToPage={goToPage}>
+                        </Pagination>
+                    </>
+                )}
             </div>
         </div>
     );

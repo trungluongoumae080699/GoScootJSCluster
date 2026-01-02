@@ -25,8 +25,8 @@ export const alertApi = {
       const { search, from, to } = options.filter;
   
     if (search?.trim()) params.append("search", search.trim());
-    if (from?.trim()) params.append("from", search.trim());
-    if (to?.trim()) params.append("to", search.trim());
+    if (from?.trim()) params.append("from", from.trim());
+    if (to?.trim()) params.append("to", to.trim());
       
   
       const queryString = params.toString();

@@ -1,11 +1,13 @@
 import { BikeStatus } from "./Bike.js";
-import { OperationStatus } from "./BikeTelemetry.js";
 export type BikeUpdate = {
     id: string;
     battery_status: number;
     longitude: number;
     latitude: number;
-    operationStatus: OperationStatus;
+    batteryIsLow: boolean;
+    isToppled: boolean;
+    isCrashed: boolean;
+    isOutOfBound: boolean;
     usageStatus: BikeStatus;
     currentHub: string | null;
 };
