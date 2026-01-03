@@ -14,7 +14,7 @@ import {
 import styles from "./Sidebar.module.css";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { useGlobalContext } from "../../context/GlobalContext";
+import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
 
 /** Configuration for navigation menu items */
 const menuItems = [
@@ -61,10 +61,17 @@ export default function Sidebar() {
 
   return (
     <aside className={styles["sidebar"]}>
+      <div className={styles["header"]}>
+        <img
+          src="/Mobile App Logo.png"
+          alt="GoScoot Logo"
+          className={styles["logo"]}
+        />
+      </div>
       <nav className={styles["nav-menu"]}>
+
         {menuItems.map(({ id, icon: Icon, label, subItems, route }) => {
           const isActive = location.pathname === route;
-
           return (
             <div
               key={id}

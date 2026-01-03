@@ -4,6 +4,7 @@ import { apiRequest } from "./apiClient";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
 import { BikeFilterPayload } from "../../hooks/PageHooks/useBikeListing";
 import { TelemetryFilterPayload } from "../../hooks/PageHooks/useTelemetryListing";
+import { Response_BikeListDTO } from "../../../../../Packages/Mobile_App_DTO/dist";
 
 
 /** Get Hubs Options */
@@ -117,10 +118,13 @@ export const bikeApi = {
     return apiRequest<Hub[]>(endpoint);
   },
 
-  async getBikesInHub(hubId: string): Promise<BikesResponse> {
-    // Use the regular bikes endpoint with hub filter parameter
-    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
-    return bikeApi.getBikes({ hub: hubId });
+  async getBikesInHub(hubId: string, signal?: AbortSignal): Promise<Response_BikeListDTO> {
+    const endpoint = `/dashboard/use/bikes/hub/${hubId}`
+    const response = await apiRequest<Response_BikeListDTO>(endpoint, {
+      signal, // ✅ use the function param, not options.signal
+    });
+
+    return response;
   },
 
 

@@ -1,7 +1,6 @@
 .sidebar {
   width: 15vw;
   height: 100vh;
-  padding-top: 14vh;
   background: #f0f0f0;
   display: flex;
   flex-direction: column;
@@ -16,6 +15,22 @@
 .nav-menu {
   display: flex;
   flex-direction: column;
+}
+
+.header {
+  height: 14vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  width: 6.5vw;
+  height: auto;
+  object-fit: contain;
 }
 
 .nav-item {

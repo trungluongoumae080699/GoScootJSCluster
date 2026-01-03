@@ -17,6 +17,7 @@ import { UnauthenticatedException } from "../../models/Exceptions/ApiExceptions"
 export { getSessionId, clearAuth as clearSession } from "../authService";
 
 
+
 /** Base API URL */
 const API_BASE_URL = getApiBaseUrl();
 
@@ -103,7 +104,11 @@ export const hubApi = {
    */
   
   /*
-
+  async getBikesInHub(hubId: string): Promise<BikesResponse> {
+    // Use the regular bikes endpoint with hub filter parameter
+    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
+    return bikeApi.getBikes({ hub: hubId });
+  },
   */
   
 };

@@ -1,8 +1,9 @@
-import Sidebar from "../components/Sidebar";
-
-import { useState } from "react";
+import Map from "../components/module/Map"
+import { useEffect, useState } from "react";
+import { useGlobalContext, WebScreen } from "../context/GlobalContext";
 
 export default function Dashboard() {
+  const globalContext = useGlobalContext()
   const [selectedBikeLocation, setSelectedBikeLocation] = useState<[number, number] | null>(null);
   const [selectedBikeId, setSelectedBikeId] = useState<string | undefined>(undefined);
 
@@ -15,16 +16,21 @@ export default function Dashboard() {
     }
   };
 
+  useEffect(()=>{
+    globalContext.setCurrentPage(WebScreen.DASHBOARD)
+  },[])
+
   return (
-    <div className="bike-details-container">
-      <div className="main-content">
-        <Sidebar />
+    <div style={{
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden"
+      }}>
         <Map 
           onNavigate={handleNavigate}
           centerOnLocation={selectedBikeLocation}
         />
       </div>
-    </div>
   );
 }
  

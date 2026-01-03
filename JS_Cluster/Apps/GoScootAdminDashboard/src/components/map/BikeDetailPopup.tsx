@@ -13,7 +13,7 @@
  */
 
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { MdBatteryFull, MdClose, MdDirectionsBike, MdInfo, MdSettings, MdPerson } from 'react-icons/md';
+import { MdBatteryFull, MdClose, MdDirectionsBike, MdInfo, MdSettings, MdPerson, MdWarning } from 'react-icons/md';
 import './BikeDetailPopup.css';
 
 interface BikeDetailPopupProps {
@@ -26,7 +26,7 @@ interface BikeDetailPopupProps {
 function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
   // Determine battery color: Green if > 20%, Red if low
   const batteryColor = bike.battery_status > 20 ? '#4CAF50' : '#F44336';
-  
+
   // Choose icon based on battery level
   const batteryIcon = bike.battery_status > 20 ? '🔋' : '⚠️';
 
@@ -104,15 +104,131 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
         {/* Row 3: Operation Status */}
         <div className="detail-row">
           <div className="detail-icon">
-            <MdSettings size={20} style={{ color: getOperationStatusColor(bike.operationStatus) }} />
+            <MdWarning size={20} />
           </div>
+
           <div className="detail-info">
-            <span className="detail-label">Operation</span>
-            <span className="detail-value" style={{ color: getOperationStatusColor(bike.operationStatus), fontWeight: 'bold' }}>
-              {bike.operationStatus}
+            <span className="detail-label">Low Battery Warning</span>
+
+            <span
+              className={`detail-value ${bike.batteryIsLow ? "blink" : ""}`}
+              style={{
+                color: bike.batteryIsLow ? "#d32f2f" : "#2e7d32",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              {bike.batteryIsLow ? (
+                <>
+                  <span>LOW</span>
+                  <MdWarning size={18} />
+                </>
+              ) : (
+                <>
+                  <span>OK</span>
+                  <span>✔</span>
+                </>
+              )}
             </span>
           </div>
         </div>
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+
+          <div className="detail-info">
+            <span className="detail-label">Crash Warning</span>
+
+            <span
+              className={`detail-value ${bike.isCrashed ? "blink" : ""}`}
+              style={{
+                color: bike.batteryIsLow ? "#d32f2f" : "#2e7d32",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              {bike.isCrashed ? (
+                <>
+                  <span>!</span>
+                </>
+              ) : (
+                <>
+                  <span>✔</span>
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+
+          <div className="detail-info">
+            <span className="detail-label">Thieve Warning</span>
+
+            <span
+              className={`detail-value ${bike.batteryIsLow ? "blink" : ""}`}
+              style={{
+                color: bike.isToppled ? "#d32f2f" : "#2e7d32",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              {bike.isToppled ? (
+                <>
+                  <span>LOW</span>
+                  <MdWarning size={18} />
+                </>
+              ) : (
+                <>
+                  <span>OK</span>
+                  <span>✔</span>
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+
+          <div className="detail-info">
+            <span className="detail-label">Out Of Bound Warning</span>
+
+            <span
+              className={`detail-value ${bike.batteryIsLow ? "blink" : ""}`}
+              style={{
+                color: bike.isOutOfBound ? "#d32f2f" : "#2e7d32",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              {bike.isOutOfBound ? (
+                <>
+                  <span>LOW</span>
+                  <MdWarning size={18} />
+                </>
+              ) : (
+                <>
+                  <span>OK</span>
+                  <span>✔</span>
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+
 
         {/* Row 4: Usage Status */}
         <div className="detail-row">

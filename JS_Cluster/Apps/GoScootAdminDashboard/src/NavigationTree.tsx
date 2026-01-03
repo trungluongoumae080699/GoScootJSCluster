@@ -18,6 +18,7 @@ import BikeDetails from "./screens/BikeMangement/BikeDetails";
 import Loader from "./components/module/LoadingModule";
 import Snackbar from "./components/module/Snackbar";
 import TripDetails from "./screens/TripManagement/TripDetails";
+import Dashboard from "./screens/Dashboard";
 
 
 
@@ -92,15 +93,16 @@ export default function Root() {
   return (
     <div className="app-container">
       {
-        globalContext.currentPage === WebScreen.LOGIN ? undefined : <Header title={globalContext.currentHeader}></Header>
+        globalContext.currentPage === WebScreen.LOGIN || globalContext.currentPage === WebScreen.DASHBOARD ? undefined : <Header title={globalContext.currentHeader}></Header>
       }
       {
         globalContext.currentPage === WebScreen.LOGIN ? undefined : <Sidebar></Sidebar>
       }
 
       <div
-        className={`main-content-container ${globalContext.isAuth ? "main-content-container-post-auth" : ""
-          }`}
+        className={`main-content-container 
+          ${globalContext.isAuth ? "main-content-container-post-auth" : ""
+          } ${globalContext.currentPage === WebScreen.DASHBOARD ? "main-content-container-post-auth-dashboard" : "" }`}
       >
 
         <ToastContainer />
@@ -113,17 +115,17 @@ export default function Root() {
           <Route path="/signup" element={globalContext.isAuth ? <Navigate to="/" replace /> : <SignUp />} />
 
           {/* Protected routes */}
-          {/*  <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        /> */}
-
           <Route
             path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/bikes"
             element={
               <Bikes />
             }

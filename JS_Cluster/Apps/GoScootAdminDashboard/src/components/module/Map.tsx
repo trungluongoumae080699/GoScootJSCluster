@@ -5,7 +5,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // Type definitions for bike data structures
-import { BikeUpdate, Bike } from '@trungthao/admin_dashboard_dto';
+import { BikeUpdate, Bike, Hub } from '@trungthao/admin_dashboard_dto';
 
 
 
@@ -18,6 +18,7 @@ import DisplayToggle, { DisplayMode } from '../map/DisplayToggle';
 import MapStatusIndicator from '../map/MapStatusIndicator';
 import HubDetailCard from '../map/HubDetailCard';
 import { websocketManager } from '../../services/websocketService';
+import { bikeApi } from '../../services/ApiClient/BikeApis';
 // Custom hooks for WebSocket connection and map marker management
 //import { useWebSocket } from './hooks/useWebSocket';
 
@@ -224,7 +225,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     
     try {
       // Fetch bikes located at this specific hub from the backend API
-      const response = await hubApi.getBikesInHub(hub.id);
+      const response = await bikeApi.getBikesInHub(hub.id);
       
       // Handle different response formats for backward compatibility
       if (response && response.bikes) {

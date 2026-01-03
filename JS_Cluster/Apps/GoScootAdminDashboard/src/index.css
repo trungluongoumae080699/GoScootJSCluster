@@ -45,6 +45,13 @@ html, body {
   padding-left: 15vw;
 }
 
+.main-content-container-post-auth-dashboard {
+  padding-top: 0;
+  padding-left: 15vw;
+}
+
+
+
 .map {
   width: 100%;
   height: 100%;

@@ -86,7 +86,7 @@ export function useMapRealtime(
                 websocketManager.sendViewport(bounds);
 
                 if (onHubUpdate) {
-                    const hubs = await hubApi.getHubsInArea(bounds);
+                    const hubs = await bikeApi.getHubsInArea(bounds);
                     onHubUpdate(hubs);
                 }
             }, 500);
