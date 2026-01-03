@@ -1,17 +1,8 @@
 /* Bikes Page Styles */
-.trips-content {
+.page-container {
+  width: 100%;
+  min-height: 100%;
   padding: 24px;
-}
-
-/* Stats Section */
-.trips-stats {
-  margin-bottom: 1rem;
-}
-
-.trips-stats p {
-  margin: 0.25rem 0;
-  font-size: 1.1rem;
-  font-weight: 500;
 }
 
 /* Filters Section */
@@ -52,7 +43,6 @@
 
 /* Clear */
 .clear-btn {
-
   color: #000;
   background: #4D9DE0;
   border-color: #4D9DE0;

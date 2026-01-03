@@ -15,6 +15,9 @@ import Sidebar from "./components/module/Sidebar";
 import Header from "./components/module/Header";
 import Trips from "./screens/TripManagement/Trips";
 import BikeDetails from "./screens/BikeMangement/BikeDetails";
+import Loader from "./components/module/LoadingModule";
+import Snackbar from "./components/module/Snackbar";
+import TripDetails from "./screens/TripManagement/TripDetails";
 
 
 
@@ -25,32 +28,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Wrapper component to get bikeId from params
-/* function BikeDetailsWrapper({
-  onNavigate,
-}: {
-  onNavigate: (page: string, bikeLocation?: [number, number]) => void;
-}) {
-  const { bikeId } = useParams<{ bikeId: string }>();
-  return <BikeDetails onNavigate={onNavigate} bikeId={bikeId} />;
-}
- */
 export default function Root() {
-
-
   const globalContext = useGlobalContext();
   const navigate = useNavigate();
-
-  const handleNavigate = (page: WebScreen, bikeLocation?: [number, number]) => {
-
-    // if you actually use these somewhere, keep them;
-    // otherwise you can remove
-    globalContext.setCurrentPage(page);
-    //if (bikeLocation) setSelectedBikeLocation(bikeLocation);
-    // you had currentPage too; remove unless you use it
-  };
-
-
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -104,7 +84,7 @@ export default function Root() {
           color: "#666",
         }}
       >
-        Loading...
+        <Loader></Loader>
       </div>
     );
   }
@@ -117,7 +97,11 @@ export default function Root() {
       {
         globalContext.currentPage === WebScreen.LOGIN ? undefined : <Sidebar></Sidebar>
       }
-      <div className="main-content-container">
+
+      <div
+        className={`main-content-container ${globalContext.isAuth ? "main-content-container-post-auth" : ""
+          }`}
+      >
 
         <ToastContainer />
         <Routes>
@@ -144,22 +128,15 @@ export default function Root() {
               <Bikes />
             }
           />
-        <Route
-          path="/bike"
-          element={
-            <ProtectedRoute>
-              <BikeDetails />
-            </ProtectedRoute>
-          }
-        /> 
-          {/*         <Route
-          path="/bike/:bikeId"
-          element={
-            <ProtectedRoute>
-              <BikeDetailsWrapper onNavigate={handleNavigate} />
-            </ProtectedRoute>
-          }
-        /> */}
+          <Route
+            path="/bike"
+            element={
+              <ProtectedRoute>
+                <BikeDetails />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/trips"
             element={
@@ -168,14 +145,14 @@ export default function Root() {
               </ProtectedRoute>
             }
           />
-          {/*         <Route
-          path="/trips/:bikeId/:tripId"
-          element={
-            <ProtectedRoute>
-              <TripDetails />
-            </ProtectedRoute>
-          }
-        /> */}
+          <Route
+            path="/trip"
+            element={
+              <ProtectedRoute>
+                <TripDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/alerts"
             element={
@@ -186,6 +163,7 @@ export default function Root() {
           />
         </Routes>
       </div>
+      <Snackbar duration={4000}></Snackbar>
 
     </div>
   );

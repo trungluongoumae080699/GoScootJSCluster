@@ -1,6 +1,11 @@
 import { createContext, Dispatch, SetStateAction, useContext, useState } from "react";
 import { Alert } from "../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
+export type SnackbarConfig = {
+    message: string,
+    type: "Waiting" | "Error" | "Success",
+    isOn: boolean
+}
 export enum WebScreen {
     DASHBOARD = "DASHBOARD",
     BIKES = "BIKES",
@@ -9,7 +14,7 @@ export enum WebScreen {
     TRIP_DETAIL = "TRIP_DETAIL",
     ALERT = "ALERT",
     LOGIN = "LOGIN",
-}   
+}
 
 export type GlobalContextType = {
     currentHeader: string,
@@ -28,8 +33,10 @@ export type GlobalContextType = {
     setCurrentPage: Dispatch<SetStateAction<WebScreen>>;
     bikeCount: number,
     setBikeCount: Dispatch<SetStateAction<number>>
-    
-    
+    snackbar: SnackbarConfig
+    setSnackbar: Dispatch<SetStateAction<SnackbarConfig>>
+
+
 };
 export const GlobalContext = createContext<GlobalContextType | undefined>(
     undefined
@@ -44,9 +51,12 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<WebScreen>(WebScreen.DASHBOARD);
     const [bikeCount, setBikeCount] = useState<number>(0)
-    const [selectedBikeLocation, setSelectedBikeLocation] = useState<
-    [number, number] | null
-  >(null);
+    const [snackbar, setSnackbar] = useState<SnackbarConfig>({
+        message: "This is a test",
+        type: "Success",
+        isOn: true
+    })
+
 
     return (
         <GlobalContext.Provider
@@ -66,7 +76,9 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
                 currentPage,
                 setCurrentPage,
                 bikeCount,
-                setBikeCount
+                setBikeCount,
+                snackbar,
+                setSnackbar
             }}
         >
             {children}
@@ -74,9 +86,9 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     );
 }
 export const useGlobalContext = () => {
-  const context = useContext(GlobalContext);
-  if (!context) {
-    throw new Error("useGlobalContext must be used within GlobalProvider");
-  }
-  return context;
+    const context = useContext(GlobalContext);
+    if (!context) {
+        throw new Error("useGlobalContext must be used within GlobalProvider");
+    }
+    return context;
 };

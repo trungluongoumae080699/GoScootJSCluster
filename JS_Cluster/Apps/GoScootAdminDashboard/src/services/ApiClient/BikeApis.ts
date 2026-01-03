@@ -49,15 +49,7 @@ export const bikeApi = {
   },
 
   async getBikeId(bikeId: string, signal?: AbortSignal): Promise<Bike> {
-    const params = new URLSearchParams();
-
-    params.set("bikeId", bikeId); // 👈 add param here
-
-    const queryString = params.toString();
-    const endpoint = queryString
-      ? `/dashboard/use/bike?${queryString}`
-      : "/dashboard/use/bike";
-
+    const endpoint = `/dashboard/use/bike/${bikeId}`
     const response = await apiRequest<Bike>(endpoint, {
       signal, // ✅ use the function param, not options.signal
     });
@@ -94,101 +86,4 @@ export const bikeApi = {
   },
 
 
-
-  /**
-   * Get bike telemetry (location and battery data) with optional date filtering
-   * Returns TelemetryResponse with pagination
-   */
-  //   async getBikeTelemetry(
-  //     bikeId: string,
-  //     options: GetTelemetryOptions = {}
-  //   ): Promise<TelemetryResponse> {
-  //     const params = new URLSearchParams();
-
-  //     if (options.page) {
-  //       params.append("page", options.page.toString());
-  //     }
-  //     if (options.pageSize) {
-  //       params.append("pageSize", options.pageSize.toString());
-  //     }
-  //     if (options.from !== undefined) {
-  //       params.append("from", options.from.toString());
-  //     }
-  //     if (options.to !== undefined) {
-  //       params.append("to", options.to.toString());
-  //     }
-  //     if (options.sortDirection) {
-  //       params.append("sortDirection", options.sortDirection);
-  //     }
-
-  //     const queryString = params.toString();
-  //     const endpoint = queryString
-  //       ? `/dashboard/use/telemetry/${bikeId}?${queryString}`
-  //       : `/dashboard/use/telemetry/${bikeId}`;
-
-  //     const response = await apiRequest<any>(endpoint);
-
-  //     // Handle both old format (array) and new format (object with pagination)
-  //     if (Array.isArray(response)) {
-  //       return {
-  //         telemetry: response,
-  //         page: 1,
-  //         pageSize: response.length,
-  //         total: response.length,
-  //         totalPages: 1,
-  //       };
-  //     }
-
-  //     // Server returns 'data' field, not 'telemetry'
-  //     return {
-  //       telemetry: response.data || response.telemetry || [],
-  //       page: response.page || 1,
-  //       pageSize: response.pageSize || 50,
-  //       total: response.total || 0,
-  //       totalPages: response.totalPages || 1,
-  //     };
-  //   },
-
-  /**
-   * Export all telemetry data for a bike with date filters (no pagination limit)
-   * Used for Excel export - fetches all records matching the filter
-   */
-  //   async exportBikeTelemetry(
-  //     bikeId: string,
-  //     options: Omit<GetTelemetryOptions, "page" | "pageSize"> = {}
-  //   ): Promise<BikeTelemetry[]> {
-  //     const params = new URLSearchParams();
-
-  //     // Large page size to get all data for export
-  //     params.append("pageSize", "10000");
-
-  //     if (options.from !== undefined) {
-  //       params.append("from", options.from.toString());
-  //     }
-  //     if (options.to !== undefined) {
-  //       params.append("to", options.to.toString());
-  //     }
-  //     if (options.sortDirection) {
-  //       params.append("sortDirection", options.sortDirection);
-  //     }
-
-  //     const queryString = params.toString();
-  //     const endpoint = `/dashboard/use/telemetry/${bikeId}?${queryString}`;
-
-  //     const response = await apiRequest<any>(endpoint);
-
-  //     if (Array.isArray(response)) {
-  //       return response;
-  //     }
-
-  //     // Server returns 'data' field, not 'telemetry'
-  //     return response.data || response.telemetry || [];
-  //   },
-
-  //   /**
-  //    * Get latest telemetry for all bikes
-  //    */
-  //   async getAllBikesTelemetry(): Promise<BikeTelemetry[]> {
-  //     return apiRequest<BikeTelemetry[]>('/dashboard/use/telemetry');
-  //   },
 };

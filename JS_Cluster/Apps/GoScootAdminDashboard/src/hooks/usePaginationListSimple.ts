@@ -41,33 +41,37 @@ export function usePaginationList<T, F>(
 
     useEffect(() => {
         const execute = async () => {
-            if (isLoading) {
-                console.log("Fetching...")
-                abortRef.current?.abort();
-                const controller = new AbortController();
-                abortRef.current = controller;
-                try {
-                    const result = await fetchApi({
-                        startPage: currentPage,
-                        pageSize: pageSize,
-                        filter: filterPayload,
-                        signal: controller.signal
-                    });
-                    setDisplayList(result.data)
-                    setTotalCount(result.totalCount)
-                } catch (err) {
-                    if (err instanceof UnauthenticatedException) {
-                        globalContext.setIsAuth(false)
-                    }
-                } finally {
-                    setIsLoading(false)
+            if (!isLoading) return;
+
+            console.log("Fetching...");
+
+            abortRef.current?.abort();
+            const controller = new AbortController();
+            abortRef.current = controller;
+
+            try {
+                const result = await fetchApi({
+                    startPage: currentPage,
+                    pageSize,
+                    filter: filterPayload,
+                    signal: controller.signal,
+                });
+
+                setDisplayList(result.data);
+                setTotalCount(result.totalCount);
+            } catch (err) {
+                if (err instanceof UnauthenticatedException) {
+                    globalContext.setIsAuth(false);
                 }
+            } finally {
+                // ⏱ delay 2 seconds
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                setIsLoading(false);
             }
+        };
 
-
-        }
-        execute()
-    }, [isLoading])
+        execute();
+    }, [isLoading]);
 
     const totalPages = useMemo(() => {
         if (totalCount === 0) return 1;

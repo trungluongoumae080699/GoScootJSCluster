@@ -9,7 +9,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Bike } from '@trungthao/admin_dashboard_dto';
 import { calculateDistance, getValidLocation } from '../../utlities/methods';
-
+import styles from "./BikeMap.module.css"
 
 const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoidHJ1bmdsdW9uZ291bWFlMDgwNjk5IiwiYSI6ImNtaG9rbDJ5dDBjMWQya3NlcGxjaHNmMTcifQ.YIh29cJOIa6Ut2NEeoOHQg';
 
@@ -271,7 +271,7 @@ function BikeMap(
 
   return (
     <div
-      className="map-container"
+      className={styles['map-container']}
 
       style={{ cursor: 'pointer' }}
       title="Click to view full map"
@@ -371,7 +371,7 @@ function BikeMap(
           </span>
         </div>
       )}
-      <div ref={mapContainerRef} className="trip-map" />
+      <div ref={mapContainerRef} className={styles['trip-map']} />
     </div>
   );
 }

@@ -1,0 +1,148 @@
+/* ---------- base ---------- */
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.battery {
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- HORIZONTAL ---------- */
+.horizontal .battery {
+  flex-direction: row;
+}
+
+.horizontal .cap {
+  width: 1px;
+  height: 12px;
+
+}
+
+/* ---------- VERTICAL ---------- */
+.vertical .battery {
+  flex-direction: column;
+}
+
+.vertical .cap {
+  width: 12px;
+  height: 1px;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+/* base cap style */
+.cap {
+  background: #555;
+}
+
+.body {
+  border: 2px solid #555;
+  border-radius: 3px;
+  overflow: hidden;
+  background-color: #fff;
+  position: relative;
+}
+
+/* ---------- fill ---------- */
+.level {
+  position: absolute;
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+/* ---------- horizontal ---------- */
+.horizontal .level {
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+
+/* ---------- vertical ---------- */
+.vertical .level {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+
+/* ---------- colors ---------- */
+.high {
+  background-color: #4caf50;
+}
+
+.medium {
+  background-color: #ff9800;
+}
+
+.low {
+  background-color: #f44336;
+}
+
+/* ---------- text ---------- */
+.text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+}
+
+/* ---------- sizes ---------- */
+
+/* XS */
+.xs .body {
+  width: 22px;
+  height: 10px;
+}
+.xs .cap {
+  width: 2px;
+  height: 6px;
+}
+
+/* SM */
+.sm .body {
+  width: 30px;
+  height: 12px;
+}
+.sm .cap {
+  width: 3px;
+  height: 8px;
+}
+
+/* MD (default) */
+.md .body {
+  width: 40px;
+  height: 14px;
+}
+.md .cap {
+  width: 4px;
+  height: 10px;
+}
+
+/* LG */
+.lg .body {
+  width: 60px;
+  height: 18px;
+}
+.lg .cap {
+  width: 5px;
+  height: 16px;
+}
+
+/* ---------- vertical override ---------- */
+.vertical .body {
+  width: 14px;
+  height: 40px;
+}
+
+.vertical.xs .body { height: 22px; }
+.vertical.sm .body { height: 30px; }
+.vertical.md .body { height: 40px; }
+.vertical.lg .body { height: 60px; }
+
+.vertical .cap {
+  width: 10px;
+  height: 3px;
+  margin-bottom: 2px;
+}

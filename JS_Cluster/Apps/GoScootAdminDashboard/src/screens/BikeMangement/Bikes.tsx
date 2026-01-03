@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Bikes.css";
-import { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
+import { BikeStatus } from "@trungthao/admin_dashboard_dto";
 import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
 import Pagination from "../../components/module/pagination";
 import { useBikeListing } from "../../hooks/PageHooks/useBikeListing";
 import { bikeApi } from "../../services/ApiClient/BikeApis";
 import Input, { Option } from "../../components/module/Input";
-import { BikeManagementContext, useBikeManagementContext } from "../../context/BikeManagementContext";
+import { useBikeManagementContext } from "../../context/BikeManagementContext";
+import Loader from "../../components/module/LoadingModule";
 
+import styles from "./Bikes.module.css";
+import Battery from "../../components/module/Battery";
 
 const STATUS_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
@@ -19,38 +21,31 @@ const STATUS_OPTIONS: Option[] = [
 
 export default function Bikes() {
   const navigate = useNavigate();
-  const globalContext = useGlobalContext()
-  const bikeManagementContext = useBikeManagementContext()
+  const globalContext = useGlobalContext();
+  const bikeManagementContext = useBikeManagementContext();
 
   useEffect(() => {
-    globalContext.setCurrentHeader("Bikes")
-    globalContext.setCurrentPage(WebScreen.BIKES)
-  }, [])
+    globalContext.setCurrentHeader("Bikes");
+    globalContext.setCurrentPage(WebScreen.BIKES);
+  }, []);
 
-  // ✅ shared state from context
   const {
-    // state
+    resetFilter,
     isLoading,
     displayList,
     totalCount,
     currentPage,
-    // actions
-    applyFilters, // use snapshot version
-    resetFilter,
+    applyFilters,
     totalPages,
     goToPage,
-    // filters
     filterPayload,
     setFilterPayload,
   } = useBikeListing(bikeApi.getBikes);
 
   useEffect(() => {
-    applyFilters(); // fetch group 0 + set display list
+    applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-
-  const handleBikeClick = (bikeId: string) => navigate(`/bike/${bikeId}`);
 
   const getStatusStyle = (status: BikeStatus) => {
     switch (status) {
@@ -78,125 +73,175 @@ export default function Bikes() {
     }
   };
 
+  const WarningBang = ({ on }: { on: boolean }) =>
+    on ? (
+      <span
+        className={[styles["warning-bang"], styles["warning-danger"], styles["warning-bang--blink"]].join(
+          " "
+        )}
+        aria-label="warning"
+        title="Warning"
+      >
+        !
+      </span>
+    ) : (
+      <span
+        className={[styles["warning-bang"], styles["warning-ok"]].join(
+          " "
+        )}
+        aria-label="warning"
+        title="Warning"
+      >
+        ✓
+      </span>
+    );
+
   return (
-    <div className="page-container">
-      <div className="content-area bikes-content">
-        {/* Stats */}
+    <div className={styles["page-container"]}>
+      <div className={styles["bikes-filters"]}>
+        <Input
+          kind="input"
+          type="text"
+          value={filterPayload.search}
+          placeHolder="Nhập xe bạn muốn tìm"
+          label="Tìm Kiếm"
+          onChange={(e) =>
+            setFilterPayload((p) => ({ ...p, search: e.target.value }))
+          }
+        />
 
-        {/* Pagination */}
-        <div className="bikes-stats">
-          <p>Total: {totalCount || 0}</p>
-          <p>Displayed (on page): {displayList.length}</p>
+        <Input
+          kind="input"
+          type="text"
+          value={filterPayload.battery}
+          placeHolder="Nhập lượng pin"
+          label="Dung Lượng Pin"
+          onChange={(e) =>
+            setFilterPayload((p) => ({ ...p, battery: e.target.value }))
+          }
+        />
 
-          {isLoading && (
-            <span className="background-loading-indicator">
-              Loading...
-            </span>
-          )}
-        </div>
+        <Input
+          kind="select"
+          value={filterPayload.status}
+          placeHolder="Chọn trạng thái"
+          options={STATUS_OPTIONS}
+          label="Trạng Thái Hoạt Động"
+          onChange={(e) =>
+            setFilterPayload((p) => ({ ...p, status: e.target.value }))
+          }
+        />
 
-        {/* Filters */}
-        <div className="bikes-filters">
-          <Input
-            kind="input"
-            type={"text"}
-            value={filterPayload.search}
-            placeHolder="Nhập xe bạn muốn tìm"
-            label={"Tìm Kiếm"}
-            onChange={
-              (e) => setFilterPayload((p) => ({ ...p, search: e.target.value }))
-            }
-          >
-          </Input>
+        <button
+          className={`${styles["btn"]} ${styles["apply-btn"]}`}
+          onClick={applyFilters}
+          disabled={isLoading}
+          title="Apply filters & fetch group 0"
+        >
+          Apply
+        </button>
 
-          <Input
-            kind="input"
-            type={"text"}
-            value={filterPayload.battery}
-            placeHolder="Nhập lượng pin"
-            label={"Dung Lượng Pin"}
-            onChange={
-              (e) => setFilterPayload((p) => ({ ...p, battery: e.target.value }))
-            }
-          >
-          </Input>
+        <button
+          className={`${styles["btn"]} ${styles["clear-btn"]}`}
+          onClick={resetFilter}
+          disabled={isLoading}
+          title="Apply filters & fetch group 0"
+        >
+          Clear
+        </button>
+      </div>
 
-          <Input
-            kind="select"
-            value={filterPayload.status}
-            placeHolder="Chọn trạng thái"
-            options={STATUS_OPTIONS}
-            label={"Trạng Thái Hoạt Động"}
-            onChange={
-              (e) => setFilterPayload((p) => ({ ...p, status: e.target.value }))
-            }
-          >
-          </Input>
-
-
-          <button
-            className="btn apply-btn"
-            onClick={applyFilters}
-            disabled={isLoading}
-            title="Apply filters & fetch group 0">
-            Apply
-          </button>
-
-          <button
-            className="btn clear-btn"
-            onClick={applyFilters}
-            disabled={isLoading}
-            title="Apply filters & fetch group 0">
-            Clear
-          </button>
-        </div>
-
-        {/* Table */}
-        <div className="bikes-table-container">
-          <table className="bikes-table">
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <div className={styles["bikes-table-container"]}>
+          <table className={styles["bikes-table"]}>
             <thead>
               <tr>
-                <th>Vin Number</th>
-                <th>Type</th>
-                <th>Current Battery</th>
-                <th>Status</th>
+                <th>Số VIN</th>
+                <th>Loại Xe</th>
+                <th>Dung Lượng Pin</th>
+                <th>Trạng Thái</th>
+                <th>Cảnh Báo Pin</th>
+                <th>Cảnh Báo Trộm</th>
+                <th>Cảnh Báo Va Chạm</th>
               </tr>
             </thead>
+
             <tbody>
-              {displayList.map((bike) => (
-                <tr
-                  key={bike.id}
-                  onClick={
-                    () => {
-                  
-                      bikeManagementContext.setCurrentBike(bike)
-                      navigate("/bike")
-                  }}
-                  className={bike.status === "Inused" ? "row-highlighted" : ""}
-                >
-                  <td className="vin-cell">{bike.id}</td>
-                  <td>{bike.name}</td>
-                  <td>{bike.battery_status !== null ? `${bike.battery_status}%` : "N/A"}</td>
-                  <td>
-                    <span className="status-badge-table" style={getStatusStyle(bike.status as BikeStatus)}>
-                      {getStatusLabel(bike.status as BikeStatus)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {displayList.map((bike) => {
+                const batteryWarningIsOn = bike.batteryIsLow
+                const robberyWarningIsOn = bike.isToppled
+                const crashWarningIsOn = bike.isCrashed
+                const bikeIsOffline = !bike.battery_status || !bike.latitude || !bike.latitude
+                const bikeIsOutOfBound = bike.isOutOfBound
+
+                return (
+                  <tr
+                    key={bike.id}
+                    onClick={() => {
+                      bikeManagementContext.setCurrentBike(bike);
+                      navigate("/bike");
+                    }}
+                    className={[
+                      bike.status === "Inused" ? styles["row-highlighted"] : "",
+                      bikeIsOffline ? styles["row-offline"] : "",
+                      bikeIsOutOfBound ? styles["row-out-of-bound"] : ""
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <td className={styles["vin-cell"]}>{bike.id}</td>
+                    <td>{bike.name}</td>
+
+                    <td>
+                      {bike.battery_status ? (
+                        <Battery
+                          level={bike.battery_status}
+                          size="xs"
+                          orientation="horizontal"
+                          showText={true}
+                        />
+                      ) : (
+                        "N/A"
+                      )}
+                    </td>
+
+                    <td>
+                      <span
+                        className={styles["status-badge-table"]}
+                        style={getStatusStyle(bike.status as BikeStatus)}
+                      >
+                        {getStatusLabel(bike.status as BikeStatus)}
+                      </span>
+                    </td>
+
+                    {/* ✅ CẢNH BÁO */}
+                    <td className={styles["warning-cell"]}>
+                      <WarningBang on={batteryWarningIsOn} />
+                    </td>
+
+                    <td className={styles["warning-cell"]}>
+                      <WarningBang on={robberyWarningIsOn} />
+                    </td>
+
+                    <td className={styles["warning-cell"]}>
+                      <WarningBang on={crashWarningIsOn} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+      )}
 
-        <Pagination
-          totalPages={totalPages}
-          currentPage={currentPage}
-          totalItems={totalCount}
-          goToPage={goToPage}>
-        </Pagination>
-
-
-      </div>
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}
+      />
     </div>
   );
 }

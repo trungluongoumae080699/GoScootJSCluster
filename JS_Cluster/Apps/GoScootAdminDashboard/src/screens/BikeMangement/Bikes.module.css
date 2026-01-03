@@ -1,12 +1,10 @@
 /* Bikes Page Styles */
 .page-container {
   width: 100%;
-  height: 100%;
-}
-.bikes-content {
+  min-height: 100%;
   padding: 24px;
-
 }
+
 
 /* Stats Section */
 .bikes-stats {
@@ -117,6 +115,55 @@
   background: #ffd4c0;
 }
 
+.row-offline {
+  background-color: rgba(244, 67, 54, 0.18);
+  animation: rowOfflineBlink 1.2s infinite;
+}
+
+.row-out-of-bound {
+  background-color: #fff3cd; /* flat yellow */
+  animation: rowOutOfBoundBlink 1.2s infinite;
+}
+
+/* blink nhẹ, dễ nhìn */
+@keyframes rowOutOfBoundBlink {
+  0% {
+    background-color: #fff3cd;
+  }
+  50% {
+    background-color: #ffe082;
+  }
+  100% {
+    background-color: #fff3cd;
+  }
+}
+
+/* accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .row-out-of-bound {
+    animation: none;
+  }
+}
+
+@keyframes rowOfflineBlink {
+  0% {
+    background-color: rgba(244, 67, 54, 0.15);
+  }
+  50% {
+    background-color: rgba(244, 67, 54, 0.35);
+  }
+  100% {
+    background-color: rgba(244, 67, 54, 0.15);
+  }
+}
+
+/* respect accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .row-offline {
+    animation: none;
+  }
+}
+
 .bikes-table td {
   padding: 1rem 1.5rem;
   font-size: 0.95rem;
@@ -127,20 +174,76 @@
   font-weight: 600;
 }
 
+.warning-cell {
+  text-align: center;
+  width: 200px;
+  /* optional */
+}
+
+.warning-empty {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+
+.warning-bang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.warning-danger {
+  background-color: #f44336;
+  color: #ffffff;
+}
+
+/* ✅ ok */
+.warning-ok {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+
+.warning-bang--blink {
+  animation: warningBlink 1s infinite;
+}
+
+@keyframes warningBlink {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* (optional) Tôn trọng user setting giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  .warning-bang--blink {
+    animation: none;
+  }
+}
+
 .status-badge-table {
   display: inline-block;
   padding: 0.4rem 1rem;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-}
-
-/* Loading and Error States */
-.loading {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #666;
 }
 
 .loading-progress {

@@ -11,7 +11,8 @@ import Input from '../module/Input';
 import { formatDate } from '../../utlities/convert';
 import Pagination from '../module/pagination';
 import { bikeApi } from '../../services/ApiClient/BikeApis';
-import "./TelemetryTable.css"
+import styles from "./TelemetryTable.module.css"
+import { exportBikeTelemetryToExcel } from '../../utlities/FileUtility';
 
 /** Get CSS class for operation status badge */
 function getOperationStatusClass(status: OperationStatus): string {
@@ -72,73 +73,97 @@ function TelemetryTable({
   } = useTelemetryListing(bike.id, bikeApi.getBikeTelemetry);
 
   return (
-    <div className="movement-history-section">
-      <div className="movement-history-header">
-        <h3>Movement History ({totalCount} records)
-          <span style={{
-            fontSize: '12px',
-            color: '#4CAF50',
-            marginLeft: '8px',
-            fontWeight: 'normal'
-          }}>
+    <div className={styles["movement-history-section"]}>
+      <div className={styles["movement-history-header"]}>
+        <h3>
+          Movement History ({totalCount} records)
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#4CAF50",
+              marginLeft: "8px",
+              fontWeight: "normal",
+            }}
+          >
             ● Live Updates
           </span>
         </h3>
-        <div className="movement-history-controls">
-          <div className="date-filters">
-            <Input
-              kind="input"
-              type={"date"}
-              placeHolder="Tìm từ ngày"
-              label={"Tìm Đến Ngày"}
-              value={
-                filterPayload.from === ""
-                  ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .slice(0, 10)
-                  : new Date(filterPayload.from).toISOString().slice(0, 10)
-              }
-              onChange={(e) =>
-                setFilterPayload((p) => ({
-                  ...p,
-                  from: String(dateToStartOfDay(e.target.value)),
-                }))
-              }
-            >
-            </Input>
-
-            <Input
-              kind="input"
-              type={"date"}
-              placeHolder="Tìm đến ngày"
-              label={"Tìm Từ Ngày"}
-              value={
-                filterPayload.to === "" ? new Date().toISOString().slice(0, 10)
-                  : new Date(filterPayload.to).toISOString().slice(0, 10)
-              }
-              onChange={(e) =>
-                setFilterPayload((p) => ({
-                  ...p,
-                  to: String(dateToEndOfDay(e.target.value)),
-                }))
-              }
-            >
-
-            </Input>
-          </div>
-          <button
-            onClick={onExportExcel}
-            className="export-btn"
-            disabled={isExportingExcel}
-            title="Export to Excel"
-          >
-            <MdFileDownload size={18} style={{ marginRight: '4px' }} />
-            {isExportingExcel ? 'Exporting...' : 'Export Excel'}
-          </button>
-        </div>
       </div>
-      <div className="telemetry-table-wrapper">
-        <table className="trips-table telemetry-table">
+
+      <div className={styles["telemetry-filters"]}>
+        <Input
+          kind="input"
+          type="date"
+          placeHolder="Tìm từ ngày"
+          label="Tìm Đến Ngày"
+          value={
+            filterPayload.from === ""
+              ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .slice(0, 10)
+              : new Date(filterPayload.from).toISOString().slice(0, 10)
+          }
+          onChange={(e) =>
+            setFilterPayload((p) => ({
+              ...p,
+              from: String(dateToStartOfDay(e.target.value)),
+            }))
+          }
+        />
+
+        <Input
+          kind="input"
+          type="date"
+          placeHolder="Tìm đến ngày"
+          label="Tìm Từ Ngày"
+          value={
+            filterPayload.to === ""
+              ? new Date().toISOString().slice(0, 10)
+              : new Date(filterPayload.to).toISOString().slice(0, 10)
+          }
+          onChange={(e) =>
+            setFilterPayload((p) => ({
+              ...p,
+              to: String(dateToEndOfDay(e.target.value)),
+            }))
+          }
+        />
+
+        <button
+          className={[styles["btn"], styles["apply-btn"]].join(" ")}
+          onClick={applyFilters}
+          disabled={isLoading}
+          title="Apply filters & fetch group 0"
+        >
+          Apply
+        </button>
+
+        <button
+          className={[styles["btn"], styles["clear-btn"]].join(" ")}
+          onClick={resetFilter}
+          disabled={isLoading}
+          title="Clear filters"
+        >
+          Clear
+        </button>
+      </div>
+
+      <button
+        onClick={()=>{
+          if (displayList.length > 0){
+            exportBikeTelemetryToExcel(displayList)
+          }
+        }}
+        className={styles["export-btn"]}
+        disabled={isExportingExcel}
+        title="Export to Excel"
+      >
+        <MdFileDownload size={18} style={{ marginRight: "4px" }} />
+        {isExportingExcel ? "Exporting..." : "Export Excel"}
+      </button>
+
+      <div className={styles["telemetry-table-wrapper"]}>
+        <table className={[styles["trips-table"], styles["telemetry-table"]].join(" ")}>
           <thead>
             <tr>
               <th>Battery</th>
@@ -147,65 +172,71 @@ function TelemetryTable({
               <th>Last GPS Long</th>
               <th>Last GPS Lat</th>
               <th>GPS Contact</th>
-              {/*<th>Operation</th>*/}
               <th>Usage</th>
               <th>Timestamp</th>
             </tr>
           </thead>
+
           <tbody>
             {displayList.length > 0 ? (
               displayList.map((t) => (
                 <tr key={t.id}>
                   <td>
-                    <span style={{
-                      color: t.battery > 20 ? '#4CAF50' : '#F44336',
-                      fontWeight: 'bold'
-                    }}>
+                    <span
+                      style={{
+                        color: t.battery > 20 ? "#4CAF50" : "#F44336",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {t.battery}%
                     </span>
                   </td>
+
                   <td>{t.longitude.toFixed(6)}</td>
                   <td>{t.latitude.toFixed(6)}</td>
-                  <td>{t.last_gps_long?.toFixed(6) ?? 'N/A'}</td>
-                  <td>{t.last_gps_lat?.toFixed(6) ?? 'N/A'}</td>
-                  <td>{t.last_gps_contact_time ? formatDate(t.last_gps_contact_time) : 'N/A'}</td>
-
-                  {/*<td>
-                  <span className={`telemetry-status ${getOperationStatusClass(t.operationStatus)}`}>
-                    {t.operationStatus}
-                  </span>
-                </td>*/}
+                  <td>{t.last_gps_long?.toFixed(6) ?? "N/A"}</td>
+                  <td>{t.last_gps_lat?.toFixed(6) ?? "N/A"}</td>
+                  <td>
+                    {t.last_gps_contact_time
+                      ? formatDate(t.last_gps_contact_time)
+                      : "N/A"}
+                  </td>
 
                   <td>
-                    <span className={`telemetry-status ${getUsageStatusClass(t.usageStatus)}`}>
+                    <span
+                      className={[
+                        styles["telemetry-status"],
+                        getUsageStatusClass(t.usageStatus),
+                      ].filter(Boolean).join(" ")}
+                    >
                       {t.usageStatus}
                     </span>
                   </td>
+
                   <td>{formatDate(t.time)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
+                <td colSpan={9} style={{ textAlign: "center", padding: "2rem" }}>
                   No telemetry data found for the selected date range
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-
       </div>
-
 
       <Pagination
         totalPages={totalPages}
         currentPage={currentPage}
         totalItems={totalCount}
-        goToPage={goToPage}>
-      </Pagination>
-
+        goToPage={goToPage}
+      />
     </div>
   );
+
+
 }
 
 export default TelemetryTable;

@@ -4,16 +4,17 @@ import "./AlertCard.css";
 interface AlertCardProps {
   title: string;
   description: string;
-  onAcknowledge: () => void;
-  onDismiss: () => void;
+  onResolve: () => void;
+  onViewDetail: () => void;
 }
 
 export default function AlertCard({
   title,
   description,
-  onAcknowledge,
-  onDismiss,
+  onResolve,
+  onViewDetail,
 }: AlertCardProps) {
+  
   return (
     <div className="alert-item">
       <div className="alert-left">
@@ -26,11 +27,11 @@ export default function AlertCard({
         </div>
       </div>
       <div className="alert-actions">
-        <button className="btn-ack" onClick={onAcknowledge}>
-          Acknowledge
+        <button className="btn-ack" onClick={onResolve}>
+          Giải Quyết
         </button>
-        <button className="btn-dismiss" onClick={onDismiss}>
-          Dismiss
+        <button className="btn-dismiss" onClick={onViewDetail}>
+          Chi Tiết
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import "./Input.css";
+import styles from "./Input.module.css";
 
 type BaseProps = {
   label: string;
@@ -25,20 +25,20 @@ type InputProps = TextOrDateProps | SelectProps;
 
 export default function Input(props: InputProps) {
   return (
-    <div className="input-box">
-      <div className="label">{props.label}</div>
+    <div className={styles["input-box"]}>
+      <div className={styles["label"]}>{props.label}</div>
 
       {props.kind === "input" ? (
         <input
           type={props.type}
-          className="filter-input"
+          className={styles["filter-input"]}
           value={props.value}
           placeholder={props.placeHolder}
           onChange={props.onChange}
         />
       ) : (
         <select
-          className="filter-input"
+          className={styles["filter-input"]}
           value={props.value}
           onChange={props.onChange}
         >

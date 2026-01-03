@@ -1,12 +1,6 @@
-/**
- * Header Component
- * Reusable header bar for the admin dashboard
- * Displays logo, page title, and user profile information
- */
-
 import { MdAccountCircle } from "react-icons/md";
 import { IoNotificationsOutline } from "react-icons/io5";
-import "./Header.css";
+import styles from "./Header.module.css";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
 
@@ -25,26 +19,39 @@ export default function Header({ title }: HeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="header">
-      <div className="header-left">
-        <img src="/Mobile App Logo.png" alt="GoScoot Logo" className="logo" />
-        <h1 className="page-title">{title}</h1>
+    <header className={styles["header"]}>
+      <div className={styles["header-left"]}>
+        <img
+          src="/Mobile App Logo.png"
+          alt="GoScoot Logo"
+          className={styles["logo"]}
+        />
+        <h1 className={styles["page-title"]}>{title}</h1>
       </div>
 
-      <div className="header-right">
-        <div className="notification-wrapper">
-          <IoNotificationsOutline className="bell-icon" size={28} />
+      <div className={styles["header-right"]}>
+        <div className={styles["notification-wrapper"]}>
+          <IoNotificationsOutline
+            className={styles["bell-icon"]}
+            size={28}
+          />
 
           {notifications.length > 0 && (
-            <span className="notif-badge">{notifications.length}</span>
+            <span className={styles["notif-badge"]}>
+              {notifications.length}
+            </span>
           )}
 
-          <div className="notif-dropdown">
+          <div className={styles["notif-dropdown"]}>
             {notifications.length === 0 ? (
               <p>No notifications</p>
             ) : (
               notifications.slice(0, 5).map((n: any) => (
-                <div key={n.id} className="notif-item" onClick={() => navigate("/alert")}>
+                <div
+                  key={n.id}
+                  className={styles["notif-item"]}
+                  onClick={() => navigate("/alert")}
+                >
                   <strong>{n.time}</strong>
                   <p>{n.message}</p>
                 </div>
@@ -53,9 +60,12 @@ export default function Header({ title }: HeaderProps) {
           </div>
         </div>
 
-        <div className="user-profile">
-          <MdAccountCircle className="user-icon" size={32} />
-          <span>User's Name</span>
+        <div className={styles["user-profile"]}>
+          <MdAccountCircle
+            className={styles["user-icon"]}
+            size={32}
+          />
+          <span>User&apos;s Name</span>
         </div>
       </div>
     </header>

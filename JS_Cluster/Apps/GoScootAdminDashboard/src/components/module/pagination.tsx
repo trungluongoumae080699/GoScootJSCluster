@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./pagination.css"
+import styles from "./Pagination.module.css";
 
 type PaginationProps = {
   currentPage: number;
@@ -19,15 +19,16 @@ export default function Pagination({
   className,
 }: PaginationProps) {
   const [pageInput, setPageInput] = useState<string>(String(currentPage));
-  
+
   // sync input mỗi khi currentPage đổi (bấm nút, fetch xong, v.v.)
   useEffect(() => {
     setPageInput(String(currentPage));
   }, [currentPage]);
 
   const canGoPrev = currentPage > 1 && !isLoading;
-  const canGoNext =
-    Number.isFinite(totalPages) ? currentPage < totalPages && !isLoading : !isLoading;
+  const canGoNext = Number.isFinite(totalPages)
+    ? currentPage < totalPages && !isLoading
+    : !isLoading;
 
   const commit = async () => {
     const page = Number(pageInput);
@@ -45,9 +46,9 @@ export default function Pagination({
   };
 
   return (
-    <div className={`pagination`}>
+    <div className={[styles["pagination"], className].filter(Boolean).join(" ")}>
       <button
-        className="pagination-btn"
+        className={styles["pagination-btn"]}
         onClick={() => goToPage(1)}
         disabled={!canGoPrev}
         title="First page"
@@ -56,7 +57,7 @@ export default function Pagination({
       </button>
 
       <button
-        className="pagination-btn"
+        className={styles["pagination-btn"]}
         onClick={() => goToPage(currentPage - 1)}
         disabled={!canGoPrev}
         title="Previous page"
@@ -64,7 +65,7 @@ export default function Pagination({
         ‹
       </button>
 
-      <span className="pagination-info">
+      <span className={styles["pagination-info"]}>
         Page{" "}
         <input
           type="text"
@@ -80,7 +81,7 @@ export default function Pagination({
             // nếu user bỏ focus mà không enter => reset về currentPage
             setPageInput(String(currentPage));
           }}
-          className="page-input"
+          className={styles["page-input"]}
           title="Enter page number and press Enter"
           disabled={isLoading}
         />{" "}
@@ -88,7 +89,7 @@ export default function Pagination({
       </span>
 
       <button
-        className="pagination-btn"
+        className={styles["pagination-btn"]}
         onClick={() => goToPage(currentPage + 1)}
         disabled={!canGoNext}
         title="Next page"
@@ -97,7 +98,7 @@ export default function Pagination({
       </button>
 
       <button
-        className="pagination-btn"
+        className={styles["pagination-btn"]}
         onClick={() => Number.isFinite(totalPages) && goToPage(totalPages)}
         disabled={!Number.isFinite(totalPages) || !canGoNext}
         title="Last page"

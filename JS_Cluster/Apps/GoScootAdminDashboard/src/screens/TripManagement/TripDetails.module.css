@@ -1,8 +1,7 @@
 /* Overall main content alignment */
 .trip-detail-content {
-  max-width: 100%;
-  margin: auto;
-  padding: 20px;
+  width: 100%;
+  padding: 24px;
 }
 
 /* --- Detail Header Card (Map Icon + VIN/Text) --- */

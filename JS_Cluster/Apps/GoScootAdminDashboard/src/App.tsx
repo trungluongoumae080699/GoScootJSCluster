@@ -9,6 +9,7 @@ import {
 import { GlobalProvider } from "./context/GlobalContext";
 import Root from "./NavigationTree";
 import { BikeManagementContextProvider } from "./context/BikeManagementContext";
+import { TripManagementContext, TripManagementContextProvider } from "./context/TripManagementContext";
 
 /**
  * Protected Route wrapper
@@ -44,7 +45,10 @@ function App() {
   return (
     <GlobalProvider>
       <BikeManagementContextProvider>
-        <Root></Root>
+        <TripManagementContextProvider>
+          <Root></Root>
+        </TripManagementContextProvider>
+
       </BikeManagementContextProvider>
 
     </GlobalProvider>
