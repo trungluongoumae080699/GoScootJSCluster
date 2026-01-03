@@ -38,6 +38,7 @@ function BikeMap(
     lastKnownLocation,
     pastTelemetryLocation,
   }: BikeMapProps) {
+  console.log("BikeMap Rerendered")
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);

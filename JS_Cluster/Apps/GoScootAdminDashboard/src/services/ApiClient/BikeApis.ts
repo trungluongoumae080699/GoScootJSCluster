@@ -1,9 +1,19 @@
-import { Bike, BikeTelemetry } from "@trungthao/admin_dashboard_dto";
+import { Bike, BikeTelemetry, Hub } from "@trungthao/admin_dashboard_dto";
 
 import { apiRequest } from "./apiClient";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
 import { BikeFilterPayload } from "../../hooks/PageHooks/useBikeListing";
 import { TelemetryFilterPayload } from "../../hooks/PageHooks/useTelemetryListing";
+
+
+/** Get Hubs Options */
+export interface GetHubsOptions {
+  maxLong?: number;
+  minLong?: number;
+  maxLat?: number;
+  minLat?: number;
+}
+
 
 /**
  * Bike API
@@ -83,6 +93,34 @@ export const bikeApi = {
     });
     return response
 
+  },
+
+  async getHubsInArea(bounds: GetHubsOptions): Promise<Hub[]> {
+    const params = new URLSearchParams();
+
+    if (bounds.maxLong !== undefined) {
+      params.append('maxLong', bounds.maxLong.toString());
+    }
+    if (bounds.minLong !== undefined) {
+      params.append('minLong', bounds.minLong.toString());
+    }
+    if (bounds.maxLat !== undefined) {
+      params.append('maxLat', bounds.maxLat.toString());
+    }
+    if (bounds.minLat !== undefined) {
+      params.append('minLat', bounds.minLat.toString());
+    }
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/dashboard/use/hubs?${queryString}` : '/dashboard/use/hubs';
+
+    return apiRequest<Hub[]>(endpoint);
+  },
+
+  async getBikesInHub(hubId: string): Promise<BikesResponse> {
+    // Use the regular bikes endpoint with hub filter parameter
+    console.log('🔧 Fixed getBikesInHub calling bikeApi.getBikes with hub:', hubId);
+    return bikeApi.getBikes({ hub: hubId });
   },
 
 

@@ -14,16 +14,16 @@ import { bikeApi } from "../../services/ApiClient/BikeApis";
 import { UnauthenticatedException } from "../../models/Exceptions/ApiExceptions";
 
 import styles from "./BikeDetails.module.css";
+import Loader from "../../components/module/LoadingModule";
 
 /**
  * BikeDetails component
  * Fetches and displays bike data from server with real-time MQTT updates
  */
 function BikeDetails() {
+  console.log("Bike Detail Re-render")
   const globalContext = useGlobalContext();
   const bikeManagementContext = useBikeManagementContext();
-
-  const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [liveLocation, setLiveLocation] = useState<Coordinate | null>(null);
@@ -58,8 +58,8 @@ function BikeDetails() {
   // Fetch bike details
   useEffect(() => {
     const fetchBikeData = async () => {
+      setIsLoading(true)
       if (!bikeManagementContext.currentBikeId) return;
-
       try {
         abortRef.current?.abort();
         const controller = new AbortController();
@@ -79,12 +79,13 @@ function BikeDetails() {
         }
         console.error("Failed to fetch bike data:", err);
       } finally {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         setIsLoading(false);
       }
     };
 
     fetchBikeData();
-  }, [bikeManagementContext.currentBikeId, bikeManagementContext, globalContext]);
+  }, [bikeManagementContext.currentBikeId]);
 
   const formatDate = useCallback((timestamp: number) => {
     return new Date(timestamp).toLocaleString();
@@ -107,46 +108,50 @@ function BikeDetails() {
 
   return (
     <div className={styles["bike-details-container"]}>
-      <div className={styles["main-content"]}>
-        <div className={styles["content-area"]}>
-          <BikeInfoCard
-            bike={bikeManagementContext.currentBike}
-            liveBattery={liveBattery}
-            formatDate={formatDate}
-            getStatusText={getStatusText}
-          />
-
-          <div className={styles["trips-map-section"]}>
-            <TripsTable
+      {
+        isLoading ? <Loader></Loader> : <div className={styles["main-content"]}>
+          <div className={styles["content-area"]}>
+            <BikeInfoCard
               bike={bikeManagementContext.currentBike}
-              onSelectTrip={(trip: Trip) => {
-                console.log(trip);
+              liveBattery={liveBattery}
+              formatDate={formatDate}
+              getStatusText={getStatusText}
+            />
+
+            <div className={styles["trips-map-section"]}>
+              <TripsTable
+                bike={bikeManagementContext.currentBike}
+                onSelectTrip={(trip: Trip) => {
+                  console.log(trip);
+                }}
+              />
+
+              <BikeMap
+                bike={bikeManagementContext.currentBike}
+                lastKnownLocation={lastKnownLocation}
+                liveLocation={liveLocation}
+                pastTelemetryLocation={pastLocation}
+              />
+            </div>
+
+            <TelemetryTable
+              bike={bikeManagementContext.currentBike}
+              onSelectTelemetry={(telemetry: BikeTelemetry) => {
+                setPastLocation({
+                  longitude: telemetry.longitude,
+                  latitude: telemetry.latitude,
+                });
+              }}
+              isExportingExcel={false}
+              onExportExcel={function (): void {
+                throw new Error("Function not implemented.");
               }}
             />
-
-            <BikeMap
-              bike={bikeManagementContext.currentBike}
-              lastKnownLocation={lastKnownLocation}
-              liveLocation={liveLocation}
-              pastTelemetryLocation={pastLocation}
-            />
           </div>
-
-          <TelemetryTable
-            bike={bikeManagementContext.currentBike}
-            onSelectTelemetry={(telemetry: BikeTelemetry) => {
-              setPastLocation({
-                longitude: telemetry.longitude,
-                latitude: telemetry.latitude,
-              });
-            }}
-            isExportingExcel={false}
-            onExportExcel={function (): void {
-              throw new Error("Function not implemented.");
-            }}
-          />
         </div>
-      </div>
+
+      }
+
     </div>
   );
 }

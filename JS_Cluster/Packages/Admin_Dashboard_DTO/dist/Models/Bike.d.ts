@@ -22,3 +22,12 @@ export interface Bike {
     isCrashed: boolean;
     isOutOfBound: boolean;
 }
+export type Hub = {
+    id: string;
+    longitude: number;
+    latitude: number;
+    address: string;
+    deleted: boolean;
+    last_modification_date: number;
+    created_at: Date;
+};

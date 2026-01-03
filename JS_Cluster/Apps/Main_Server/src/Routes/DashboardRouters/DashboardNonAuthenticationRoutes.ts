@@ -3,7 +3,7 @@ import express, { Router, Request, Response } from "express";
 import { NextFunction } from "express-serve-static-core";
 import { CustomRequest } from "../../Middlewares/Authorization.js";
 import { createTempUser } from "../../Repositories/mqttRepo/mqttDynamicSecurity.js";
-import { fetchAlerts, fetchBikeById, fetchBikesController, fetchHubs, fetchTelemetryByBike, fetchTrips} from "../../Controllers/DashboardController.js";
+import { fetchAlerts, fetchBikeById, fetchBikesByHub, fetchBikesController, fetchHubs, fetchTelemetryByBike, fetchTrips} from "../../Controllers/DashboardController.js";
 
 
 export const dashboardNonAuthenticationRouter: Router = express.Router();
@@ -26,7 +26,7 @@ dashboardNonAuthenticationRouter.get("/hubs", (request: Request, response: Respo
 
 dashboardNonAuthenticationRouter.get("/bikes/hub/:hubId", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    fetchHubs(customerRequest, response).catch(next)
+    fetchBikesByHub(customerRequest, response).catch(next)
 })
 
 dashboardNonAuthenticationRouter.get("/trips", (request: Request, response: Response, next: NextFunction) => {

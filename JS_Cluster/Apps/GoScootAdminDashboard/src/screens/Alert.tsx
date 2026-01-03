@@ -132,10 +132,22 @@ export default function Alerts() {
           </button>
         </div>
 
-        {/* Alert List */}
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          totalItems={totalCount}
+          goToPage={goToPage}
+        />
+
+
         {
-          isLoading ? <Loader></Loader> :
-            <>
+          isLoading ? <div style={{
+            width: "100%",
+            height: "500px"
+          }}>
+            <Loader />
+          </div> :
+            <div className={`${styles["alerts-container"]}`}>
               {displayList.map((alert: Alert) => (
                 <AlertCard
                   key={alert.id}
@@ -152,7 +164,7 @@ export default function Alerts() {
                   }
                 />
               ))}
-            </>
+            </div>
         }
 
 

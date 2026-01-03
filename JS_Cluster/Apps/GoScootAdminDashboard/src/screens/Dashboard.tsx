@@ -1,5 +1,5 @@
-/* import Sidebar from "../components/Sidebar";
-import Map from "../components/Map"
+import Sidebar from "../components/Sidebar";
+
 import { useState } from "react";
 
 export default function Dashboard() {
@@ -27,4 +27,4 @@ export default function Dashboard() {
     </div>
   );
 }
- */
+ 

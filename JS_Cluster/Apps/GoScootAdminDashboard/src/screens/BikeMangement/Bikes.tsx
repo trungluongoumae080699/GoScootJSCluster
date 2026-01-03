@@ -151,8 +151,21 @@ export default function Bikes() {
         </button>
       </div>
 
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}
+      />
+
       {isLoading ? (
-        <Loader />
+        <div style={{
+          width: "100%",
+          height: "500px"
+        }}>
+          <Loader />
+        </div>
+
       ) : (
         <div className={styles["bikes-table-container"]}>
           <table className={styles["bikes-table"]}>

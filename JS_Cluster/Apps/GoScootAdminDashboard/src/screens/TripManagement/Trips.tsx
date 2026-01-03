@@ -103,8 +103,8 @@ export default function Trips() {
           value={
             filterPayload.from === ""
               ? new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .slice(0, 10)
+                .toISOString()
+                .slice(0, 10)
               : new Date(filterPayload.from).toISOString().slice(0, 10)
           }
           onChange={(e) =>
@@ -160,76 +160,78 @@ export default function Trips() {
         </button>
       </div>
 
-      {/* Loading */}
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <>
-          <Pagination
-            totalPages={totalPages}
-            currentPage={currentPage}
-            totalItems={totalCount}
-            goToPage={goToPage}
-          />
-
-          <div className={styles["trips-table-container"]}>
-            <table className={styles["trips-table"]}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Vin Number</th>
-                  <th>Customer ID</th>
-                  <th>Date Range</th>
-                  <th>Status</th>
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}
+      />
+      {
+        isLoading ? <div style={{
+          width: "100%",
+          height: "500px"
+        }}>
+          <Loader />
+        </div> : <div className={styles["trips-table-container"]}>
+          <table className={styles["trips-table"]}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Vin Number</th>
+                <th>Customer ID</th>
+                <th>Date Range</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayList.map((trip) => (
+                <tr
+                  key={trip.id}
+                  onClick={() => {
+                    tripManagementContext.setCurrentTrip(trip)
+                    navigate("/trip")
+                  }}
+                  className={
+                    trip.trip_status === "in progress"
+                      ? styles["row-highlighted"]
+                      : undefined
+                  }
+                >
+                  <td className={styles["vin-cell"]}>{trip.id}</td>
+                  <td>{trip.bike_id}</td>
+                  <td>{trip.customer_id}</td>
+                  <td>
+                    {formatDate(trip.trip_start_date!)} –{" "}
+                    {formatDate(trip.trip_end_date!)}
+                  </td>
+                  <td>
+                    <span
+                      className={styles["status-badge-table"]}
+                      style={getStatusStyle(
+                        trip.trip_status.toLowerCase() as TripStatus
+                      )}
+                    >
+                      {getStatusLabel(
+                        trip.trip_status.toLowerCase() as TripStatus
+                      )}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {displayList.map((trip) => (
-                  <tr
-                    key={trip.id}
-                    onClick={() => {
-                      tripManagementContext.setCurrentTrip(trip)
-                      navigate("/trip")
-                    }}
-                    className={
-                      trip.trip_status === "in progress"
-                        ? styles["row-highlighted"]
-                        : undefined
-                    }
-                  >
-                    <td className={styles["vin-cell"]}>{trip.id}</td>
-                    <td>{trip.bike_id}</td>
-                    <td>{trip.customer_id}</td>
-                    <td>
-                      {formatDate(trip.trip_start_date!)} –{" "}
-                      {formatDate(trip.trip_end_date!)}
-                    </td>
-                    <td>
-                      <span
-                        className={styles["status-badge-table"]}
-                        style={getStatusStyle(
-                          trip.trip_status.toLowerCase() as TripStatus
-                        )}
-                      >
-                        {getStatusLabel(
-                          trip.trip_status.toLowerCase() as TripStatus
-                        )}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      }
 
-          <Pagination
-            totalPages={totalPages}
-            currentPage={currentPage}
-            totalItems={totalCount}
-            goToPage={goToPage}
-          />
-        </>
-      )}
+
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        totalItems={totalCount}
+        goToPage={goToPage}
+      />
+
+
     </div>
   );
 }

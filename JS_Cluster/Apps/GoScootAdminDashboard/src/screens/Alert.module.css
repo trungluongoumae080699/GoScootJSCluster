@@ -84,3 +84,7 @@
   background: #f5f5f5;
   border-color: #C85A28;
 }
+
+.alerts-container {
+  margin-block: 1rem;
+}
