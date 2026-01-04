@@ -64,6 +64,8 @@ export async function getAlerts(
   const conditions: string[] = [];
   const params: any[] = [];
 
+  console.log("type", type)
+
   if (search) {
     conditions.push("bike_id = ?");
     params.push(search);
