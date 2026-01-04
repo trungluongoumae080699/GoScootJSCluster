@@ -52,8 +52,8 @@ export const fetchBikeUpdatesByBattery = async (
   request: CustomRequest<{}, {}, {}, {battery?: string}>, response: Response
 ) => {
   let batteryNum = undefined
-
     batteryNum = request.query.battery?.trim() === "" ? 0 : Number(request.query.battery);
+    console.log(batteryNum)
     const updates = await fetchBikeUpdates({
         battery: batteryNum,
     });

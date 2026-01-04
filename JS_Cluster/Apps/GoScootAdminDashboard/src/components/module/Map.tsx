@@ -365,20 +365,9 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     setFilteredBikesLoading(true);
 
     try {
-      // Get all bikes from WebSocket data (much faster than API calls)
-      const allWebSocketBikes = getAllBikes();
-
-      console.log(`🔋 Filtering ${allWebSocketBikes.length} bikes from WebSocket data with battery ≤ ${maxBattery}%`);
-
-      // Filter bikes by battery level
-      const filtered = allWebSocketBikes.filter(bike =>
-        (bike.battery_status ?? 0) <= maxBattery
-      );
-
-      console.log(`🔋 Found ${filtered.length} bikes with battery ≤ ${maxBattery}%`);
-
+      const updates = await bikeApi.getBikeUpdatesByBattery(String(maxBattery))
       // Convert BikeUpdate to Bike format for the filter component
-      const bikesForFilter: Bike[] = filtered.map(bikeUpdate => ({
+      const bikesForFilter: Bike[] = updates.map(bikeUpdate => ({
         id: bikeUpdate.id,
         name: bikeUpdate.id, // Use ID as name if no name field
         battery_status: bikeUpdate.battery_status,
