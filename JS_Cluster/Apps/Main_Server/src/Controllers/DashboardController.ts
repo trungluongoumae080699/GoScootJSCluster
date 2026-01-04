@@ -267,6 +267,7 @@ export const fetchAlerts = async (
     const result = await getAlerts({
       search,
       from: fromNum,
+      type: type,
       to: toNum,
       page: pageNum,
       limit: limitNum,
