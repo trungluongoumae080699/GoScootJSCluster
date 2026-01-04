@@ -63,6 +63,7 @@
 .nav-item.sub-item {
   padding-left: 3rem;
   font-size: 1rem;
+    background: #c85a28;
 }
 
 .nav-item.logout {

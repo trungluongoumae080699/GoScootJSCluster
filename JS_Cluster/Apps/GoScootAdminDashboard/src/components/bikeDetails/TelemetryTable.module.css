@@ -3,6 +3,11 @@
     width: 100%;
 }
 
+.liveText {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+
 .movement-history-header {
     display: flex;
     justify-content: space-between;
@@ -148,6 +153,16 @@
 /* Telemetry Table Styles */
 .telemetry-table {
     table-layout: auto;
+}
+
+.telemetry-table tbody tr:hover {
+    background: #FFF0E8;
+    box-shadow: inset 0 0 0 1px #C85A28;
+}
+
+.selectedRow {
+background: #FFF0E8;
+  box-shadow: inset 3px 0 0 #C85A28;
 }
 
 .telemetry-table th,

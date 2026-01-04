@@ -255,7 +255,6 @@ export class WebSocketManager {
         const { protocol, payload } = decodeBinaryPayload(bytes);
 
         if (protocol === 1) {
-          console.log('🚨 Received alert:');
           const bikeUpdates = decodeBikeUpdates(payload);
           console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
           console.log(bikeUpdates);
@@ -263,6 +262,11 @@ export class WebSocketManager {
             this.onBikeUpdate(bikeUpdates);
           }
         } else if (protocol === 0) {
+         
+
+          const { protocol, payload } = decodeBinaryPayload(bytes);
+
+
           const alertData = decodeAlertBinary(payload);
           if (this.onAlert) {
             this.onAlert(alertData);
@@ -424,7 +428,7 @@ export class WebSocketManager {
     console.log('📤 Requested bike:', bikeId);
   }
 
-  requestBikeTelemetry(bikeId: string): void {
+  requestBikeTelemetry(bikeIds: string[]): void {
     // Guard: Only send if connection is open
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.warn('⚠️ WebSocket not open, cannot request bike telemetry');
@@ -434,12 +438,12 @@ export class WebSocketManager {
     // Build bike telemetry request message
     const message = {
       msgType: WSMessageType.BIKE_TELEMETRY,
-      bike_id: bikeId
+      bike_id: bikeIds
     };
 
     // Send as JSON string
     this.ws.send(JSON.stringify(message));
-    console.log('📤 Requested bike telemetry:', bikeId);
+    console.log('📤 Requested bike telemetry:', bikeIds);
   }
 
 

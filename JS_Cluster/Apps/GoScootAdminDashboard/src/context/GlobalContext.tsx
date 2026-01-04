@@ -1,4 +1,4 @@
-import { createContext, Dispatch, SetStateAction, useContext, useState } from "react";
+import { createContext, Dispatch, MutableRefObject, SetStateAction, useContext, useEffect, useRef, useState } from "react";
 import { Alert } from "../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
 export type SnackbarConfig = {
@@ -21,7 +21,10 @@ export type GlobalContextType = {
     setCurrentHeader: Dispatch<SetStateAction<string>>
     alerts: Alert[];
     setAlerts: Dispatch<SetStateAction<Alert[]>>;
+    alertsReserve: MutableRefObject<Alert[]>
     alertCount: number;
+    activeAlertId: string;
+    setActiveAlertId: Dispatch<SetStateAction<string>>;
     setAlertCount: Dispatch<SetStateAction<number>>;
     newAlerts: Alert[];
     setNewAlerts: Dispatch<SetStateAction<Alert[]>>;
@@ -46,7 +49,9 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     const [currentHeader, setCurrentHeader] = useState<string>("")
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [newAlerts, setNewAlerts] = useState<Alert[]>([]);
+    const alertsReserve = useRef<Alert[]>([])
     const [alertCount, setAlertCount] = useState<number>(0);
+    const [activeAlertId, setActiveAlertId] = useState<string>("");
     const [isAuth, setIsAuth] = useState<boolean>(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<WebScreen>(WebScreen.DASHBOARD);
@@ -65,6 +70,9 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
                 setCurrentHeader,
                 alerts,
                 setAlerts,
+                alertsReserve,
+                activeAlertId,
+                setActiveAlertId,
                 alertCount,
                 setAlertCount,
                 newAlerts,

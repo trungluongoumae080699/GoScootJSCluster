@@ -43,7 +43,7 @@ function TripsTable({
   return (
     <div className={styles["trips-table-container"]}>
       <div className={styles["trips-header"]}>
-        <h3>Last Trips ({totalCount})</h3>
+        <h3>Lịch Sử Chuyến Đi ({totalCount})</h3>
       </div>
 
       <div className={styles["trips-filters"]}>
@@ -109,9 +109,9 @@ function TripsTable({
           isLoading ? <Loader></Loader> : <table className={styles["trips-table"]}>
             <thead>
               <tr>
-                <th>Customer ID</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th>ID Khách Hàng</th>
+                <th>Trạng Thái</th>
+                <th>Thời Gian</th>
               </tr>
             </thead>
 

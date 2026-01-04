@@ -3,7 +3,7 @@
   left: 50%;
   bottom: 1rem;
   transform: translateX(-50%) translateY(0);
-  z-index: 10000;
+  z-index: 999999;
   display: flex; /* ✅ horizontally aligned */
   align-items: center;
   gap: 0.5rem;

@@ -1,32 +1,35 @@
 import { BikeStatus } from "@trungthao/admin_dashboard_dto";
 
-  const getStatusStyle =(status: BikeStatus) => {
-    switch (status) {
-      case "Idle":
-        return { background: "#d4edda", color: "#155724" };
-      case "Inused":
-        return { background: "#ffe4c4", color: "#856404" };
-      case "Reserved":
-        return { background: "#fff3cd", color: "#856404" };
-      default:
-        return { background: "#e2e3e5", color: "#383d41" };
-    }
-  };
+export const getStatusStyle = (status: BikeStatus) => {
+  switch (status) {
+    case "Idle":
+      return { background: "#d4edda", color: "#155724" };
+    case "Inused":
+      return { background: "#ffe4c4", color: "#856404" };
+    case "Reserved":
+      return { background: "#fff3cd", color: "#856404" };
+    default:
+      return { background: "#e2e3e5", color: "#383d41" };
+  }
+};
 
-  const getStatusLabel = (status: BikeStatus) => {
-    switch (status) {
-      case "Idle":
-        return "Available";
-      case "Inused":
-        return "Inused";
-      case "Reserved":
-        return "Reserved";
-      default:
-        return status;
-    }
-  };
+export const getStatusText = (status: BikeStatus) => {
+  switch (status) {
+    case BikeStatus.INUSED:
+      return "Đang sử dụng";
 
-  function timestampToDateInput(ts: number): string {
+    case BikeStatus.RESERVED:
+      return "Đã được đặt";
+
+    case BikeStatus.IDLE:
+      return "Sẵn sàng";
+
+    default:
+      return status;
+  }
+}
+
+function timestampToDateInput(ts: number): string {
   return new Date(ts).toISOString().slice(0, 10); // yyyy-mm-dd
 }
 
@@ -47,13 +50,13 @@ export function dateToEndOfDay(dateStr: string): number {
  * Returns distance in meters
  */
 export function calculateDistance(
-  lat1: number, lon1: number, 
+  lat1: number, lon1: number,
   lat2: number, lon2: number
 ): number {
   const R = 6371000; // Earth's radius in meters
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);

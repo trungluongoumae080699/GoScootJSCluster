@@ -65,6 +65,8 @@ function BikeMap(
   // Determine which type of location is being displayed
   const locationSource = pastTelemetryLocation ? "past" : "present"
 
+  console.log("Past Loc", validPastTelemetryLocation)
+
   useEffect(() => {
     if (!mapContainerRef.current || !MAPBOX_TOKEN || !bike) return;
 

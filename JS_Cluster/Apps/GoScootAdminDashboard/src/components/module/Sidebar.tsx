@@ -18,36 +18,40 @@ import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
 
 /** Configuration for navigation menu items */
 const menuItems = [
-  { id: "map", icon: MdDashboard, label: "Dashboard", route: "/" },
+  { id: "map", type: WebScreen.DASHBOARD, icon: MdDashboard, label: "Dashboard", route: "/" },
   {
     id: "bikes",
+    type: WebScreen.BIKES,
     icon: MdElectricBike,
-    label: "Bikes",
+    label: "Quản Lý Xe",
     route: "/bikes",
     subItems: [
       {
         id: "bike-detail",
+        type: WebScreen.BIKE_DETAIL,
         icon: MdElectricBike,
         label: "Bike Detail",
-        route: "/bike-detail",
+        route: "/bike",
       },
     ],
   },
   {
     id: "trips",
+    type: WebScreen.TRIPS,
     icon: MdBikeScooter,
-    label: "Trips",
+    label: "Quản Lý Hành Tình",
     route: "/trips",
     subItems: [
       {
         id: "trip-detail",
+        type: WebScreen.TRIP_DETAIL,
         icon: MdBikeScooter,
         label: "Trip Detail",
-        route: "/trip-detail",
+        route: "/trip",
       },
     ],
   },
-  { id: "alert", icon: MdWarning, label: "Alert", route: "/alerts" },
+  { id: "alert", icon: MdWarning, label: "Cảnh Báo", route: "/alerts" },
 ];
 
 /**
@@ -94,34 +98,36 @@ export default function Sidebar() {
                 <span>{label}</span>
               </Link>
 
-              {subItems && openMenu === id && (
+              {subItems && (
                 <ul className={styles["submenu"]}>
                   {subItems.map(
                     ({
                       id: subId,
+                      type,
                       icon: SubIcon,
                       label: subLabel,
                       route: subRoute,
                     }) => {
-                      const isSubActive = location.pathname === subRoute;
-
+                      if (globalContext.currentPage === type){
                       return (
                         <li key={subId}>
-                          <Link
-                            to={subRoute}
+                          <div
                             className={[
                               styles["nav-item"],
                               styles["sub-item"],
-                              isSubActive ? styles["active"] : "",
                             ]
                               .filter(Boolean)
                               .join(" ")}
                           >
                             <SubIcon className={styles["nav-icon"]} size={24} />
                             <span>{subLabel}</span>
-                          </Link>
+                          </div>
                         </li>
                       );
+                      }
+                      
+
+
                     }
                   )}
                 </ul>

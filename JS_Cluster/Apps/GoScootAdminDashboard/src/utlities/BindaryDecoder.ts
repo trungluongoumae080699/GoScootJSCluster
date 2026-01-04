@@ -219,8 +219,8 @@ export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
   return bikes;
 }
 
-export function decodeAlertBinary(bytes: Uint8Array): Alert {
-  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+export function decodeAlertBinary(payload: Uint8Array): Alert {
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   const decoder = new TextDecoder();
   let offset = 0;
 
@@ -232,12 +232,6 @@ export function decodeAlertBinary(bytes: Uint8Array): Alert {
     }
   };
 
-  // 0) protocol / header byte (your int8(0))
-  ensure(1);
-  const protocol = dv.getUint8(offset);
-  offset += 1;
-  // (optional) you can use protocol if you want
-
   const readU8 = () => {
     ensure(1);
     return dv.getUint8(offset++);
@@ -246,7 +240,7 @@ export function decodeAlertBinary(bytes: Uint8Array): Alert {
   const readString = () => {
     const len = readU8();
     ensure(len);
-    const s = decoder.decode(bytes.subarray(offset, offset + len));
+    const s = decoder.decode(payload.subarray(offset, offset + len));
     offset += len;
     return s;
   };
@@ -257,15 +251,15 @@ export function decodeAlertBinary(bytes: Uint8Array): Alert {
   const type = readString();
 
   ensure(4);
-  const longitude = dv.getFloat32(offset, true);
+  const longitude = dv.getFloat32(offset, true); // ✅ little-endian (matches Go)
   offset += 4;
 
   ensure(4);
-  const latitude = dv.getFloat32(offset, true);
+  const latitude = dv.getFloat32(offset, true); // ✅ little-endian
   offset += 4;
 
   ensure(8);
-  const time = Number(dv.getBigInt64(offset, true));
+  const time = Number(dv.getBigInt64(offset, true)); // ✅ little-endian
   offset += 8;
 
   return { id, bike_id, content, type, longitude, latitude, time };

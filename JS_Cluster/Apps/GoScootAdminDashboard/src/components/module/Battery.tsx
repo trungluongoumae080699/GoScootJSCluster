@@ -4,6 +4,7 @@ type BatterySize = "xs" | "sm" | "md" | "lg";
 type BatteryOrientation = "horizontal" | "vertical";
 
 type BatteryProps = {
+
   level: number;               // 0 → 100
   size?: BatterySize;          // default: md
   orientation?: BatteryOrientation; // default: horizontal
@@ -22,8 +23,8 @@ export default function Battery({
     safeLevel <= 20
       ? styles.low
       : safeLevel <= 50
-      ? styles.medium
-      : styles.high;
+        ? styles.medium
+        : styles.high;
 
   return (
     <div

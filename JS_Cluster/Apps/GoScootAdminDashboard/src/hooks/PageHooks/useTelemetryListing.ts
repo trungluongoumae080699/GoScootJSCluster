@@ -51,6 +51,7 @@ export function useTelemetryListing(bikeId: string, fetchApi: (args: FetchApiArg
         // state
         isLoading,
         displayList,
+        setDisplayList,
         totalCount,
         totalPages,
         currentPage,

@@ -54,6 +54,7 @@ export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>)
     // state
     isLoading,
     displayList,
+    setDisplayList,
     totalPages,
     totalCount,
     currentPage,

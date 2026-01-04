@@ -19,6 +19,8 @@ import Loader from "./components/module/LoadingModule";
 import Snackbar from "./components/module/Snackbar";
 import TripDetails from "./screens/TripManagement/TripDetails";
 import Dashboard from "./screens/Dashboard";
+import AlertSnackbar from "./components/module/AlertSnackbar";
+
 
 
 
@@ -32,6 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function Root() {
   const globalContext = useGlobalContext();
   const navigate = useNavigate();
+  const [reserveTick, setReserveTick] = useState(0);
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -63,6 +66,7 @@ export default function Root() {
 
   useEffect(() => {
     if (!globalContext.isAuth) {
+      globalContext.setAlerts([])
       navigate("/login", { replace: true });
     }
   }, [globalContext.isAuth])
@@ -70,8 +74,27 @@ export default function Root() {
   useEffect(() => {
     if (!globalContext.isAuth) return;
     websocketManager.connect();
+    websocketManager.setOnAlert((alert) => {
+      console.log("Adding Alerts To Reserve....")
+      globalContext.alertsReserve.current.push(alert);
+      setReserveTick(t => t + 1);
+
+    });
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
+
+    useEffect(() => {
+    if (globalContext.alerts.length === 0 && globalContext.alertsReserve.current.length > 0) {
+      console.log("Extracting from reserve to state...")
+      const first5Alerts = globalContext.alertsReserve.current.slice(0, 5);
+      console.log(first5Alerts)
+      globalContext.setAlerts(first5Alerts);
+
+      globalContext.alertsReserve.current = globalContext.alertsReserve.current.slice(5);
+
+    }
+  }, [globalContext.alerts, reserveTick]);
+
 
   if (globalContext.isCheckingAuth) {
     return (
@@ -90,6 +113,8 @@ export default function Root() {
     );
   }
 
+
+
   return (
     <div className="app-container">
       {
@@ -102,7 +127,7 @@ export default function Root() {
       <div
         className={`main-content-container 
           ${globalContext.isAuth ? "main-content-container-post-auth" : ""
-          } ${globalContext.currentPage === WebScreen.DASHBOARD ? "main-content-container-post-auth-dashboard" : "" }`}
+          } ${globalContext.currentPage === WebScreen.DASHBOARD ? "main-content-container-post-auth-dashboard" : ""}`}
       >
 
         <ToastContainer />
@@ -166,6 +191,12 @@ export default function Root() {
         </Routes>
       </div>
       <Snackbar duration={4000}></Snackbar>
+
+      {
+        globalContext.alerts.map((alert) => (
+          <AlertSnackbar key={alert.id} alert={alert} />
+        ))
+      }
 
     </div>
   );

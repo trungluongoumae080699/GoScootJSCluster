@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BikeStatus } from "@trungthao/admin_dashboard_dto";
+import { BikeStatus, BikeTelemetry } from "@trungthao/admin_dashboard_dto";
 import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
 import Pagination from "../../components/module/pagination";
 import { useBikeListing } from "../../hooks/PageHooks/useBikeListing";
@@ -11,6 +11,8 @@ import Loader from "../../components/module/LoadingModule";
 
 import styles from "./Bikes.module.css";
 import Battery from "../../components/module/Battery";
+import { websocketManager } from "../../services/websocketService";
+import { getStatusStyle, getStatusText } from "../../utlities/methods";
 
 const STATUS_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
@@ -25,7 +27,7 @@ export default function Bikes() {
   const bikeManagementContext = useBikeManagementContext();
 
   useEffect(() => {
-    globalContext.setCurrentHeader("Bikes");
+    globalContext.setCurrentHeader("Danh Sách Xe");
     globalContext.setCurrentPage(WebScreen.BIKES);
   }, []);
 
@@ -33,6 +35,7 @@ export default function Bikes() {
     resetFilter,
     isLoading,
     displayList,
+    setDisplayList,
     totalCount,
     currentPage,
     applyFilters,
@@ -44,34 +47,77 @@ export default function Bikes() {
 
   useEffect(() => {
     applyFilters();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getStatusStyle = (status: BikeStatus) => {
-    switch (status) {
-      case "Idle":
-        return { background: "#d4edda", color: "#155724" };
-      case "Inused":
-        return { background: "#ffe4c4", color: "#856404" };
-      case "Reserved":
-        return { background: "#fff3cd", color: "#856404" };
-      default:
-        return { background: "#e2e3e5", color: "#383d41" };
-    }
-  };
 
-  const getStatusLabel = (status: BikeStatus) => {
-    switch (status) {
-      case "Idle":
-        return "Available";
-      case "Inused":
-        return "Inused";
-      case "Reserved":
-        return "Reserved";
-      default:
-        return status;
-    }
+  useEffect(() => {
+    if (!displayList || displayList.length === 0) return;
+
+    const bikeIds = displayList.map((b) => b.id);
+
+    const fire = () => {
+      if (websocketManager.isConnected()) {
+        websocketManager.requestBikeTelemetry(bikeIds);
+      }
+    };
+
+    fire();
+
+    const timer = window.setInterval(fire, 10_000);
+    return () => window.clearInterval(timer);
+  }, [displayList]);
+
+  useEffect(() => {
+  websocketManager.setOnBikeTelemetry((t: BikeTelemetry) => {
+    // chỉ update nếu bike đang nằm trong displayList hiện tại
+    setDisplayList((prev) => {
+      const idx = prev.findIndex((b) => b.id === t.bike_id);
+      if (idx === -1) return prev;
+
+      const old = prev[idx];
+
+      // build updated bike (patch live fields)
+      const updated = {
+        ...old,
+        battery_status: t.battery,
+        batteryIsLow: t.batteryIsLow,
+
+        latitude: t.latitude,
+        longitude: t.longitude,
+
+        isToppled: t.isToppled,
+        isCrashed: t.isCrashed,
+        isOutOfBound: t.isOutOfBound,
+
+        status: t.usageStatus, // BikeStatus
+      };
+
+      // (optional) tránh rerender nếu không đổi gì đáng kể
+      const noChange =
+        old.battery_status === updated.battery_status &&
+        old.batteryIsLow === updated.batteryIsLow &&
+        old.latitude === updated.latitude &&
+        old.longitude === updated.longitude &&
+        old.isToppled === updated.isToppled &&
+        old.isCrashed === updated.isCrashed &&
+        old.isOutOfBound === updated.isOutOfBound &&
+        old.status === updated.status;
+
+      if (noChange) return prev;
+
+      const next = prev.slice();
+      next[idx] = updated;
+      return next;
+    });
+  });
+
+  return () => {
+    websocketManager.setOnBikeTelemetry(null);
   };
+}, [setDisplayList]);
+
+
+
 
   const WarningBang = ({ on }: { on: boolean }) =>
     on ? (
@@ -189,6 +235,10 @@ export default function Bikes() {
                 const bikeIsOffline = !bike.battery_status || !bike.latitude || !bike.latitude
                 const bikeIsOutOfBound = bike.isOutOfBound
 
+                function getStatusLabel(arg0: BikeStatus): import("react").ReactNode {
+                  throw new Error("Function not implemented.");
+                }
+
                 return (
                   <tr
                     key={bike.id}
@@ -209,12 +259,15 @@ export default function Bikes() {
 
                     <td>
                       {bike.battery_status ? (
+                        <div className={styles.batteryContainer}>
                         <Battery
                           level={bike.battery_status}
                           size="xs"
                           orientation="horizontal"
                           showText={true}
                         />
+                        </div>
+
                       ) : (
                         "N/A"
                       )}
@@ -225,7 +278,7 @@ export default function Bikes() {
                         className={styles["status-badge-table"]}
                         style={getStatusStyle(bike.status as BikeStatus)}
                       >
-                        {getStatusLabel(bike.status as BikeStatus)}
+                        {getStatusText(bike.status as BikeStatus)}
                       </span>
                     </td>
 

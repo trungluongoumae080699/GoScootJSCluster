@@ -148,7 +148,7 @@ export default function Trips() {
           onClick={applyFilters}
           disabled={isLoading}
         >
-          Apply
+          Tìm Kiếm
         </button>
 
         <button
@@ -156,7 +156,7 @@ export default function Trips() {
           onClick={resetFilter}
           disabled={isLoading}
         >
-          Clear
+          Huỷ
         </button>
       </div>
 
@@ -177,10 +177,10 @@ export default function Trips() {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Vin Number</th>
-                <th>Customer ID</th>
-                <th>Date Range</th>
-                <th>Status</th>
+                <th>Số Xe</th>
+                <th>ID Khách Hàng</th>
+                <th>Thời Gian</th>
+                <th>Trạng Thái</th>
               </tr>
             </thead>
             <tbody>

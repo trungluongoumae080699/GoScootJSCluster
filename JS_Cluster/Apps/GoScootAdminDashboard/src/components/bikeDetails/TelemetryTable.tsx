@@ -13,20 +13,7 @@ import Pagination from '../module/pagination';
 import { bikeApi } from '../../services/ApiClient/BikeApis';
 import styles from "./TelemetryTable.module.css"
 import { exportBikeTelemetryToExcel } from '../../utlities/FileUtility';
-
-/** Get CSS class for operation status badge */
-function getOperationStatusClass(status: OperationStatus): string {
-  switch (status) {
-    case OperationStatus.NORMAL:
-      return 'status-normal';
-    case OperationStatus.OUT_OF_BOUND:
-      return 'status-warning';
-    case OperationStatus.LOW_BATTERY:
-      return 'status-danger';
-    default:
-      return 'status-normal';
-  }
-}
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 
 /** Get CSS class for usage status badge */
 function getUsageStatusClass(status: BikeStatus): string {
@@ -44,6 +31,10 @@ function getUsageStatusClass(status: BikeStatus): string {
 
 interface TelemetryTableProps {
   bike: Bike,
+  newTelemetry: BikeTelemetry | null,
+  setNewTelemetry: Dispatch<SetStateAction<BikeTelemetry | null>>
+
+  selectedTelemetry: BikeTelemetry | null
   onSelectTelemetry: (telemetry: BikeTelemetry) => void
   isExportingExcel: boolean
   onExportExcel: () => void
@@ -51,6 +42,9 @@ interface TelemetryTableProps {
 
 function TelemetryTable({
   bike,
+  newTelemetry,
+  setNewTelemetry,
+  selectedTelemetry,
   onSelectTelemetry,
   isExportingExcel,
   onExportExcel,
@@ -60,6 +54,7 @@ function TelemetryTable({
     // state
     isLoading,
     displayList,
+    setDisplayList,
     totalCount,
     currentPage,
     // actions
@@ -72,11 +67,24 @@ function TelemetryTable({
     setFilterPayload,
   } = useTelemetryListing(bike.id, bikeApi.getBikeTelemetry);
 
+  useEffect(() => {
+    if (!newTelemetry) return;
+
+    setDisplayList((prev) => {
+      if (!prev || prev.length === 0) return [newTelemetry];
+
+      // add to top, remove last
+      return [newTelemetry, ...prev.slice(0, prev.length - 1)];
+    });
+
+    setNewTelemetry(null);
+  }, [newTelemetry, setDisplayList]);
+
   return (
     <div className={styles["movement-history-section"]}>
       <div className={styles["movement-history-header"]}>
         <h3>
-          Movement History ({totalCount} records)
+          Lịch Sử Trạng Thái ({totalCount} records)
           <span
             style={{
               fontSize: "12px",
@@ -85,7 +93,7 @@ function TelemetryTable({
               fontWeight: "normal",
             }}
           >
-            ● Live Updates
+            ● Trực Tuyến
           </span>
         </h3>
       </div>
@@ -135,7 +143,7 @@ function TelemetryTable({
           disabled={isLoading}
           title="Apply filters & fetch group 0"
         >
-          Apply
+          Tìm Kiếm
         </button>
 
         <button
@@ -144,19 +152,19 @@ function TelemetryTable({
           disabled={isLoading}
           title="Clear filters"
         >
-          Clear
+          Huỷ
         </button>
       </div>
 
       <button
-        onClick={()=>{
-          if (displayList.length > 0){
+        onClick={() => {
+          if (displayList.length > 0) {
             exportBikeTelemetryToExcel(displayList)
           }
         }}
         className={styles["export-btn"]}
         disabled={isExportingExcel}
-        title="Export to Excel"
+        title="Xuất File Excel"
       >
         <MdFileDownload size={18} style={{ marginRight: "4px" }} />
         {isExportingExcel ? "Exporting..." : "Export Excel"}
@@ -166,21 +174,27 @@ function TelemetryTable({
         <table className={[styles["trips-table"], styles["telemetry-table"]].join(" ")}>
           <thead>
             <tr>
-              <th>Battery</th>
-              <th>Longitude</th>
-              <th>Latitude</th>
-              <th>Last GPS Long</th>
-              <th>Last GPS Lat</th>
-              <th>GPS Contact</th>
-              <th>Usage</th>
-              <th>Timestamp</th>
+              <th>Pin</th>
+              <th>Kinh Độ</th>
+              <th>Vĩ Độ</th>
+              <th>Kinh Độ GPS</th>
+              <th>Vĩ Độ GPS</th>
+              <th>Kết Nôi GPS Cuối Cùng</th>
+              <th>Thời Gian</th>
+              <th></th>
             </tr>
           </thead>
 
           <tbody>
             {displayList.length > 0 ? (
               displayList.map((t) => (
-                <tr key={t.id}>
+                <tr
+                  key={t.id}
+                  className={[
+                    selectedTelemetry?.id === t.id ? styles.selectedRow : "",
+                  ].join(" ")}
+                  onClick={() => onSelectTelemetry(t)}
+                >
                   <td>
                     <span
                       style={{

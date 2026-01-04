@@ -31,13 +31,13 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
   const batteryIcon = bike.battery_status > 20 ? '🔋' : '⚠️';
 
   // Get operation status color (original preferred colors)
-  const getOperationStatusColor = (status: string) => {
-    switch (status) {
-      case 'Normal': return '#4CAF50';
-      case 'Out of bound': return '#FF9800';
-      case 'Low battery': return '#F44336';
-      default: return '#757575';
+  const getOperationStatusColor = () => {
+    if (bike.isCrashed || bike.batteryIsLow || bike.isOutOfBound || bike.isToppled){
+      return '#4CAF50'; 
+    } else {
+      return '#F44336'
     }
+    
   };
 
   // Get usage status color (original preferred colors)
@@ -60,7 +60,7 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            background: `linear-gradient(90deg, ${getOperationStatusColor(bike.operationStatus)} 50%, ${getUsageStatusColor(bike.usageStatus)} 50%)`,
+            background: `linear-gradient(90deg, ${getOperationStatusColor()} 50%, ${getUsageStatusColor(bike.usageStatus)} 50%)`,
             border: '2px solid white',
             boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             marginRight: '4px'
