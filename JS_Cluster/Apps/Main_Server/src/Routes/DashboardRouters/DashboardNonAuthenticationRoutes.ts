@@ -20,6 +20,7 @@ dashboardNonAuthenticationRouter.get("/bike/:bikeId", (request: Request, respons
 
 dashboardNonAuthenticationRouter.get("/bike/update", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
+    console.log("HAHAHA")
     fetchBikeUpdatesByBattery(customerRequest, response).catch(next)
 });
 
