@@ -51,6 +51,7 @@ export const fetchHubs = async (
 export const fetchBikeUpdatesByBattery = async (
   request: CustomRequest<{}, {}, {}, {battery?: string}>, response: Response
 ) => {
+  console.log("Hello")
   let batteryNum = undefined
     batteryNum = request.query.battery?.trim() === "" ? 0 : Number(request.query.battery);
     console.log(batteryNum)
