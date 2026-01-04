@@ -22,6 +22,7 @@ import { bikeApi } from '../../services/ApiClient/BikeApis';
 import { useGlobalContext } from '../../context/GlobalContext';
 import { useBikeManagementContext } from '../../context/BikeManagementContext';
 import { useNavigate } from 'react-router-dom';
+import { BikeFilterPayload } from '../../hooks/PageHooks/useBikeListing';
 // Custom hooks for WebSocket connection and map marker management
 //import { useWebSocket } from './hooks/useWebSocket';
 

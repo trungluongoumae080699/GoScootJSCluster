@@ -48,6 +48,19 @@ export const fetchHubs = async (
   return response.status(200).json(result);
 };
 
+export const fetchBikeUpdatesByBattery = async (
+  request: CustomRequest<{}, {}, {}, {battery?: string}>, response: Response
+) => {
+  let batteryNum = undefined
+
+    batteryNum = request.query.battery?.trim() === "" ? 0 : Number(request.query.battery);
+    const updates = await fetchBikeUpdates({
+        battery: batteryNum,
+    });
+    response.status(200).json(updates)
+}
+
+
 export const fetchBikesByHub = async (
   request: CustomRequest<{ hubId: string }>,
   response: Response

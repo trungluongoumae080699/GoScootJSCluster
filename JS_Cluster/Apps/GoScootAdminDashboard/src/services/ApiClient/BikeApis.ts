@@ -1,4 +1,4 @@
-import { Bike, BikeTelemetry, Hub } from "@trungthao/admin_dashboard_dto";
+import { Bike, BikeTelemetry, BikeUpdate, Hub } from "@trungthao/admin_dashboard_dto";
 
 import { apiRequest } from "./apiClient";
 import { FetchApiArgs, FetchResult } from "../../hooks/usePaginationListSimple";
@@ -125,6 +125,18 @@ export const bikeApi = {
     });
 
     return response;
+  },
+
+  async getBikeUpdatesByBattery(battery: string, signal?: AbortSignal): Promise<BikeUpdate[]> {
+    const params = new URLSearchParams();
+    params.append('battery', battery);
+    const queryString = params.toString();
+    const endpoint = queryString ? `/dashboard/use/hubs?${queryString}` : '/dashboard/use/hubs';
+
+    const response = await apiRequest<BikeUpdate[]>(endpoint, {
+      signal: signal, // ✅ THIS is the key line
+    });
+    return response
   },
 
 
