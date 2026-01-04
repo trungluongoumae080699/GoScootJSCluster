@@ -366,6 +366,10 @@ function DashboardMap({ centerOnLocation }: MapProps) {
 
     try {
       const updates = await bikeApi.getBikeUpdatesByBattery(String(maxBattery))
+      if (mapRef.current){
+        updateMarkers(updates, mapRef.current )
+      }
+
       // Convert BikeUpdate to Bike format for the filter component
       const bikesForFilter: Bike[] = updates.map(bikeUpdate => ({
         id: bikeUpdate.id,
