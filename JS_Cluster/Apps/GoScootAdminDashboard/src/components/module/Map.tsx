@@ -541,29 +541,35 @@ function DashboardMap({ centerOnLocation }: MapProps) {
 
     console.log(`🗺️ Total bikes: ${counts.totalCount}, Visible: ${counts.visibleCount}`);
 
-    // Check if we received a bike we were searching for
-    if (bikes.length === 1 && bikeSearchError === 'Searching...') {
-      const bike = bikes[0];
-      console.log('✅ Received searched bike:', bike.id);
-
-      // Clear any pending timeout
-      if ((window as any).__bikeSearchTimeout) {
-        clearTimeout((window as any).__bikeSearchTimeout);
-        (window as any).__bikeSearchTimeout = null;
-      }
-
-      // Move camera to bike location
-      mapRef.current.flyTo({
-        center: [bike.longitude, bike.latitude],
-        zoom: 16,
-        duration: 2000
-      });
-
-      // Open bike detail popup
-      setSelectedBike(bike);
-      setBikeSearchError(null);
-    }
   }, [updateMarkers, bikeSearchError]);
+
+  const handleSingleBikeUpdate = useCallback((bike: BikeUpdate) => {
+
+    console.log('✅ Received searched bike:', bike.id);
+    if (!mapRef.current) {
+      console.warn('⚠️ Map not ready yet');
+      return;
+    }
+
+    // Clear any pending timeout
+    if ((window as any).__bikeSearchTimeout) {
+      clearTimeout((window as any).__bikeSearchTimeout);
+      (window as any).__bikeSearchTimeout = null;
+    }
+
+    // Move camera to bike location
+    mapRef.current.flyTo({
+      center: [bike.longitude, bike.latitude],
+      zoom: 16,
+      duration: 2000
+    });
+
+    // Open bike detail popup
+    setSelectedBike(bike);
+    setBikeSearchError(null);
+  }, [updateMarkers, bikeSearchError]);
+
+
 
   // === REAL-TIME DATA CONNECTION ===
   /**
@@ -578,6 +584,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   useMapRealtime(
     handleBikeUpdate,
+    handleSingleBikeUpdate,
     handleHubUpdate,
     handleWebSocketError,
     mapRef.current,

@@ -26,6 +26,7 @@ import { bikeApi } from '../services/ApiClient/BikeApis';
 
 export function useMapRealtime(
     onBikeUpdate: (bikes: BikeUpdate[]) => void,
+    onSingleBikeUpdate: (bike: BikeUpdate) => void,
     onHubUpdate: (hubs: Hub[]) => void,
     onError: (error: string) => void,
     map?: mapboxgl.Map | null,
@@ -35,6 +36,7 @@ export function useMapRealtime(
     useEffect(() => {
         websocketManager.setOnBikeUpdate(onBikeUpdate);
         websocketManager.setOnError(onError);
+        websocketManager.setSingleBikeRequest(onSingleBikeUpdate)
     }, [onBikeUpdate, onError]);
 
     // Initial viewport

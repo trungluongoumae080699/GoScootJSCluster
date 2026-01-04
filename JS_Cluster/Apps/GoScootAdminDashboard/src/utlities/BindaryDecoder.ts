@@ -264,3 +264,67 @@ export function decodeAlertBinary(payload: Uint8Array): Alert {
 
   return { id, bike_id, content, type, longitude, latitude, time };
 }
+
+export function decodeSingleBikeFromBinary(payload: Uint8Array): BikeUpdate {
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  let offset = 0;
+
+  const decoder = new TextDecoder();
+  const readU8 = () => dv.getUint8(offset++);
+  const readU16BE = () => {
+    const v = dv.getUint16(offset, false);
+    offset += 2;
+    return v;
+  };
+  const readI32BE = () => {
+    const v = dv.getInt32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readF32BE = () => {
+    const v = dv.getFloat32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readBool = () => readU8() === 1;
+  const readLenString = () => {
+    const len = readU8();
+    const s = decoder.decode(payload.subarray(offset, offset + len));
+    offset += len;
+    return s;
+  };
+
+  // payload starts from COUNT now (uint16)
+  const count = readU16BE();
+  if (count !== 1) throw new Error(`Expected 1 bike, got ${count}`);
+
+  const usageStateMap: BikeStatus[] = [
+    BikeStatus.IDLE,
+    BikeStatus.RESERVED,
+    BikeStatus.INUSED,
+  ];
+
+  const id = readLenString();
+  const battery_status = readI32BE();
+  const longitude = readF32BE();
+  const latitude = readF32BE();
+  const batteryIsLow = readBool();
+  const isToppled = readBool();
+  const isCrashed = readBool();
+  const isOutOfBound = readBool();
+  const usageStateInt = readU8();
+  const usageStatus = usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
+
+  return {
+    id,
+    battery_status,
+    longitude,
+    latitude,
+    batteryIsLow,
+    isToppled,
+    isCrashed,
+    isOutOfBound,
+    usageStatus,
+    currentHub: null,
+  };
+}

@@ -5,7 +5,7 @@
  */
 
 import { BikeTelemetry, BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { decodeAlertBinary, decodeBikeUpdates, decodeBinaryPayload, decodeTelemetry } from '../utlities/BindaryDecoder';
+import { decodeAlertBinary, decodeBikeUpdates, decodeBinaryPayload, decodeSingleBikeFromBinary, decodeTelemetry } from '../utlities/BindaryDecoder';
 import { getSessionId } from './ApiClient/apiClient';
 import { Alert } from '../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts';
 
@@ -41,6 +41,8 @@ export type ErrorCallback = (error: string) => void;
 export type AlertCallback = (alert: Alert) => void;
 
 export type BikeTelemetryCallback = (telemetry: BikeTelemetry) => void;
+
+export type SingleBikeRequestCallback = (bike: BikeUpdate) => void
 
 /**
  * WebSocket Manager Class
@@ -83,6 +85,9 @@ export class WebSocketManager {
   /** Callback function to handle bike telemetry */
   private onBikeTelemetry: BikeTelemetryCallback | null = null;
 
+  private onSingleBikeRequest: SingleBikeRequestCallback | null = null;
+
+
   /** Flag to prevent reconnection when user intentionally closes connection */
   private isIntentionallyClosed = false;
 
@@ -116,6 +121,10 @@ export class WebSocketManager {
 
   public setOnBikeTelemetry(cb: BikeTelemetryCallback | null): void {
     this.onBikeTelemetry = cb;
+  }
+
+  public setSingleBikeRequest(cb: SingleBikeRequestCallback | null): void {
+    this.onSingleBikeRequest = cb;
   }
 
   /**
@@ -234,6 +243,12 @@ export class WebSocketManager {
           this.onBikeTelemetry(telemetry);
         }
       }
+      else if (protocol === 4) {
+        const bikeUpdate = decodeSingleBikeFromBinary(payload)
+        if (this.onSingleBikeRequest) {
+          this.onSingleBikeRequest(bikeUpdate)
+        }
+      }
       /*
       else if (protocol == 0){
         const alertData = new TextDecoder().decode(payload);
@@ -262,7 +277,7 @@ export class WebSocketManager {
             this.onBikeUpdate(bikeUpdates);
           }
         } else if (protocol === 0) {
-         
+
 
           const { protocol, payload } = decodeBinaryPayload(bytes);
 
@@ -277,6 +292,13 @@ export class WebSocketManager {
           const telemetry = decodeTelemetry(payload);
           if (this.onBikeTelemetry) {
             this.onBikeTelemetry(telemetry);
+          }
+        }
+        else if (protocol === 4) {
+          console.log("Single Bike response received!!!")
+          const bikeUpdate = decodeSingleBikeFromBinary(payload)
+          if (this.onSingleBikeRequest) {
+            this.onSingleBikeRequest(bikeUpdate)
           }
         }
       });
