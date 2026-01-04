@@ -131,7 +131,7 @@ export const bikeApi = {
     const params = new URLSearchParams();
     params.append('battery', battery);
     const queryString = params.toString();
-    const endpoint = queryString ? `/dashboard/use/bike/update?${queryString}` : '/dashboard/use/hubs';
+    const endpoint = queryString ? `/dashboard/use/update/bike?${queryString}` : '/dashboard/use/hubs';
 
     const response = await apiRequest<BikeUpdate[]>(endpoint, {
       signal: signal, // ✅ THIS is the key line
