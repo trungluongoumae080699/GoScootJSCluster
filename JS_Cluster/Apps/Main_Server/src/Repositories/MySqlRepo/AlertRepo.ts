@@ -25,6 +25,7 @@ export interface GetAlertsOptions {
   to?: number;              // time <= to    (BIGINT)
   page?: number;            // default: 1
   limit?: number;        // default: 10, max: 10
+  type?: string
 }
 
 
@@ -49,6 +50,7 @@ export async function getAlerts(
   const {
     search,
     from,
+    type,
     to,
     page,
     limit,
@@ -65,6 +67,11 @@ export async function getAlerts(
   if (search) {
     conditions.push("bike_id = ?");
     params.push(search);
+  }
+
+  if (type) {
+    conditions.push("type = ?");
+    params.push(type);
   }
 
   if (from !== undefined) {

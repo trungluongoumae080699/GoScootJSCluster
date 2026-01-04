@@ -16,10 +16,10 @@ import Loader from "../components/module/LoadingModule";
 
 const ALERT_TYPE_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
-  { value: AlertType.BOUNDARY_CROSS, label: "Boudary Cross" },
-  { value: AlertType.LOW_BATTERY, label: "Low Batter" },
-  { value: AlertType.TOPPLE, label: "Topple" },
-  { value: AlertType.CRASH, label: "Crash" },
+  { value: AlertType.BOUNDARY_CROSS, label: "Ngoài Phạm Vi" },
+  { value: AlertType.LOW_BATTERY, label: "Pin Thấp" },
+  { value: AlertType.TOPPLE, label: "Ngã Đỗ" },
+  { value: AlertType.CRASH, label: "Va Chạm" },
 ];
 
 // Main Alerts Page

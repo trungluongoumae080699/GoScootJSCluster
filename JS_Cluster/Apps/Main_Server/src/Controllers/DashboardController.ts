@@ -227,6 +227,7 @@ type AlertQuery = {
   search?: string;
   from?: string;
   to?: string;
+  type?: string;
   page?: string;
   limit?: string
 };
@@ -236,7 +237,7 @@ export const fetchAlerts = async (
   response: Response
 ) => {
   try {
-    const { search, from, to, limit, page } = request.query;
+    const { search, from, to, limit, page, type } = request.query;
 
     // ---- Parse and validate time filters ----
     let fromNum: number | undefined;

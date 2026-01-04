@@ -22,11 +22,13 @@ export const alertApi = {
       params.append("limit", options.pageSize.toString());
     
       // ✅ filters come from options.filter
-      const { search, from, to } = options.filter;
+      const { search, from, to, type } = options.filter;
   
     if (search?.trim()) params.append("search", search.trim());
     if (from?.trim()) params.append("from", from.trim());
     if (to?.trim()) params.append("to", to.trim());
+    if (type?.trim()) params.append("type", type.trim());
+    
       
   
       const queryString = params.toString();
