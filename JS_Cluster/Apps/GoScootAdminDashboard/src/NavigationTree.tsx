@@ -83,7 +83,7 @@ export default function Root() {
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (globalContext.alerts.length === 0 && globalContext.alertsReserve.current.length > 0) {
       console.log("Extracting from reserve to state...")
       const first5Alerts = globalContext.alertsReserve.current.slice(0, 5);
@@ -193,10 +193,16 @@ export default function Root() {
       <Snackbar duration={4000}></Snackbar>
 
       {
-        globalContext.alerts.map((alert) => (
-          <AlertSnackbar key={alert.id} alert={alert} />
-        ))
+        globalContext.currentPage !== WebScreen.ALERT ?
+          <>
+            {
+              globalContext.alerts.map((alert) => (
+                <AlertSnackbar key={alert.id} alert={alert} />
+              ))
+            }
+          </> : undefined
       }
+
 
     </div>
   );

@@ -1,0 +1,57 @@
+.warning-empty {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+
+.warning-bang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.warning-danger {
+  background-color: #f44336;
+  color: #ffffff;
+}
+
+/* ✅ ok */
+.warning-ok {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+
+.warning-bang--blink {
+  animation: warningBlink 1s infinite;
+}
+
+@keyframes warningBlink {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* (optional) Tôn trọng user setting giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  .warning-bang--blink {
+    animation: none;
+  }
+}

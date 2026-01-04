@@ -18,7 +18,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { BikeUpdate, Hub } from '@trungthao/admin_dashboard_dto';
 import { websocketManager, ViewportBounds } from '../services/websocketService';
-import { hubApi} from '../services/ApiClient/apiClient';
+import { hubApi } from '../services/ApiClient/apiClient';
 import mapboxgl from 'mapbox-gl';
 import { bikeApi } from '../services/ApiClient/BikeApis';
 
@@ -41,6 +41,9 @@ export function useMapRealtime(
 
     useEffect(() => {
         if (!map) return;
+
+        let intervalId: number | null = null;
+
         const sendInitialViewport = async () => {
             const bounds = getMapBounds(map);
             if (!bounds) return;
@@ -54,8 +57,13 @@ export function useMapRealtime(
         };
 
         const handleMapLoad = () => {
-            onMapLoad?.();          // báo cho UI map đã load
-            sendInitialViewport(); // gửi viewport + fetch hubs
+            onMapLoad?.();        // báo UI map đã load
+            sendInitialViewport();
+
+            // 🔁 gửi viewport mỗi 3 giây
+            intervalId = window.setInterval(() => {
+                sendInitialViewport();
+            }, 3000);
         };
 
         if (map.loaded()) {
@@ -65,9 +73,14 @@ export function useMapRealtime(
         }
 
         return () => {
-            map.off("load", sendInitialViewport); // ✅
-        };
+            // cleanup interval
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
 
+            // cleanup event listener
+            map.off("load", handleMapLoad);
+        };
     }, [map]);
 
 

@@ -45,6 +45,8 @@ export default function Alerts() {
   useEffect(() => {
     globalContext.setCurrentPage(WebScreen.ALERT);
     globalContext.setCurrentHeader("Cảnh Báo");
+    globalContext.setAlerts([])
+    globalContext.alertsReserve.current = []
   }, []);
 
   return (

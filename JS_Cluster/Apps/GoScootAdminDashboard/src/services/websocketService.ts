@@ -256,7 +256,7 @@ export class WebSocketManager {
 
         if (protocol === 1) {
           const bikeUpdates = decodeBikeUpdates(payload);
-          console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
+          //console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
           console.log(bikeUpdates);
           if (this.onBikeUpdate) {
             this.onBikeUpdate(bikeUpdates);
@@ -335,7 +335,7 @@ export class WebSocketManager {
 
     // Send as JSON string
     this.ws.send(JSON.stringify(message));
-    console.log('📤 Sent viewport:', message);
+    //console.log('📤 Sent viewport:', message);
   }
 
   /**

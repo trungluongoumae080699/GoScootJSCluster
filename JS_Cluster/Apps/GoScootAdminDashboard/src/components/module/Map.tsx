@@ -19,6 +19,9 @@ import MapStatusIndicator from '../map/MapStatusIndicator';
 import HubDetailCard from '../map/HubDetailCard';
 import { websocketManager } from '../../services/websocketService';
 import { bikeApi } from '../../services/ApiClient/BikeApis';
+import { useGlobalContext } from '../../context/GlobalContext';
+import { useBikeManagementContext } from '../../context/BikeManagementContext';
+import { useNavigate } from 'react-router-dom';
 // Custom hooks for WebSocket connection and map marker management
 //import { useWebSocket } from './hooks/useWebSocket';
 
@@ -74,11 +77,14 @@ export interface MapProps {
  * @param onNavigate - Callback function for navigation to other pages
  */
 function DashboardMap({ centerOnLocation }: MapProps) {
+  const globalContext = useGlobalContext()
+  const bikeManagementContext = useBikeManagementContext()
+  const navigate = useNavigate()
   // DOM reference to the map container div element
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // Reference to the Mapbox GL JS map instance for direct map manipulation
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  
+
   // === MAP STATUS STATE ===
   // Number of bikes currently visible within the map viewport bounds
   const [visibleBikeCount, setVisibleBikeCount] = useState(0);
@@ -88,15 +94,15 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   const [isLoading, setIsLoading] = useState(true);
   // Error message if map fails to load or encounters issues
   const [error, setError] = useState<string | null>(null);
-  
+
   // === WEBSOCKET CONNECTION STATE ===
   // Real-time WebSocket connection status for live bike updates
   const [wsConnected, setWsConnected] = useState(false);
-  
+
   // === BIKE SELECTION STATE ===
   // Currently selected bike for displaying detailed popup information
   const [selectedBike, setSelectedBike] = useState<BikeUpdate | null>(null);
-  
+
   // === LOCATION SEARCH STATE ===
   // User input for location search (addresses, landmarks, etc.)
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,17 +110,17 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   // Controls visibility of the search results dropdown menu
   const [showResults, setShowResults] = useState(false);
-  
+
   // === BIKE ID SEARCH STATE ===
   // User input for searching specific bikes by their unique ID
   const [bikeSearchQuery, setBikeSearchQuery] = useState('');
   // Error message displayed when bike search fails or bike not found
   const [bikeSearchError, setBikeSearchError] = useState<string | null>(null);
-  
+
   // === DISPLAY CONTROL STATE ===
   // Current display mode: 'bikes', 'hubs', or 'both' - controls which markers are visible
   const [displayMode, setDisplayMode] = useState<DisplayMode>('both');
-  
+
   // === HUB INTERACTION STATE ===
   // Currently selected hub for displaying detailed information card
   const [selectedHub, setSelectedHub] = useState<Hub | null>(null);
@@ -122,13 +128,13 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   const [hubBikes, setHubBikes] = useState<any[]>([]);
   // Loading state while fetching bikes for the selected hub
   const [hubBikesLoading, setHubBikesLoading] = useState(false);
-  
+
   // === BATTERY FILTER STATE ===
   // Bikes filtered by battery level criteria (e.g., low battery bikes)
   const [filteredBikes, setFilteredBikes] = useState<Bike[]>([]);
   // Loading state while applying battery level filters
   const [filteredBikesLoading, setFilteredBikesLoading] = useState(false);
-  
+
   // === ERROR HANDLING STATE ===
   // Error message to display in the snackbar notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -145,7 +151,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   const handleBikeClick = useCallback((bike: BikeUpdate) => {
     setSelectedBike(bike);
   }, []);
-  
+
   /**
    * LOCATION SEARCH HANDLER
    * Uses Mapbox Geocoding API to search for addresses, landmarks, and places
@@ -160,14 +166,14 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
-    
+
     // Don't search for very short queries to avoid too many API calls
     if (query.length < 3) {
       setSearchResults([]);
       setShowResults(false);
       return;
     }
-    
+
     try {
       // Call Mapbox Geocoding API for location suggestions
       const response = await fetch(
@@ -181,20 +187,20 @@ function DashboardMap({ centerOnLocation }: MapProps) {
       setSearchResults([]);
     }
   }, []);
-  
+
   /**
    * Handler: When user selects a location from search results
    */
   const handleSelectLocation = useCallback((result: any) => {
     if (!mapRef.current) return;
-    
+
     const [lng, lat] = result.center;
     mapRef.current.flyTo({
       center: [lng, lat],
       zoom: 15,
       duration: 2000
     });
-    
+
     setSearchQuery(result.place_name);
     setShowResults(false);
   }, []);
@@ -222,11 +228,11 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   const handleHubClick = useCallback(async (hub: Hub) => {
     setSelectedHub(hub);
     setHubBikesLoading(true);
-    
+
     try {
       // Fetch bikes located at this specific hub from the backend API
       const response = await bikeApi.getBikesInHub(hub.id);
-      
+
       // Handle different response formats for backward compatibility
       if (response && response.bikes) {
         // Standard paginated response format
@@ -250,7 +256,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
   }, []);
 
   // === CUSTOM HOOKS FOR MAP MARKER MANAGEMENT ===
-  
+
   /**
    * BIKE MARKERS HOOK
    * Manages all bike markers on the map including:
@@ -261,7 +267,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    * - Finding specific bikes by ID for search functionality
    */
   const { updateMarkers, clearMarkers, getBikeById, getAllBikes, setBikeMarkersVisible } = useBikeMarkers(handleBikeClick);
-  
+
   /**
    * HUB MARKERS HOOK
    * Manages all hub/station markers on the map including:
@@ -285,11 +291,11 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     setBikeSearchError('Searching...');
     const searchId = bikeSearchQuery.trim();
     console.log('🔍 Searching for bike ID:', searchId);
-    
+
     // First, check if bike is already in memory
     const existingBike = getBikeById(searchId);
     console.log('🔍 getBikeById result:', existingBike);
-    
+
     if (existingBike && mapRef.current) {
       console.log('✅ Bike found in memory:', existingBike);
       // Bike found in memory - move camera to it
@@ -298,7 +304,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
         zoom: 16,
         duration: 2000
       });
-      
+
       // Open bike detail popup
       setSelectedBike(existingBike);
       setBikeSearchQuery('');
@@ -307,10 +313,10 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     }
 
     console.log('📡 Bike not in memory, requesting from server via WebSocket...');
-    
+
     // Request bike from server via WebSocket
     websocketManager.requestBike(searchId);
-    
+
     // Wait for WebSocket to send the bike data
     // Set a timeout to show error if bike doesn't arrive
     const timeoutId = setTimeout(() => {
@@ -320,10 +326,10 @@ function DashboardMap({ centerOnLocation }: MapProps) {
         setBikeSearchError('Bike not found. Please check the bike ID and try again.');
       }
     }, 5000); // 5 second timeout
-    
+
     // Store timeout ID to clear it if bike arrives sooner
     (window as any).__bikeSearchTimeout = timeoutId;
-    
+
     // Clear search query
     setBikeSearchQuery('');
   }, [bikeSearchQuery, getBikeById]);
@@ -341,11 +347,11 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   const handleDisplayModeChange = useCallback((mode: DisplayMode) => {
     setDisplayMode(mode);
-    
+
     // Update marker visibility based on mode
     const showBikes = mode === 'both' || mode === 'bikes';
     const showHubs = mode === 'both' || mode === 'hubs';
-    
+
     setBikeMarkersVisible(showBikes);
     setHubMarkersVisible(showHubs);
   }, [setBikeMarkersVisible, setHubMarkersVisible]);
@@ -356,20 +362,20 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   const handleBatteryFilter = useCallback(async (maxBattery: number) => {
     setFilteredBikesLoading(true);
-    
+
     try {
       // Get all bikes from WebSocket data (much faster than API calls)
       const allWebSocketBikes = getAllBikes();
-      
+
       console.log(`🔋 Filtering ${allWebSocketBikes.length} bikes from WebSocket data with battery ≤ ${maxBattery}%`);
-      
+
       // Filter bikes by battery level
-      const filtered = allWebSocketBikes.filter(bike => 
+      const filtered = allWebSocketBikes.filter(bike =>
         (bike.battery_status ?? 0) <= maxBattery
       );
-      
+
       console.log(`🔋 Found ${filtered.length} bikes with battery ≤ ${maxBattery}%`);
-      
+
       // Convert BikeUpdate to Bike format for the filter component
       const bikesForFilter: Bike[] = filtered.map(bikeUpdate => ({
         id: bikeUpdate.id,
@@ -388,7 +394,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
         last_modification_date: Date.now(),
         deleted: false
       }));
-      
+
       setFilteredBikes(bikesForFilter);
     } catch (error) {
       console.error('Failed to filter bikes from WebSocket data:', error);
@@ -428,18 +434,9 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   const handleBikeClickFromList = useCallback((bike: Bike | BikeUpdate) => {
     // Check if it's already a BikeUpdate
-    if ('longitude' in bike && 'latitude' in bike) {
-      setSelectedBike(bike as BikeUpdate);
-    } else {
-      // Try to get the BikeUpdate version from memory
-      const bikeUpdate = getBikeById(bike.id);
-      if (bikeUpdate) {
-        setSelectedBike(bikeUpdate);
-      } else {
-        // Request the bike via WebSocket if not in memory
-        websocketManager.requestBike(bike.id);
-      }
-    }
+    bikeManagementContext.setCurrentBike(null)
+    bikeManagementContext.setCurrentBikeId(bike.id)
+    navigate("/bike")
   }, [getBikeById]);
 
   /**
@@ -486,7 +483,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     // === EVENT HANDLERS ===
     // Map finished loading all tiles and styles
     //map.on('load', () => setIsLoading(false));
-    
+
     // Map encountered an error during loading or operation
     map.on('error', (e) => {
       console.error('Map error:', e);
@@ -497,7 +494,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     // === MAP CONTROLS ===
     // Add zoom in/out, rotate, and compass controls to top-right corner
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    
+
     // Add "Find My Location" button with high-accuracy GPS tracking
     map.addControl(
       new mapboxgl.GeolocateControl({
@@ -528,7 +525,7 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    */
   const handleBikeUpdate = useCallback((bikes: BikeUpdate[]) => {
     console.log('🎯 handleBikeUpdate called with', bikes.length, 'bikes');
-    
+
     // Guard: Don't process if map isn't ready yet
     if (!mapRef.current) {
       console.warn('⚠️ Map not ready yet');
@@ -541,27 +538,27 @@ function DashboardMap({ centerOnLocation }: MapProps) {
     const counts = updateMarkers(bikes, mapRef.current);
     setTotalBikeCount(counts.totalCount); // Total bikes in system
     setVisibleBikeCount(counts.visibleCount); // Bikes visible in current viewport
-    
+
     console.log(`🗺️ Total bikes: ${counts.totalCount}, Visible: ${counts.visibleCount}`);
-    
+
     // Check if we received a bike we were searching for
     if (bikes.length === 1 && bikeSearchError === 'Searching...') {
       const bike = bikes[0];
       console.log('✅ Received searched bike:', bike.id);
-      
+
       // Clear any pending timeout
       if ((window as any).__bikeSearchTimeout) {
         clearTimeout((window as any).__bikeSearchTimeout);
         (window as any).__bikeSearchTimeout = null;
       }
-      
+
       // Move camera to bike location
       mapRef.current.flyTo({
         center: [bike.longitude, bike.latitude],
         zoom: 16,
         duration: 2000
       });
-      
+
       // Open bike detail popup
       setSelectedBike(bike);
       setBikeSearchError(null);
@@ -579,13 +576,13 @@ function DashboardMap({ centerOnLocation }: MapProps) {
    * - Connection errors and reconnection attempts
    * - Automatic marker updates when new data arrives
    */
-useMapRealtime(
-  handleBikeUpdate,
-  handleHubUpdate,
-  handleWebSocketError, 
-  mapRef.current,
-  () => setIsLoading(false),
-);
+  useMapRealtime(
+    handleBikeUpdate,
+    handleHubUpdate,
+    handleWebSocketError,
+    mapRef.current,
+    () => setIsLoading(false),
+  );
 
   /**
    * Effect: Poll WebSocket connection status
@@ -623,7 +620,7 @@ useMapRealtime(
           <p>Loading dashboard...</p>
         </div>
       )}
-      
+
       {error && (
         <div className="error-overlay">
           <p>{error}</p>
@@ -716,7 +713,7 @@ useMapRealtime(
               outline: 'none'
             }}
           />
-          
+
           {showResults && searchResults.length > 0 && (
             <div style={{
               marginTop: '8px',
@@ -764,7 +761,7 @@ useMapRealtime(
         mapRef={mapRef}
       />
 
-      <MapStatusIndicator 
+      <MapStatusIndicator
         wsConnected={wsConnected}
         totalBikeCount={totalBikeCount}
         visibleBikeCount={visibleBikeCount}
@@ -777,47 +774,17 @@ useMapRealtime(
         />
       )}
 
-      {/* {selectedHub && (
-        <ErrorBoundary fallback={
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            width: '350px',
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-            zIndex: 1000,
-            padding: '20px'
-          }}>
-            <h3>Hub Error</h3>
-            <p>Failed to load hub details. Please try again.</p>
-            <button 
-              onClick={handleCloseHubCard}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Close
-            </button>
-          </div>
-        }>
-          <HubDetailCard
-            hub={selectedHub}
-            bikes={hubBikes}
-            isLoading={hubBikesLoading}
-            onClose={handleCloseHubCard}
-            onBikeClick={handleBikeClickFromList}
-          />
-        </ErrorBoundary>
-      )} */}
+      {selectedHub && (
+        <HubDetailCard
+          hub={selectedHub}
+          bikes={hubBikes}
+          isLoading={hubBikesLoading}
+          onClose={handleCloseHubCard}
+          onBikeClick={handleBikeClickFromList}
+        />
+      )}
 
-      
+
 
       <div ref={mapContainerRef} className="map" />
     </div>

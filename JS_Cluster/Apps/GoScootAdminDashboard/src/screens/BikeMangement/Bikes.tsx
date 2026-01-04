@@ -13,6 +13,7 @@ import styles from "./Bikes.module.css";
 import Battery from "../../components/module/Battery";
 import { websocketManager } from "../../services/websocketService";
 import { getStatusStyle, getStatusText } from "../../utlities/methods";
+import WarningBang from "../../components/ui/WarningBang";
 
 const STATUS_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
@@ -115,32 +116,6 @@ export default function Bikes() {
     websocketManager.setOnBikeTelemetry(null);
   };
 }, [setDisplayList]);
-
-
-
-
-  const WarningBang = ({ on }: { on: boolean }) =>
-    on ? (
-      <span
-        className={[styles["warning-bang"], styles["warning-danger"], styles["warning-bang--blink"]].join(
-          " "
-        )}
-        aria-label="warning"
-        title="Warning"
-      >
-        !
-      </span>
-    ) : (
-      <span
-        className={[styles["warning-bang"], styles["warning-ok"]].join(
-          " "
-        )}
-        aria-label="warning"
-        title="Warning"
-      >
-        ✓
-      </span>
-    );
 
   return (
     <div className={styles["page-container"]}>

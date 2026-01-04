@@ -41,9 +41,9 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
    */
   const getOperationStatusColor = (bike: BikeUpdate) => {
     if (bike.isCrashed || bike.batteryIsLow || bike.isOutOfBound || bike.isToppled){
-      return '#4CAF50'; 
+      return '#F44336'; 
     } else {
-      return '#F44336'
+      return '#4CAF50';
     }
     
   };
