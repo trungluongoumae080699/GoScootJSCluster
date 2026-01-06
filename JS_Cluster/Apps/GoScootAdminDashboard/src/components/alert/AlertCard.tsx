@@ -19,7 +19,7 @@ export default function AlertCard({
   return (
     <div className={`${styles["alert-item"]} ${className ?? ""}`}>
       <div className={styles["alert-left"]}>
-        <div className={styles["alert-icon"]}>
+        <div className={styles["alert-icon"]}> 
           <AlertTriangle size={70} />
         </div>
         <div>

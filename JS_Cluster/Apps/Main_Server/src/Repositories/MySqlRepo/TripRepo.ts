@@ -377,6 +377,8 @@ const FIND_ACTIVE_TRIP_SQL = `
     reservation_date,
     trip_start_date,
     trip_end_date,
+    trip_start_long,
+    trip_start_lat
     trip_end_long,
     trip_end_lat,
     trip_secret,
