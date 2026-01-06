@@ -61,6 +61,7 @@ const AlertSnackbar: React.FC<SnackbarProps> = ({ alert }) => {
                 onClick={(e) => {
                     e.preventDefault();
                     globalContext.setActiveAlertId(alert.id)
+                    console.log(alert)
                     navigate("/alerts")
 
                 }}

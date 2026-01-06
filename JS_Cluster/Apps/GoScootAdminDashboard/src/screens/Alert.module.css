@@ -111,3 +111,8 @@
 .alerts-container {
   margin-block: 1rem;
 }
+
+.active-alert {
+  background-color: #c49d7e;
+ 
+}

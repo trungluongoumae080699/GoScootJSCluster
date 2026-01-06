@@ -14,6 +14,7 @@ import { useBikeManagementContext } from "../context/BikeManagementContext";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/module/LoadingModule";
 import { BadRequestException, UnauthenticatedException } from "../models/Exceptions/ApiExceptions";
+import { websocketManager } from "../services/websocketService";
 
 const ALERT_TYPE_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
@@ -53,6 +54,19 @@ export default function Alerts() {
     globalContext.setCurrentHeader("Cảnh Báo");
     globalContext.setAlerts([])
     globalContext.alertsReserve.current = []
+    websocketManager.setSecondaryAlertHandler((alert: Alert) => {
+      setDisplayList((prev) => {
+        // ✅ prevent duplicates (optional but recommended)
+        if (prev.some((a) => a.id === alert.id)) return prev;
+
+        // ✅ add to top
+        const next = [alert, ...prev];
+
+        // ✅ remove one from bottom (keep same length as before)
+        return next.slice(0, prev.length);
+      });
+
+    });
   }, []);
 
 
@@ -77,7 +91,11 @@ export default function Alerts() {
             type: "Success",
             isOn: true
           })
-        } catch (err) {
+        } catch (err: any) {
+          if (err?.name === "AbortError") {
+            return;
+          }
+
           if (err instanceof UnauthenticatedException) {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             setIsResolving(false)
@@ -227,8 +245,7 @@ export default function Alerts() {
               {displayList.map((alert: Alert) => (
                 <AlertCard
                   key={alert.id}
-                  title={alert.bike_id}
-                  description={alert.content}
+                  alert={alert}
                   onResolve={() => {
                     setIsResolving(true)
                     setSelectedAlert(alert.id)

@@ -78,10 +78,30 @@ export default function Root() {
       console.log("Adding Alerts To Reserve....")
       globalContext.alertsReserve.current.push(alert);
       setReserveTick(t => t + 1);
-
     });
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
+
+  useEffect(()=> {
+    websocketManager.setOnError((err: string) => {
+      globalContext.setSnackbar({
+        message: err,
+        type: "Error",
+        isOn: true
+      })
+    })
+  },[])
+
+
+  useEffect(()=>{
+    if (globalContext.currentPage != WebScreen.DASHBOARD && globalContext.currentPage != WebScreen.BIKES && globalContext.currentPage != WebScreen.BIKE_DETAIL){
+      websocketManager.cleanTilesAndBikesSubscription()
+      websocketManager.setOnBikeTelemetry(null)
+      websocketManager.setOnBikeUpdate(null)
+    } if (globalContext.currentPage != WebScreen.ALERT){
+      websocketManager.setSecondaryAlertHandler(null)
+    }
+  }, [globalContext.currentPage])
 
   useEffect(() => {
     if (globalContext.alerts.length === 0 && globalContext.alertsReserve.current.length > 0) {

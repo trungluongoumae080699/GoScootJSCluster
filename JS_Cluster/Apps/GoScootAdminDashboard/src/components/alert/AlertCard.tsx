@@ -1,17 +1,16 @@
 import { MdWarning as AlertTriangle } from "react-icons/md";
 import styles from "./AlertCard.module.css"
+import { Alert } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
 interface AlertCardProps {
-  title: string;
-  description: string;
+  alert: Alert
   onResolve: () => void;
   onViewDetail: () => void;
   className?: string
 }
 
 export default function AlertCard({
-  title,
-  description,
+  alert,
   onResolve,
   onViewDetail,
   className,
@@ -19,12 +18,25 @@ export default function AlertCard({
   return (
     <div className={`${styles["alert-item"]} ${className ?? ""}`}>
       <div className={styles["alert-left"]}>
-        <div className={styles["alert-icon"]}> 
+        <div className={styles["alert-icon"]}>
           <AlertTriangle size={70} />
         </div>
         <div>
-          <h2 className={styles["alert-title"]}>{title}</h2>
-          <p className={styles["alert-desc"]}>{description}</p>
+          <div className={styles.alertHeaderContainer}>
+            <h2 className={styles["alert-title"]}>{alert.bike_id}</h2>
+
+            <span className={styles.dot} />
+
+            <span className={styles.alertMeta}>{alert.id}</span>
+
+            <span className={styles.dot} />
+
+            <span className={styles.alertMeta}>
+              {new Date(alert.time).toLocaleString("vi-VN")}
+            </span>
+          </div>
+
+          <p className={styles["alert-desc"]}>{alert.content}</p>
         </div>
       </div>
 

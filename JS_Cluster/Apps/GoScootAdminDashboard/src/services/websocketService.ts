@@ -24,7 +24,8 @@ export interface ViewportBounds {
 export enum WSMessageType {
   BIKE_TELEMETRY = 2,
   VIEWPORT_UPDATE = 0,
-  BIKE_REQUEST = 1
+  BIKE_REQUEST = 1,
+  CLEAN_UP = 3
 }
 
 /** Error message from server */
@@ -79,6 +80,8 @@ export class WebSocketManager {
   /** Callback function to handle alerts */
   private onAlert: AlertCallback | null = null;
 
+  private onSecondaryAlertHandler: AlertCallback | null = null;
+
   /** Callback function to handle error messages */
   private onError: ErrorCallback | null = null;
 
@@ -113,6 +116,10 @@ export class WebSocketManager {
 
   public setOnAlert(cb: AlertCallback | null): void {
     this.onAlert = cb;
+  }
+
+  public setSecondaryAlertHandler(cb: AlertCallback | null): void {
+    this.onSecondaryAlertHandler = cb;
   }
 
   public setOnError(cb: ErrorCallback | null): void {
@@ -235,6 +242,9 @@ export class WebSocketManager {
         if (this.onAlert) {
           this.onAlert(alertData);
         }
+        if (this.onSecondaryAlertHandler) {
+          this.onSecondaryAlertHandler(alertData)
+        }
       }
 
       else if (protocol === 2) {
@@ -277,14 +287,13 @@ export class WebSocketManager {
             this.onBikeUpdate(bikeUpdates);
           }
         } else if (protocol === 0) {
-
-
           const { protocol, payload } = decodeBinaryPayload(bytes);
-
-
           const alertData = decodeAlertBinary(payload);
           if (this.onAlert) {
             this.onAlert(alertData);
+          }
+          if (this.onSecondaryAlertHandler) {
+            this.onSecondaryAlertHandler(alertData)
           }
         }
         else if (protocol === 2) {
@@ -466,6 +475,24 @@ export class WebSocketManager {
     // Send as JSON string
     this.ws.send(JSON.stringify(message));
     console.log('📤 Requested bike telemetry:', bikeIds);
+  }
+
+  cleanTilesAndBikesSubscription(): void {
+    // Guard: Only send if connection is open
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket not open, cannot request bike telemetry');
+      return;
+    }
+
+    // Build bike telemetry request message
+    const message = {
+      msgType: WSMessageType.CLEAN_UP,
+
+    };
+
+    // Send as JSON string
+    this.ws.send(JSON.stringify(message));
+
   }
 
 

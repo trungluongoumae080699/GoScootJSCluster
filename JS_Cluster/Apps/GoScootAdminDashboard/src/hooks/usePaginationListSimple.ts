@@ -42,9 +42,7 @@ export function usePaginationList<T, F>(
     useEffect(() => {
         const execute = async () => {
             if (!isLoading) return;
-
             console.log("Fetching...");
-
             abortRef.current?.abort();
             const controller = new AbortController();
             abortRef.current = controller;
@@ -63,7 +61,13 @@ export function usePaginationList<T, F>(
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 setIsLoading(false);
             }
-            catch (err) {
+            catch (err: any) {
+
+                // ✅ 1️⃣ Ignore AbortError (EXPECTED behavior)
+                if (err?.name === "AbortError") {
+                    return;
+                }
+
                 if (err instanceof UnauthenticatedException) {
                     await new Promise((resolve) => setTimeout(resolve, 2000));
                     setIsLoading(false);
@@ -71,25 +75,27 @@ export function usePaginationList<T, F>(
                         message: "Phiên đăng nhập đã hết hạn. Xin vui lòng đăng nhập lại",
                         type: "Error",
                         isOn: true
-                    })
+                    });
                     globalContext.setIsAuth(false);
 
                 } else if (err instanceof BadRequestException) {
+                    console.log(err);
                     await new Promise((resolve) => setTimeout(resolve, 2000));
                     setIsLoading(false);
                     globalContext.setSnackbar({
                         message: err.message,
                         type: "Error",
                         isOn: true
-                    })
+                    });
 
                 } else {
                     setIsLoading(false);
+                    console.log(err);
                     globalContext.setSnackbar({
                         message: "Đã xảy ra lỗi. Xin vui lòng thử lại",
                         type: "Error",
                         isOn: true
-                    })
+                    });
                 }
             }
 
