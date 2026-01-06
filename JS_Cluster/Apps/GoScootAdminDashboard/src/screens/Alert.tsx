@@ -25,7 +25,6 @@ const ALERT_TYPE_OPTIONS: Option[] = [
 
 // Main Alerts Page
 export default function Alerts() {
-  const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const globalContext = useGlobalContext();
   const bikeManagementContext = useBikeManagementContext()
