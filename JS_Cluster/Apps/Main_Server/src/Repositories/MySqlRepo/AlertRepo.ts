@@ -113,7 +113,7 @@ export async function getAlerts(
   const params: any[] = [];
 
   // 🔒 ALWAYS only resolved alerts
-  conditions.push("isResolved = TRUE");
+  conditions.push("isResolved = FALSE");
 
   if (search) {
     conditions.push("bike_id = ?");
