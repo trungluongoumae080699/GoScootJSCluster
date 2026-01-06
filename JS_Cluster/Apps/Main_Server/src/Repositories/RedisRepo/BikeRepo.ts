@@ -1,5 +1,6 @@
 import { BikeStatus, BikeUpdate, OperationStatus } from "@trungthao/admin_dashboard_dto";
 import { redisClient } from "../../RedisConfig.js";
+import { AlertType } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts.js";
 export type BikeIdsAndBatteries = {
     id: string;
     battery: number;
@@ -104,7 +105,7 @@ function mapOperationStatus(value?: string): OperationStatus | null {
     }
 }
 
-
+/* 
 export const fetchBikeUpdates = async (
     options?: {
         battery?: number;
@@ -140,7 +141,6 @@ export const fetchBikeUpdates = async (
             const battery_status = Number(hash.battery_status ?? "0");
             const longitude = Number(hash.longitude ?? "0");
             const latitude = Number(hash.latitude ?? "0");
-
             const batteryIsLow = toBool01(hash.battery_is_low);
             const isToppled = toBool01(hash.is_toppled);
             const isCrashed = toBool01(hash.is_crashed);
@@ -189,6 +189,96 @@ export const fetchBikeUpdates = async (
     } while (cursor !== 0);
 
     return matched;
+}; */
+
+export const fetchBikeUpdates = async (
+  options?: {
+    battery?: number;
+    bikeStatus?: BikeStatus;
+    usageStatus?: string;
+    alertType?: AlertType; // ✅ NEW
+  }
+): Promise<BikeUpdate[]> => {
+  const matched: BikeUpdate[] = [];
+  let cursor = 0;
+
+  do {
+    const scanResult = await redisClient.scan(cursor, {
+      MATCH: "bike:*:telemetry",
+      COUNT: 100,
+    });
+
+    cursor = Number(scanResult.cursor);
+    const keys = scanResult.keys;
+    if (keys.length === 0) continue;
+
+    const hashes = await Promise.all(keys.map((k) => redisClient.hGetAll(k)));
+
+    hashes.forEach((hash, index) => {
+      if (!hash || Object.keys(hash).length === 0) return;
+
+      const key = keys[index]; // bike:{id}:telemetry
+      const parts = key.split(":");
+      if (parts.length !== 3) return;
+
+      const id = parts[1];
+
+      const battery_status = Number(hash.battery_status ?? "0");
+      const longitude = Number(hash.longitude ?? "0");
+      const latitude = Number(hash.latitude ?? "0");
+
+      const batteryIsLow = toBool01(hash.battery_is_low);
+      const isToppled = toBool01(hash.is_toppled);
+      const isCrashed = toBool01(hash.is_crashed);
+      const isOutOfBound = toBool01(hash.is_out_of_bound);
+
+      const usageStatusStr: string = (hash.usage_state ?? "").toString();
+
+      // ---------- FILTERS ----------
+      if (
+        options?.battery !== undefined &&
+        (!Number.isFinite(battery_status) || battery_status > options.battery)
+      ) {
+        return;
+      }
+
+      if (options?.usageStatus !== undefined && usageStatusStr !== options.usageStatus) {
+        return;
+      }
+
+      if (options?.bikeStatus !== undefined) {
+        const expected = String(options.bikeStatus); // hoặc map nếu cần
+        if (usageStatusStr !== expected) return;
+      }
+
+      // ✅ NEW: filter by alertType (optional)
+      if (options?.alertType !== undefined) {
+        const pass =
+          (options.alertType === AlertType.LOW_BATTERY && batteryIsLow) ||
+          (options.alertType === AlertType.TOPPLE && isToppled) ||
+          (options.alertType === AlertType.CRASH && isCrashed) ||
+          (options.alertType === AlertType.BOUNDARY_CROSS && isOutOfBound);
+
+        if (!pass) return;
+      }
+
+      // ---------- PUSH RESULT ----------
+      matched.push({
+        id,
+        battery_status,
+        longitude,
+        latitude,
+        batteryIsLow,
+        isToppled,
+        isCrashed,
+        isOutOfBound,
+        usageStatus: usageStatusStr as BikeStatus,
+        currentHub: (hash as any).current_hub ?? null, // giữ theo code bạn
+      });
+    });
+  } while (cursor !== 0);
+
+  return matched;
 };
 
 

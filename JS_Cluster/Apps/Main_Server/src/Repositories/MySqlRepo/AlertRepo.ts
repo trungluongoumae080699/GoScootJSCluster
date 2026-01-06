@@ -4,7 +4,7 @@ import { SortDirection } from "../../Controllers/DashboardController.js";
 import { Response_DashboardGetAlertsDTO } from "@trungthao/admin_dashboard_dto";
 import { Alert, AlertType } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts.js";
 
-
+import { PoolConnection } from "mysql2/promise";
 
 interface AlertRow extends RowDataPacket {
   id: string;
@@ -44,6 +44,55 @@ export async function getAlertMetadata(): Promise<number> {
  * optionally filtered by time range and bike_id,
  * sorted by time ASC/DESC.
  */
+
+type AlertIdRow = RowDataPacket & { id: string };
+
+
+export async function resolveAlertById(alertId: string): Promise<boolean> {
+  let conn: PoolConnection | null = null;
+
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    // 1) Lock row (row-level lock)
+    const [rows] = await conn.execute<AlertIdRow[]>(
+      `
+      SELECT id
+      FROM alerts
+      WHERE id = ?
+      FOR UPDATE
+      `,
+      [alertId]
+    );
+
+    if (rows.length === 0) {
+      await conn.rollback();
+      return false;
+    }
+
+    // 2) Update
+    const [result] = await conn.execute<import("mysql2/promise").ResultSetHeader>(
+      `
+      UPDATE alerts
+      SET isResolved = TRUE
+      WHERE id = ?
+      `,
+      [alertId]
+    );
+
+    await conn.commit();
+    return result.affectedRows > 0;
+  } catch (err) {
+    if (conn) await conn.rollback();
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+
+
 export async function getAlerts(
   options: GetAlertsOptions = {}
 ): Promise<Response_DashboardGetAlertsDTO> {
@@ -57,14 +106,14 @@ export async function getAlerts(
   } = options;
 
   const safePage = Math.max(page || 1, 1);
-  const safePageSize = Math.max(limit || 10, 10)
-
+  const safePageSize = Math.max(limit || 10, 10);
   const offset = (safePage - 1) * safePageSize;
 
   const conditions: string[] = [];
   const params: any[] = [];
 
-  console.log("type", type)
+  // 🔒 ALWAYS only resolved alerts
+  conditions.push("isResolved = TRUE");
 
   if (search) {
     conditions.push("bike_id = ?");
@@ -86,10 +135,7 @@ export async function getAlerts(
     params.push(to);
   }
 
-  let whereClause = "";
-  if (conditions.length > 0) {
-    whereClause = " WHERE " + conditions.join(" AND ");
-  }
+  const whereClause = " WHERE " + conditions.join(" AND ");
 
   // ---- 1) Count total ----
   const countSql = `
@@ -101,7 +147,6 @@ export async function getAlerts(
   const total = countRows[0]?.total ?? 0;
   const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
 
-  // If no records, short-circuit
   if (total === 0) {
     return {
       alerts: [],
@@ -129,21 +174,22 @@ export async function getAlerts(
   `;
 
   const dataParams = [...params, safePageSize, offset];
-
   const [rows] = await pool.query<AlertRow[]>(dataSql, dataParams);
 
   const alerts: Alert[] = rows.map((row) => ({
     id: row.id,
     bike_id: row.bike_id,
     content: row.content,
-    type: Object.values(AlertType).includes(row.type as AlertType) ? row.type as AlertType : AlertType.BOUNDARY_CROSS,
+    type: Object.values(AlertType).includes(row.type as AlertType)
+      ? (row.type as AlertType)
+      : AlertType.BOUNDARY_CROSS,
     longitude: Number(row.longitude),
     latitude: Number(row.latitude),
     time: Number(row.time),
   }));
 
   return {
-    alerts: alerts,
+    alerts,
     page: safePage,
     pageSize: safePageSize,
     total,
