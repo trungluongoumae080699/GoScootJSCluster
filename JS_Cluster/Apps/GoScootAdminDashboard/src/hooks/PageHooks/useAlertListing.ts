@@ -51,6 +51,7 @@ export function useAlertListing(fetchApi: (args: FetchApiArgs<AlertFilterPayload
   return {
     // state
     isLoading,
+    setDisplayList,
     displayList,
     totalCount,
       totalPages,

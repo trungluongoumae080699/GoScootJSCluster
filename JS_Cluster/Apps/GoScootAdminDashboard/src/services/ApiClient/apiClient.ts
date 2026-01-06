@@ -11,7 +11,8 @@ import type {
 } from "@trungthao/admin_dashboard_dto";
 
 import { getApiBaseUrl } from "../authService";
-import { UnauthenticatedException } from "../../models/Exceptions/ApiExceptions";
+import { BadRequestException, UnauthenticatedException } from "../../models/Exceptions/ApiExceptions";
+import { resolve } from "path";
 
 // Re-export auth functions for backward compatibility
 export { getSessionId, clearAuth as clearSession } from "../authService";
@@ -46,11 +47,16 @@ export async function apiRequest<T>(
     credentials: "include",
   });
 
-  // Handle 401 Unauthorized - session expired
   if (response.status === 401) {
     throw new UnauthenticatedException("Session expired. Please log in again.");
   }
 
+  if (response.status === 400) {
+    const data = await response.json().catch(() => null);
+    throw new BadRequestException(
+      data?.message ?? "Đã xảy ra lỗi, xin vui lòng thử lại"
+    );
+  }
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`API Error: ${response.status} - ${errorText}`);
@@ -102,7 +108,7 @@ export const hubApi = {
   /**
    * Get bikes in a specific hub
    */
-  
+
   /*
   async getBikesInHub(hubId: string): Promise<BikesResponse> {
     // Use the regular bikes endpoint with hub filter parameter
@@ -110,5 +116,5 @@ export const hubApi = {
     return bikeApi.getBikes({ hub: hubId });
   },
   */
-  
+
 };

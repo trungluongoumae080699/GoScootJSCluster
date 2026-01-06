@@ -6,7 +6,7 @@ import { fetchBikesNoCount, fetchBikesWithCount, getBikeById, getMobileAppBikesB
 import { Bike, BikeStatus, BikeTelemetry, OperationStatus, TripStatus } from "@trungthao/admin_dashboard_dto";
 import { getTrips } from "../Repositories/MySqlRepo/TripRepo.js";
 import { getBikeTelemetry } from "../Repositories/ClickhouseRepo/TelemetryRepo.js";
-import { getAlerts } from "../Repositories/MySqlRepo/AlertRepo.js";
+import { getAlerts, resolveAlertById } from "../Repositories/MySqlRepo/AlertRepo.js";
 import { getHubsWithinBoundary } from "../Repositories/MySqlRepo/HubRepo.js";
 import { Response_BikeListDTO } from "@trungthao/mobile_app_dto";
 
@@ -442,3 +442,17 @@ export const fetchBikeById = async (
   }
 };
 
+
+export const resolveAlert = async (request: CustomRequest<{alertId: string}>, response: Response) => {
+  const alertId = request.params.alertId
+  const result = await resolveAlertById(alertId)
+  if (!result){
+    response.status(400).json({
+      message: "Cảnh báo này có thể đã được xử lý hoặc không tồn tại"
+    })
+  } else {
+    response.status(200).json({
+      message: "Cảnh báo đã được xử lý thành công"
+    })
+  }
+}

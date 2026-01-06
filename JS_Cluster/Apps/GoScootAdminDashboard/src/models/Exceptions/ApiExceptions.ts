@@ -23,3 +23,14 @@ export class UnauthenticatedException extends ApiError {
     Object.setPrototypeOf(this, UnauthenticatedException.prototype);
   }
 }
+
+
+export class BadRequestException extends ApiError {
+  constructor(message: string = "Bad Request") {
+    super(400, message);
+
+    this.name = "UnauthenticatedException";
+
+    Object.setPrototypeOf(this, BadRequestException.prototype);
+  }
+}

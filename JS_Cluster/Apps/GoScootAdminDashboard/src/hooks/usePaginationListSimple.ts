@@ -1,6 +1,6 @@
 
 import { Dispatch, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { UnauthenticatedException } from "../models/Exceptions/ApiExceptions";
+import { BadRequestException, UnauthenticatedException } from "../models/Exceptions/ApiExceptions";
 import { useGlobalContext } from "../context/GlobalContext";
 
 export type PrefetchGroupPayload<T> = {
@@ -59,14 +59,43 @@ export function usePaginationList<T, F>(
 
                 setDisplayList(result.data);
                 setTotalCount(result.totalCount);
-            } catch (err) {
-                if (err instanceof UnauthenticatedException) {
-                    globalContext.setIsAuth(false);
-                }
-            } finally {
                 // ⏱ delay 2 seconds
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 setIsLoading(false);
+            }
+            catch (err) {
+                if (err instanceof UnauthenticatedException) {
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                    setIsLoading(false);
+                    globalContext.setSnackbar({
+                        message: "Phiên đăng nhập đã hết hạn. Xin vui lòng đăng nhập lại",
+                        type: "Error",
+                        isOn: true
+                    })
+                    globalContext.setIsAuth(false);
+
+                } else if (err instanceof BadRequestException) {
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                    setIsLoading(false);
+                    globalContext.setSnackbar({
+                        message: err.message,
+                        type: "Error",
+                        isOn: true
+                    })
+
+                } else {
+                    setIsLoading(false);
+                    globalContext.setSnackbar({
+                        message: "Đã xảy ra lỗi. Xin vui lòng thử lại",
+                        type: "Error",
+                        isOn: true
+                    })
+                }
+            }
+
+
+            finally {
+
             }
         };
 

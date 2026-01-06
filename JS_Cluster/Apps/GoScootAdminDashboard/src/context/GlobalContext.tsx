@@ -59,7 +59,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     const [snackbar, setSnackbar] = useState<SnackbarConfig>({
         message: "This is a test",
         type: "Success",
-        isOn: true
+        isOn: false
     })
 
 

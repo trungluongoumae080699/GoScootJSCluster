@@ -4,7 +4,7 @@ import Pagination from "../components/module/pagination";
 import { useAlertListing } from "../hooks/PageHooks/useAlertListing";
 import { alertApi } from "../services/ApiClient/AlertApis";
 import { dateToEndOfDay, dateToStartOfDay } from "../utlities/methods";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGlobalContext, WebScreen } from "../context/GlobalContext";
 import Input, { Option } from "../components/module/Input";
 import { Alert, AlertType } from "../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
@@ -13,6 +13,7 @@ import styles from "./Alert.module.css";
 import { useBikeManagementContext } from "../context/BikeManagementContext";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/module/LoadingModule";
+import { BadRequestException, UnauthenticatedException } from "../models/Exceptions/ApiExceptions";
 
 const ALERT_TYPE_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
@@ -29,9 +30,13 @@ export default function Alerts() {
   const globalContext = useGlobalContext();
   const bikeManagementContext = useBikeManagementContext()
 
+  const [isResolving, setIsResolving] = useState(false)
+  const [selectedAlert, setSelectedAlert] = useState("")
+
   const {
     isLoading,
     displayList,
+    setDisplayList,
     totalCount,
     totalPages,
     currentPage,
@@ -42,6 +47,8 @@ export default function Alerts() {
     setFilterPayload,
   } = useAlertListing(alertApi.getAlerts);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     globalContext.setCurrentPage(WebScreen.ALERT);
     globalContext.setCurrentHeader("Cảnh Báo");
@@ -49,8 +56,76 @@ export default function Alerts() {
     globalContext.alertsReserve.current = []
   }, []);
 
+
+
+
+
+  useEffect(() => {
+    const resolveAlert = async () => {
+      if (isResolving && selectedAlert) {
+        try {
+          abortRef.current?.abort();
+          const controller = new AbortController();
+          abortRef.current = controller;
+          await alertApi.resolveAlerts(selectedAlert, controller.signal)
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          setIsResolving(false)
+          setDisplayList(prev =>
+            (prev ?? []).filter(a => a.id !== selectedAlert)
+          );
+          globalContext.setSnackbar({
+            message: "Đã tiếp nhận xử lý cảnh báo thành công",
+            type: "Success",
+            isOn: true
+          })
+        } catch (err) {
+          if (err instanceof UnauthenticatedException) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            setIsResolving(false)
+            globalContext.setSnackbar({
+              message: "Phiên đăng nhập đã hết hạn. Xin vui lòng đăng nhập lại",
+              type: "Error",
+              isOn: true
+            })
+            globalContext.setIsAuth(false);
+
+          } else if (err instanceof BadRequestException) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            setIsResolving(false)
+            setDisplayList(prev =>
+              (prev ?? []).filter(a => a.id !== selectedAlert)
+            );
+            globalContext.setSnackbar({
+              message: err.message,
+              type: "Error",
+              isOn: true
+            })
+
+          } else {
+            setIsResolving(false)
+            globalContext.setSnackbar({
+              message: "Đã xảy ra lỗi. Xin vui lòng thử lại",
+              type: "Error",
+              isOn: true
+            })
+          }
+        }
+
+      }
+    }
+    resolveAlert()
+  }, [isResolving])
+
   return (
     <div className={styles["page-container"]}>
+      {
+        isResolving ? <div className={styles.loadingOverlay}>
+          <div className={styles.loadingWhiteBackground}>
+            <Loader></Loader>
+          </div>
+        </div> : undefined
+      }
+
 
       <div className={styles["alerts-wrapper"]}>
         {/* Filter Buttons */}
@@ -121,7 +196,7 @@ export default function Alerts() {
             disabled={isLoading}
             title="Apply filters & fetch group 0"
           >
-            Apply
+            Tìm Kiếm
           </button>
 
           <button
@@ -130,7 +205,7 @@ export default function Alerts() {
             disabled={isLoading}
             title="Apply filters & fetch group 0"
           >
-            Clear
+            Huỷ
           </button>
         </div>
 
@@ -155,7 +230,15 @@ export default function Alerts() {
                   key={alert.id}
                   title={alert.bike_id}
                   description={alert.content}
-                  onResolve={() => console.log("Acknowledge", alert.id)}
+                  onResolve={() => {
+                    setIsResolving(true)
+                    setSelectedAlert(alert.id)
+                  }}
+                  className={
+                    alert.id === globalContext.activeAlertId
+                      ? styles["active-alert"]
+                      : ""
+                  }
                   onViewDetail={
                     () => {
                       bikeManagementContext.setCurrentBikeId(alert.bike_id)

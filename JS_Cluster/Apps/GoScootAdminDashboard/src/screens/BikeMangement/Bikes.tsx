@@ -14,12 +14,20 @@ import Battery from "../../components/module/Battery";
 import { websocketManager } from "../../services/websocketService";
 import { getStatusStyle, getStatusText } from "../../utlities/methods";
 import WarningBang from "../../components/ui/WarningBang";
+import { AlertType } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
 const STATUS_OPTIONS: Option[] = [
   { value: "", label: "All Status" },
   { value: BikeStatus.IDLE, label: "Available" },
   { value: BikeStatus.INUSED, label: "Inused" },
   { value: BikeStatus.RESERVED, label: "Reserved" },
+];
+
+const WARNING_OPTIONS: Option[] = [
+  { value: AlertType.LOW_BATTERY, label: "Pin Yếu" },
+  { value: AlertType.CRASH, label: "Va Chạm" },
+  { value: AlertType.TOPPLE, label: "Ngả Đổ" },
+  { value: AlertType.BOUNDARY_CROSS, label: "Ngoài Phạm Vi" },
 ];
 
 export default function Bikes() {
@@ -69,53 +77,53 @@ export default function Bikes() {
   }, [displayList]);
 
   useEffect(() => {
-  websocketManager.setOnBikeTelemetry((t: BikeTelemetry) => {
-    // chỉ update nếu bike đang nằm trong displayList hiện tại
-    setDisplayList((prev) => {
-      const idx = prev.findIndex((b) => b.id === t.bike_id);
-      if (idx === -1) return prev;
+    websocketManager.setOnBikeTelemetry((t: BikeTelemetry) => {
+      // chỉ update nếu bike đang nằm trong displayList hiện tại
+      setDisplayList((prev) => {
+        const idx = prev.findIndex((b) => b.id === t.bike_id);
+        if (idx === -1) return prev;
 
-      const old = prev[idx];
+        const old = prev[idx];
 
-      // build updated bike (patch live fields)
-      const updated = {
-        ...old,
-        battery_status: t.battery,
-        batteryIsLow: t.batteryIsLow,
+        // build updated bike (patch live fields)
+        const updated = {
+          ...old,
+          battery_status: t.battery,
+          batteryIsLow: t.batteryIsLow,
 
-        latitude: t.latitude,
-        longitude: t.longitude,
+          latitude: t.latitude,
+          longitude: t.longitude,
 
-        isToppled: t.isToppled,
-        isCrashed: t.isCrashed,
-        isOutOfBound: t.isOutOfBound,
+          isToppled: t.isToppled,
+          isCrashed: t.isCrashed,
+          isOutOfBound: t.isOutOfBound,
 
-        status: t.usageStatus, // BikeStatus
-      };
+          status: t.usageStatus, // BikeStatus
+        };
 
-      // (optional) tránh rerender nếu không đổi gì đáng kể
-      const noChange =
-        old.battery_status === updated.battery_status &&
-        old.batteryIsLow === updated.batteryIsLow &&
-        old.latitude === updated.latitude &&
-        old.longitude === updated.longitude &&
-        old.isToppled === updated.isToppled &&
-        old.isCrashed === updated.isCrashed &&
-        old.isOutOfBound === updated.isOutOfBound &&
-        old.status === updated.status;
+        // (optional) tránh rerender nếu không đổi gì đáng kể
+        const noChange =
+          old.battery_status === updated.battery_status &&
+          old.batteryIsLow === updated.batteryIsLow &&
+          old.latitude === updated.latitude &&
+          old.longitude === updated.longitude &&
+          old.isToppled === updated.isToppled &&
+          old.isCrashed === updated.isCrashed &&
+          old.isOutOfBound === updated.isOutOfBound &&
+          old.status === updated.status;
 
-      if (noChange) return prev;
+        if (noChange) return prev;
 
-      const next = prev.slice();
-      next[idx] = updated;
-      return next;
+        const next = prev.slice();
+        next[idx] = updated;
+        return next;
+      });
     });
-  });
 
-  return () => {
-    websocketManager.setOnBikeTelemetry(null);
-  };
-}, [setDisplayList]);
+    return () => {
+      websocketManager.setOnBikeTelemetry(null);
+    };
+  }, [setDisplayList]);
 
   return (
     <div className={styles["page-container"]}>
@@ -150,6 +158,17 @@ export default function Bikes() {
           label="Trạng Thái Hoạt Động"
           onChange={(e) =>
             setFilterPayload((p) => ({ ...p, status: e.target.value }))
+          }
+        />
+
+        <Input
+          kind="select"
+          value={filterPayload.status}
+          placeHolder="Chọn Cảnh Báo"
+          options={WARNING_OPTIONS}
+          label="Cảnh Báo"
+          onChange={(e) =>
+            setFilterPayload((p) => ({ ...p, operationStatus: e.target.value }))
           }
         />
 
@@ -235,12 +254,12 @@ export default function Bikes() {
                     <td>
                       {bike.battery_status ? (
                         <div className={styles.batteryContainer}>
-                        <Battery
-                          level={bike.battery_status}
-                          size="xs"
-                          orientation="horizontal"
-                          showText={true}
-                        />
+                          <Battery
+                            level={bike.battery_status}
+                            size="xs"
+                            orientation="horizontal"
+                            showText={true}
+                          />
                         </div>
 
                       ) : (

@@ -11,6 +11,10 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+.active-alert {
+  background-color: #f7b177;
+}
+
 /* Left section */
 .alert-left {
   display: flex;

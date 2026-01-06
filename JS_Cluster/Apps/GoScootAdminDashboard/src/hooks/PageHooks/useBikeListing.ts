@@ -9,6 +9,7 @@ export type BikeFilterPayload = {
   battery: string;
   status: string;
   operationStatus: string
+
 };
 
 export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>) => Promise<FetchResult<Bike>>) {
@@ -27,6 +28,7 @@ export function useBikeListing(fetchApi: (args: FetchApiArgs<BikeFilterPayload>)
     battery: "",
     operationStatus: "",
     status: "",
+
   });
 
   // ✅ prev snapshot (no rerender)
