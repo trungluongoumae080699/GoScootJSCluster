@@ -10,6 +10,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Bike } from '@trungthao/admin_dashboard_dto';
 import { calculateDistance, getValidLocation } from '../../utlities/methods';
 import styles from "./BikeMap.module.css"
+import { ensureServicePolygonUtil } from '../../utlities/MapUtility';
 
 const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoidHJ1bmdsdW9uZ291bWFlMDgwNjk5IiwiYSI6ImNtaG9rbDJ5dDBjMWQya3NlcGxjaHNmMTcifQ.YIh29cJOIa6Ut2NEeoOHQg';
 
@@ -68,6 +69,7 @@ function BikeMap(
   console.log("Past Loc", validPastTelemetryLocation)
 
   useEffect(() => {
+
     if (!mapContainerRef.current || !MAPBOX_TOKEN || !bike) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -84,6 +86,16 @@ function BikeMap(
         style: 'mapbox://styles/mapbox/streets-v11',
         center: bikeLocation,
         zoom: 14,
+      });
+
+      map.once("load", () => {
+        if (map.isStyleLoaded()) {
+          ensureServicePolygonUtil(map, "bike-map", "bike-map-fill", "bike-map-outline");
+        } else {
+          ensureServicePolygonUtil(map, "bike-map", "bike-map-fill", "bike-map-outline");
+        }
+
+        requestAnimationFrame(() => map.resize());
       });
 
       const el = document.createElement('div');
@@ -275,7 +287,6 @@ function BikeMap(
   return (
     <div
       className={styles['map-container']}
-
       style={{ cursor: 'pointer' }}
       title="Click to view full map"
     >

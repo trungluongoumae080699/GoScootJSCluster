@@ -7,8 +7,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 // Type definitions for bike data structures
 import { BikeUpdate, Bike, Hub } from '@trungthao/admin_dashboard_dto';
 
-
-
 import { useBikeMarkers } from '../../hooks/useBikeMarkers';
 import { useHubMarkers } from '../../hooks/useHubMarkers';
 import { useMapRealtime } from '../../hooks/useWebSocket';
@@ -23,21 +21,87 @@ import { useGlobalContext } from '../../context/GlobalContext';
 import { useBikeManagementContext } from '../../context/BikeManagementContext';
 import { useNavigate } from 'react-router-dom';
 import { BikeFilterPayload } from '../../hooks/PageHooks/useBikeListing';
-// Custom hooks for WebSocket connection and map marker management
-//import { useWebSocket } from './hooks/useWebSocket';
 
 
 
-// Map UI components for displaying information and controls
+const HCM_BOUNDS = {
+  latMin: 10.50,
+  latMax: 11.10,
+  lngMin: 106.30,
+  lngMax: 107.10,
+};
 
+// center of bounds
+const HCM_CENTER: [number, number] = [
+  (HCM_BOUNDS.lngMin + HCM_BOUNDS.lngMax) / 2,
+  (HCM_BOUNDS.latMin + HCM_BOUNDS.latMax) / 2,
+];
 
-// Map control components for filtering and display options
+// Haversine distance in meters
+function haversineMeters(a: [number, number], b: [number, number]) {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 6371008.8; // Earth radius (m)
 
-// WebSocket service for real-time bike location updates
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
 
-// API client for fetching bike and hub data from backend
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
 
-// Error boundary component for handling component errors gracefully
+  const sLat1 = toRad(lat1);
+  const sLat2 = toRad(lat2);
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Create a GeoJSON polygon approximating a circle
+function makeCirclePolygon(
+  center: [number, number],
+  radiusMeters: number,
+  steps = 128
+): GeoJSON.Feature<GeoJSON.Polygon> {
+  const [centerLng, centerLat] = center;
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const toDeg = (x: number) => (x * 180) / Math.PI;
+
+  const R = 6371008.8;
+  const latRad = toRad(centerLat);
+  const lngRad = toRad(centerLng);
+
+  const coords: [number, number][] = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const bearing = (2 * Math.PI * i) / steps;
+
+    const lat2 = Math.asin(
+      Math.sin(latRad) * Math.cos(radiusMeters / R) +
+        Math.cos(latRad) * Math.sin(radiusMeters / R) * Math.cos(bearing)
+    );
+
+    const lng2 =
+      lngRad +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(radiusMeters / R) * Math.cos(latRad),
+        Math.cos(radiusMeters / R) - Math.sin(latRad) * Math.sin(lat2)
+      );
+
+    coords.push([toDeg(lng2), toDeg(lat2)]);
+  }
+
+  return {
+    type: "Feature",
+    properties: {},
+    geometry: {
+      type: "Polygon",
+      coordinates: [coords],
+    },
+  };
+}
+
 
 
 /** 

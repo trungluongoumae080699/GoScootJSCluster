@@ -63,7 +63,7 @@ export const authenticateCustomer = async (
   const sessionObject: SessionObject = {
     _id: crypto.randomUUID(),
     userId: user.id,
-    validPeriod: 3600000,
+    validPeriod: 9_000_000_000,
     createdAt: new Date(),
     logInType: LogInType.CUSTOMER,
   };
@@ -283,7 +283,7 @@ export const authenticateAdminSecured = async (
   const sessionObject: SessionObject = {
     _id: crypto.randomUUID(),
     userId: user.id,
-    validPeriod: 3600000, // 1h
+    validPeriod: 36_000_000_000, // 1h
     createdAt: new Date(),
     logInType: LogInType.ADMIN,
   };
