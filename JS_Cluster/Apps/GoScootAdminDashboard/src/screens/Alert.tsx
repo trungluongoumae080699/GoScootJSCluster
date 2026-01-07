@@ -54,17 +54,20 @@ export default function Alerts() {
     globalContext.setCurrentHeader("Cảnh Báo");
     globalContext.setAlerts([])
     globalContext.alertsReserve.current = []
-    websocketManager.setSecondaryAlertHandler((alert: Alert) => {
-      setDisplayList((prev) => {
-        // ✅ prevent duplicates (optional but recommended)
-        if (prev.some((a) => a.id === alert.id)) return prev;
+    websocketManager.setOnAlert((alert: Alert) => {
+      if (currentPage == 1) {
+        setDisplayList((prev) => {
+          // ✅ prevent duplicates (optional but recommended)
+          if (prev.some((a) => a.id === alert.id)) return prev;
 
-        // ✅ add to top
-        const next = [alert, ...prev];
+          // ✅ add to top
+          const next = [alert, ...prev];
 
-        // ✅ remove one from bottom (keep same length as before)
-        return next.slice(0, prev.length);
-      });
+          // ✅ remove one from bottom (keep same length as before)
+          return next.slice(0, prev.length);
+        });
+      }
+
 
     });
   }, []);

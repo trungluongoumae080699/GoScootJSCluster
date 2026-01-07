@@ -71,6 +71,7 @@ export default function Root() {
     }
   }, [globalContext.isAuth])
 
+
   useEffect(() => {
     if (!globalContext.isAuth) return;
     websocketManager.connect();
@@ -82,7 +83,8 @@ export default function Root() {
     return () => websocketManager.disconnect();
   }, [globalContext.isAuth]);
 
-  useEffect(()=> {
+
+  useEffect(() => {
     websocketManager.setOnError((err: string) => {
       globalContext.setSnackbar({
         message: err,
@@ -90,18 +92,27 @@ export default function Root() {
         isOn: true
       })
     })
-  },[])
+  }, [])
 
 
-  useEffect(()=>{
-    if (globalContext.currentPage != WebScreen.DASHBOARD && globalContext.currentPage != WebScreen.BIKES && globalContext.currentPage != WebScreen.BIKE_DETAIL){
-      websocketManager.cleanTilesAndBikesSubscription()
-      websocketManager.setOnBikeTelemetry(null)
-      websocketManager.setOnBikeUpdate(null)
-    } if (globalContext.currentPage != WebScreen.ALERT){
-      websocketManager.setSecondaryAlertHandler(null)
+  useEffect(() => {
+    if (globalContext.isAuth) {
+      if (globalContext.currentPage != WebScreen.DASHBOARD && globalContext.currentPage != WebScreen.BIKES && globalContext.currentPage != WebScreen.BIKE_DETAIL) {
+        websocketManager.cleanTilesAndBikesSubscription()
+        websocketManager.setOnBikeTelemetry(null)
+        websocketManager.setOnBikeUpdate(null)
+      }
+      if (globalContext.currentPage != WebScreen.ALERT) {
+        websocketManager.setOnAlert((alert) => {
+          console.log("Adding Alerts To Reserve....")
+          globalContext.alertsReserve.current.push(alert);
+          setReserveTick(t => t + 1);
+        });
+      }
+
     }
-  }, [globalContext.currentPage])
+
+  }, [globalContext.currentPage, globalContext.isAuth])
 
   useEffect(() => {
     if (globalContext.alerts.length === 0 && globalContext.alertsReserve.current.length > 0) {
