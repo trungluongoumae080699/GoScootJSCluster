@@ -11,6 +11,7 @@ import TripMap from "../../components/tripDetails/TripMap";
 import { convertLocationName, formatDate, formatDistance, calculateDuration } from "../../utlities/convert";
 import { calculateDistance } from "../../utlities/methods";
 import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
+import { Images } from "../../utlities/images";
 
 export default function TripDetails() {
   const tripManagementContext = useTripManagementContext();
@@ -57,7 +58,7 @@ export default function TripDetails() {
         <div className={styles["map-icon-container"]}>
           <img
             className={styles["map-icon"]}
-            src="/Map.png"
+            src={Images.map}
             alt="Trip Map"
           />
         </div>

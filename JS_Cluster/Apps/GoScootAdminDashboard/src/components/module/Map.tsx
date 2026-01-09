@@ -109,7 +109,7 @@ function makeCirclePolygon(
  * Required for map rendering and geocoding services
  * Should be set in .env file as VITE_MAPBOX_TOKEN
  */
-const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoidHJ1bmdsdW9uZ291bWFlMDgwNjk5IiwiYSI6ImNtaG9rbDJ5dDBjMWQya3NlcGxjaHNmMTcifQ.YIh29cJOIa6Ut2NEeoOHQg';
+const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN
 
 /** 
  * Default map center coordinates (Ho Chi Minh City center)

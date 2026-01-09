@@ -7,6 +7,7 @@ import { MdBatteryFull, MdSpeed, MdRoute, MdBuild } from "react-icons/md";
 import { Bike, BikeStatus } from "@trungthao/admin_dashboard_dto";
 import styles from "./BikeInfoCard.module.css";
 import Battery from "../module/Battery";
+import { Images } from "../../utlities/images";
 
 interface BikeInfoCardProps {
   bike: Bike;
@@ -57,7 +58,7 @@ function BikeInfoCard({
   return (
     <div className={styles["bike-info-section"]}>
       <div className={styles["bike-image"]}>
-        <img src="/bike_type.png" alt="Bike" />
+        <img src={Images.bikeType} alt="Bike" />
       </div>
 
       <div className={styles["bike-details"]}>

@@ -3,6 +3,7 @@ import { IoNotificationsOutline } from "react-icons/io5";
 import styles from "./Header.module.css";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
+import { Images } from "../../utlities/images";
 
 /** Props for the Header component */
 interface HeaderProps {
@@ -22,7 +23,7 @@ export default function Header({ title }: HeaderProps) {
     <header className={styles["header"]}>
       <div className={styles["header-left"]}>
         <img
-          src="/Mobile App Logo.png"
+          src={Images.appLogo}
           alt="GoScoot Logo"
           className={styles["logo"]}
         />

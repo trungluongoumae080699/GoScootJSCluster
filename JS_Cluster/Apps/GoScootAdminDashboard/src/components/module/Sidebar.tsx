@@ -15,6 +15,7 @@ import styles from "./Sidebar.module.css";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useGlobalContext, WebScreen } from "../../context/GlobalContext";
+import { Images } from "../../utlities/images";
 
 /** Configuration for navigation menu items */
 const menuItems = [
@@ -67,7 +68,7 @@ export default function Sidebar() {
     <aside className={styles["sidebar"]}>
       <div className={styles["header"]}>
         <img
-          src="/Mobile App Logo.png"
+          src={Images.appLogo}
           alt="GoScoot Logo"
           className={styles["logo"]}
         />

@@ -18,13 +18,15 @@ import { UnauthenticatedException } from '../models/Exceptions/ApiExceptions';
 const SESSION_KEY = 'goscoot_session_id';
 const STAFF_PROFILE_KEY = 'goscoot_staff_profile';
 
-/** 
- * Get the API base URL - in development, use relative path for Vite proxy
- * The proxy in vite.config.ts handles forwarding to the actual ngrok server
- */
+
 export function getApiBaseUrl(): string {
-  const envUrl = 'https://still-simply-katydid.ngrok.app/GoScoot/Server'; 
-  return envUrl;
+  const url = (import.meta as any).VITE_API_BASE_URL;
+
+  if (!url) {
+    throw new Error("Missing VITE_API_BASE_URL");
+  }
+
+  return url;
 }
 
 const API_BASE_URL = getApiBaseUrl();

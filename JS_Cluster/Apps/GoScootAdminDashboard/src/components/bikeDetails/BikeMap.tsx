@@ -12,7 +12,7 @@ import { calculateDistance, getValidLocation } from '../../utlities/methods';
 import styles from "./BikeMap.module.css"
 import { ensureServicePolygonUtil } from '../../utlities/MapUtility';
 
-const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoidHJ1bmdsdW9uZ291bWFlMDgwNjk5IiwiYSI6ImNtaG9rbDJ5dDBjMWQya3NlcGxjaHNmMTcifQ.YIh29cJOIa6Ut2NEeoOHQg';
+const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN;
 
 // Default center location (Ho Chi Minh City, Vietnam) when no telemetry data
 const DEFAULT_CENTER: [number, number] = [106.6297, 10.8231];

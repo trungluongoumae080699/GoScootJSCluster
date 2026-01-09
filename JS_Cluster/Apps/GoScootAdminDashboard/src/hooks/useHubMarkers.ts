@@ -2,6 +2,7 @@
 import { useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl'; // Mapbox GL JS for interactive map markers
 import { Hub } from '@trungthao/admin_dashboard_dto';
+import { Images } from '../utlities/images';
 
 
 /**
@@ -54,7 +55,7 @@ export function useHubMarkers(onHubClick: (hub: Hub) => void) {
     
     // Create image element for hub icon
     const img = document.createElement('img');
-    img.src = '/moto_hub.png';
+    img.src = Images.motoHub;
     img.alt = 'Hub';
     img.style.cssText = 'width:100%;height:100%;object-fit:contain';
     

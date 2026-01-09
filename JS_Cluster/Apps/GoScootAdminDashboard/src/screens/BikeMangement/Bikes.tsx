@@ -163,7 +163,7 @@ export default function Bikes() {
 
         <Input
           kind="select"
-          value={filterPayload.status}
+          value={filterPayload.operationStatus}
           placeHolder="Chọn Cảnh Báo"
           options={WARNING_OPTIONS}
           label="Cảnh Báo"
@@ -176,9 +176,9 @@ export default function Bikes() {
           className={`${styles["btn"]} ${styles["apply-btn"]}`}
           onClick={applyFilters}
           disabled={isLoading}
-          title="Apply filters & fetch group 0"
+          title="Tìm Kiếm"
         >
-          Apply
+          Tìm Kiếm
         </button>
 
         <button
@@ -187,7 +187,7 @@ export default function Bikes() {
           disabled={isLoading}
           title="Apply filters & fetch group 0"
         >
-          Clear
+            Huỷ
         </button>
       </div>
 
@@ -216,7 +216,7 @@ export default function Bikes() {
                 <th>Dung Lượng Pin</th>
                 <th>Trạng Thái</th>
                 <th>Cảnh Báo Pin</th>
-                <th>Cảnh Báo Trộm</th>
+                <th>Cảnh Báo Ngả Đỗ</th>
                 <th>Cảnh Báo Va Chạm</th>
               </tr>
             </thead>

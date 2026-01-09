@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Auth.css';
+import { Images } from '../utlities/images';
 
 const SignUp = () => {
   const [fullname, setFullname] = useState('');
@@ -22,7 +23,7 @@ const SignUp = () => {
     <div className="auth-container">
       <div className="auth-left">
         <div className="logo-section">
-          <img src="/app_logo.png" alt="GoScoot Logo" className="app-logo" />
+          <img src= {Images.appLogo} alt="GoScoot Logo" className="app-logo" />
         </div>
       </div>
       <div className="auth-right">

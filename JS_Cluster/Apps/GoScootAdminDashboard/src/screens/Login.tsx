@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signIn } from '../services/authService';
 import './Auth.css';
 import { useGlobalContext, WebScreen } from '../context/GlobalContext';
+import {Images} from '../utlities/images'
 
 interface LoginProps {
   onLoginSuccess?: () => void;
@@ -46,7 +47,7 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-left">
         <div className="logo-section">
-          <img src="/app_logo.png" alt="GoScoot Logo" className="app-logo" />
+          <img src={Images.appLogo} alt="GoScoot Logo" className="app-logo" />
         </div>
       </div>
       <div className="auth-right">
