@@ -7,9 +7,12 @@
 import { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Bike, BikeTelemetry } from '@trungthao/admin_dashboard_dto';
+import { Bike } from '@trungthao/admin_dashboard_dto';
+import { calculateDistance, getValidLocation } from '../../utlities/methods';
+import styles from "./BikeMap.module.css"
+import { ensureServicePolygonUtil } from '../../utlities/MapUtility';
 
-const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN;
 
 // Default center location (Ho Chi Minh City, Vietnam) when no telemetry data
 const DEFAULT_CENTER: [number, number] = [106.6297, 10.8231];
@@ -17,101 +20,62 @@ const DEFAULT_CENTER: [number, number] = [106.6297, 10.8231];
 // Distance threshold in meters to consider coordinates as "significantly different"
 const DISTANCE_THRESHOLD_METERS = 50;
 
-/**
- * Calculate distance between two coordinates using Haversine formula
- * Returns distance in meters
- */
-function calculateDistance(
-  lat1: number, lon1: number, 
-  lat2: number, lon2: number
-): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
 
-/**
- * Validate and return coordinates if valid for Mapbox, otherwise null
- * Longitude: -180 to 180, Latitude: -90 to 90
- */
-function getValidLocation(location: { longitude: number; latitude: number } | null | undefined): { longitude: number; latitude: number } | null {
-  if (!location) return null;
-  const { longitude, latitude } = location;
-  if (
-    typeof longitude === 'number' &&
-    typeof latitude === 'number' &&
-    !isNaN(longitude) &&
-    !isNaN(latitude) &&
-    longitude >= -180 &&
-    longitude <= 180 &&
-    latitude >= -90 &&
-    latitude <= 90
-  ) {
-    return location;
-  }
-  return null;
+export type Coordinate = {
+  longitude: number,
+  latitude: number
 }
-
 interface BikeMapProps {
   bike: Bike;
-  telemetry: BikeTelemetry[];
-  liveLocation?: { longitude: number; latitude: number } | null;
-  selectedTripLocation?: { longitude: number; latitude: number } | null;
-  lastKnownLocation?: { longitude: number; latitude: number } | null;
-  onMapClick: () => void;
+  liveLocation: { longitude: number; latitude: number } | null;
+  lastKnownLocation: { longitude: number; latitude: number } | null;
+  pastTelemetryLocation?: { longitude: number; latitude: number } | null;
+
 }
 
-function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnownLocation, onMapClick }: BikeMapProps) {
+function BikeMap(
+  { bike,
+    liveLocation,
+    lastKnownLocation,
+    pastTelemetryLocation,
+  }: BikeMapProps) {
+  console.log("BikeMap Rerendered")
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const lastGpsMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Get valid telemetry location (first valid one)
-  const telemetryLocation = telemetry.length > 0 
-    ? getValidLocation({ longitude: telemetry[0].longitude, latitude: telemetry[0].latitude })
-    : null;
-
-  // Get last GPS location from telemetry (different from current location)
-  const lastGpsLocation = telemetry.length > 0 
-    ? getValidLocation({ longitude: telemetry[0].last_gps_long, latitude: telemetry[0].last_gps_lat })
-    : null;
 
   // Check if the two locations differ significantly
-  const locationsAreDifferent = telemetryLocation && lastGpsLocation 
+  const locationsAreDifferent = lastKnownLocation && liveLocation
     ? calculateDistance(
-        telemetryLocation.latitude, telemetryLocation.longitude,
-        lastGpsLocation.latitude, lastGpsLocation.longitude
-      ) > DISTANCE_THRESHOLD_METERS
+      liveLocation.latitude, liveLocation.longitude,
+      lastKnownLocation.latitude, lastKnownLocation.longitude
+    ) > DISTANCE_THRESHOLD_METERS
     : false;
 
   // Get the current location (prioritize: selectedTripLocation > liveLocation > telemetry > lastKnownLocation)
   // Only use locations that have valid coordinates
-  const validSelectedTrip = getValidLocation(selectedTripLocation);
+  const validPastTelemetryLocation = getValidLocation(pastTelemetryLocation);
   const validLiveLocation = getValidLocation(liveLocation);
-  const validLastKnown = getValidLocation(lastKnownLocation);
-  const currentLocation = validSelectedTrip || validLiveLocation || telemetryLocation || validLastKnown;
-  
+  const validLastKnownLocation = getValidLocation(lastKnownLocation);
+
+  const currentLocation = validPastTelemetryLocation || validLiveLocation || validLastKnownLocation;
+
   // Determine which type of location is being displayed
-  const locationSource = validSelectedTrip ? 'trip' 
-    : validLiveLocation ? 'live' 
-    : telemetryLocation ? 'telemetry' 
-    : validLastKnown ? 'lastKnown' 
-    : null;
+  const locationSource = pastTelemetryLocation ? "past" : "present"
+
+  console.log("Past Loc", validPastTelemetryLocation)
 
   useEffect(() => {
+
     if (!mapContainerRef.current || !MAPBOX_TOKEN || !bike) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     // Use current location if valid, otherwise use default center
-    const bikeLocation: [number, number] = currentLocation 
+    const bikeLocation: [number, number] = currentLocation
       ? [currentLocation.longitude, currentLocation.latitude]
       : DEFAULT_CENTER;
 
@@ -122,6 +86,16 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         style: 'mapbox://styles/mapbox/streets-v11',
         center: bikeLocation,
         zoom: 14,
+      });
+
+      map.once("load", () => {
+        if (map.isStyleLoaded()) {
+          ensureServicePolygonUtil(map, "bike-map", "bike-map-fill", "bike-map-outline");
+        } else {
+          ensureServicePolygonUtil(map, "bike-map", "bike-map-fill", "bike-map-outline");
+        }
+
+        requestAnimationFrame(() => map.resize());
       });
 
       const el = document.createElement('div');
@@ -172,7 +146,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
     }
 
     // If locations differ significantly, add a second marker for last GPS position
-    if (locationsAreDifferent && lastGpsLocation && !validSelectedTrip) {
+    if (locationsAreDifferent && validLastKnownLocation && !validPastTelemetryLocation) {
       const lastGpsEl = document.createElement('div');
       lastGpsEl.style.width = '14px';
       lastGpsEl.style.height = '14px';
@@ -182,13 +156,13 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
       lastGpsEl.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
 
       const lastGpsMarker = new mapboxgl.Marker({ element: lastGpsEl })
-        .setLngLat([lastGpsLocation.longitude, lastGpsLocation.latitude])
+        .setLngLat([validLastKnownLocation.longitude, validLastKnownLocation.latitude])
         .setPopup(
           new mapboxgl.Popup({ offset: 15 }).setHTML(
             `<strong>Last GPS Location</strong><br/>` +
             `<span style="color: #FF9800;">📍 Previous Position</span><br/>` +
-            `Lat: ${lastGpsLocation.latitude.toFixed(6)}<br/>` +
-            `Lng: ${lastGpsLocation.longitude.toFixed(6)}`
+            `Lat: ${validLastKnownLocation.latitude.toFixed(6)}<br/>` +
+            `Lng: ${validLastKnownLocation.longitude.toFixed(6)}`
           )
         )
         .addTo(mapRef.current);
@@ -197,7 +171,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
 
       // Also draw a line between the two points
       const lineId = 'gps-difference-line';
-      
+
       // Remove existing line if any
       if (mapRef.current.getSource(lineId)) {
         mapRef.current.removeLayer(lineId);
@@ -205,7 +179,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
       }
 
       // Add line between current and last GPS
-      if (telemetryLocation) {
+      if (validLiveLocation) {
         mapRef.current.addSource(lineId, {
           type: 'geojson',
           data: {
@@ -214,8 +188,8 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
             geometry: {
               type: 'LineString',
               coordinates: [
-                [lastGpsLocation.longitude, lastGpsLocation.latitude],
-                [telemetryLocation.longitude, telemetryLocation.latitude]
+                [validLiveLocation.longitude, validLiveLocation.latitude],
+                [validLastKnownLocation.longitude, validLastKnownLocation.latitude]
               ]
             }
           }
@@ -244,16 +218,16 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         mapRef.current.removeSource(lineId);
       }
     }
-  }, [locationsAreDifferent, lastGpsLocation, telemetryLocation, validSelectedTrip]);
+  }, [locationsAreDifferent, validLiveLocation, validLastKnownLocation, validPastTelemetryLocation]);
 
   // Pan to selected trip location when it changes, or back to current location when deselected
   useEffect(() => {
     if (!mapRef.current) return;
 
     // If selectedTripLocation is set and valid, fly to trip location
-    if (validSelectedTrip) {
-      const tripPosition: [number, number] = [validSelectedTrip.longitude, validSelectedTrip.latitude];
-      
+    if (validPastTelemetryLocation) {
+      const tripPosition: [number, number] = [validPastTelemetryLocation.longitude, validPastTelemetryLocation.latitude];
+
       mapRef.current.flyTo({
         center: tripPosition,
         zoom: 15,
@@ -265,11 +239,11 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
       }
     } else {
       // selectedTripLocation is null or invalid - fly back to bike's current location
-      const bikeLocation = validLiveLocation || telemetryLocation || validLastKnown;
-      
+      const bikeLocation = validLiveLocation || validLastKnownLocation;;
+
       if (bikeLocation) {
         const bikePosition: [number, number] = [bikeLocation.longitude, bikeLocation.latitude];
-        
+
         mapRef.current.flyTo({
           center: bikePosition,
           zoom: 14,
@@ -281,7 +255,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         }
       }
     }
-  }, [validSelectedTrip, validLiveLocation, telemetryLocation, validLastKnown]);
+  }, [validPastTelemetryLocation, validLiveLocation, validLastKnownLocation]);
 
   // Update marker position when live location changes
   useEffect(() => {
@@ -289,9 +263,9 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
 
     const newPosition: [number, number] = [currentLocation.longitude, currentLocation.latitude];
     markerRef.current.setLngLat(newPosition);
-    
+
     // Smoothly pan to new location (only if not showing a selected trip)
-    if (!validSelectedTrip) {
+    if (!validPastTelemetryLocation) {
       mapRef.current.panTo(newPosition, { duration: 1000 });
     }
 
@@ -308,12 +282,11 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         `<strong>${bike.name}</strong><br/>Battery: ${bike.battery_status || 0}%${validLiveLocation ? '<br/><span style="color: #4CAF50;">● Live</span>' : ''}`
       );
     }
-  }, [currentLocation, bike, validLiveLocation, validSelectedTrip]);
+  }, [currentLocation, bike, validLiveLocation, validPastTelemetryLocation]);
 
   return (
-    <div 
-      className="map-container" 
-      onClick={onMapClick}
+    <div
+      className={styles['map-container']}
       style={{ cursor: 'pointer' }}
       title="Click to view full map"
     >
@@ -354,7 +327,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         </div>
       )}
       {/* Show "End Trip Location" badge when a trip is selected */}
-      {validSelectedTrip && (
+      {validPastTelemetryLocation && (
         <div style={{
           position: 'absolute',
           top: '10px',
@@ -371,13 +344,12 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
         </div>
       )}
       {/* Show appropriate badge based on location source when no trip is selected */}
-      {!validSelectedTrip && currentLocation && (
+      {!validPastTelemetryLocation && currentLocation && (
         <div style={{
           position: 'absolute',
           top: '10px',
           right: '10px',
-          background: locationSource === 'live' ? 'rgba(76, 175, 80, 0.9)' 
-            : locationSource === 'lastKnown' ? 'rgba(158, 158, 158, 0.9)'
+          background: locationSource === 'present' ? 'rgba(76, 175, 80, 0.9)'
             : 'rgba(33, 150, 243, 0.9)',
           color: 'white',
           padding: '4px 8px',
@@ -386,13 +358,12 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
           fontWeight: 'bold',
           zIndex: 10,
         }}>
-          {locationSource === 'live' ? '● Live Tracking' 
-            : locationSource === 'lastKnown' ? '📍 Last Known Location'
-            : '📍 Current Location'}
+          {locationSource === 'present' ? '● Live Tracking'
+            : '📍 Past Location'}
         </div>
       )}
       {/* Show GPS discrepancy warning when current and last GPS differ significantly */}
-      {locationsAreDifferent && !validSelectedTrip && (
+      {locationsAreDifferent && !validPastTelemetryLocation && (
         <div style={{
           position: 'absolute',
           bottom: '10px',
@@ -414,7 +385,7 @@ function BikeMap({ bike, telemetry, liveLocation, selectedTripLocation, lastKnow
           </span>
         </div>
       )}
-      <div ref={mapContainerRef} className="trip-map" />
+      <div ref={mapContainerRef} className={styles['trip-map']} />
     </div>
   );
 }

@@ -1,0 +1,50 @@
+/* Bike Details Page Styles */
+.bike-details-container {
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  padding: 24px;
+}
+
+/* Main Content */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  background: white;
+}
+
+/* Trips and Map Section */
+.trips-map-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 1rem;
+  align-items: start; /* Prevent map from stretching to match table height */
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .trips-map-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .bike-info-section {
+    flex-direction: column;
+  }
+
+  .bike-image img {
+    width: 200px;
+  }
+}
+
+

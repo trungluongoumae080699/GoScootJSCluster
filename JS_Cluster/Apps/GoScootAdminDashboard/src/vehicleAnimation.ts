@@ -5,6 +5,7 @@
  */
 
 import mapboxgl from 'mapbox-gl';
+import { Images } from './utlities/images';
 
 // ============================================================================
 // CONFIGURATION
@@ -114,7 +115,7 @@ const createVehicleMarker = (
   // Create image element for the marker
   const el = document.createElement('img');
   el.className = `${type}-marker`;
-  el.src = '/bike_type.png';
+  el.src = Images.bikeType;
   el.style.width = '40px';
   el.style.height = '40px';
   el.style.cursor = 'pointer';

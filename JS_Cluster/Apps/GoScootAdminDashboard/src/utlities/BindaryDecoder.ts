@@ -5,211 +5,326 @@ export function decodeTelemetry(bytes: Uint8Array): BikeTelemetry {
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let offset = 0;
 
-  // --- ID ---
-  const idLen = dv.getUint8(offset);
-  offset += 1;
-  const id = new TextDecoder().decode(bytes.slice(offset, offset + idLen));
-  offset += idLen;
+  const decoder = new TextDecoder();
 
-  // --- bike_id ---
-  const bikeIdLen = dv.getUint8(offset);
-  offset += 1;
-  const bike_id = new TextDecoder().decode(bytes.slice(offset, offset + bikeIdLen));
-  offset += bikeIdLen;
+  const readU8 = () => dv.getUint8(offset++);
+  const readI32LE = () => {
+    const v = dv.getInt32(offset, true);
+    offset += 4;
+    return v;
+  };
+  const readF32LE = () => {
+    const v = dv.getFloat32(offset, true);
+    offset += 4;
+    return v;
+  };
+  const readI64LE = () => {
+    const v = Number(dv.getBigInt64(offset, true));
+    offset += 8;
+    return v;
+  };
+  const readBool = () => readU8() === 1;
+  const readLenString = () => {
+    const len = readU8();
+    const s = decoder.decode(bytes.subarray(offset, offset + len));
+    offset += len;
+    return s;
+  };
 
-  // --- battery (int32 LE) ---
-  const battery = dv.getInt32(offset, true);
-  offset += 4;
+  // --- 1) ID (u8 len + bytes) ---
+  const id = readLenString();
 
-  // --- longitude (float32 LE) ---
-  const longitude = dv.getFloat32(offset, true);
-  offset += 4;
+  // --- 2) Bike ID (u8 len + bytes) ---
+  const bike_id = readLenString();
 
-  // --- latitude (float32 LE) ---
-  const latitude = dv.getFloat32(offset, true);
-  offset += 4;
+  // --- 3) BatteryStatus (int32 LE) ---
+  const battery = readI32LE();
 
-  // --- time (int64 LE) ---
-  const time = Number(dv.getBigInt64(offset, true));
-  offset += 8;
+  // --- 4) Longitude (float32 LE) ---
+  const longitude = readF32LE();
 
-  // --- last_gps_long (float32 LE) ---
-  const last_gps_long = dv.getFloat32(offset, true);
-  offset += 4;
+  // --- 5) Latitude (float32 LE) ---
+  const latitude = readF32LE();
 
-  // --- last_gps_lat (float32 LE) ---
-  const last_gps_lat = dv.getFloat32(offset, true);
-  offset += 4;
+  // --- 6) Time (int64 LE) ---
+  const time = readI64LE();
 
-  // --- last_gps_contact_time (int64 LE) ---
-  const last_gps_contact_time = Number(dv.getBigInt64(offset, true));
-  offset += 8;
+  // --- 7) Last GPS Long (float32 LE) ---
+  const last_gps_long = readF32LE();
 
-  // 6) Operation State  (uint8)
-  const operationStateInt = dv.getUint8(offset);
-  offset += 1;
+  // --- 8) Last GPS Lat (float32 LE) ---
+  const last_gps_lat = readF32LE();
 
-  // 7) Usage State  (uint8)
-  const usageStateInt = dv.getUint8(offset);
-  offset += 1;
+  // --- 9) Last GPS Contact Time (int64 LE) ---
+  const last_gps_contact_time = readI64LE();
+
+  // --- 10) BatteryIsLow (u8) ---
+  const batteryIsLow = readBool();
+
+  // --- 11) IsToppled (u8) ---
+  const isToppled = readBool();
+
+  // --- 12) IsCrashed (u8) ---
+  const isCrashed = readBool();
+
+  // --- 13) IsOutOfBound (u8) ---
+  const isOutOfBound = readBool();
+
+  // --- 14) UsageStatus (u8 enum index) ---
+  const usageStateInt = readU8();
 
   const usageStateMap: BikeStatus[] = [
     BikeStatus.IDLE,
     BikeStatus.RESERVED,
-    BikeStatus.INUSED
+    BikeStatus.INUSED,
   ];
 
+  const usageStatus: BikeStatus = usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
 
-  const operationStateMap: OperationStatus[] = [
-    OperationStatus.NORMAL,
-    OperationStatus.OUT_OF_BOUND,
-    OperationStatus.LOW_BATTERY
-  ];
-
-  const operationStatus: OperationStatus =
-    operationStateMap[operationStateInt] ?? OperationStatus.NORMAL;
-
-  const usageStatus: BikeStatus =
-    usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
+  // Fields that exist in BikeTelemetry but aren't in this payload:
+  // - last_gps_long/lat already mapped
+  // - last_gps_long/lat "aliases" (last_gps_long vs last_gps_long) ok
+  // - last_gps_long/lat "last_gps_*" already
+  // - isOutOfBound mapped from payload, keep both if you also have operation enums elsewhere
+  // - latitude/longitude already
+  // - last_gps_long/lat vs last_gps_long/lat
+  // - If you also need `last_gps_long/lat` AND `last_gps_long/lat` duplicates, set them explicitly below.
 
   return {
     id,
     bike_id,
     battery,
+    last_gps_long,
+    last_gps_lat,
     longitude,
     latitude,
     time,
-    last_gps_long,
-    last_gps_lat,
     last_gps_contact_time,
-    operationStatus,     
-    usageStatus
+    batteryIsLow,
+    isToppled,
+    isCrashed,
+    isOutOfBound,
+    usageStatus,
   };
 }
+
+
+export type BinaryDecodedPayload = {
+  protocol: number;
+  payload: Uint8Array;
+};
+
+export function decodeBinaryPayload(bytes: Uint8Array): BinaryDecodedPayload {
+  if (bytes.byteLength < 1) {
+    throw new Error("Payload too small to contain protocol byte");
+  }
+
+  // protocol is uint8 (0–9)
+  const protocol = bytes[0];
+
+  // remaining bytes = actual payload
+  const payload = bytes.slice(1);
+
+  return {
+    protocol,
+    payload,
+  };
+}
+
 
 export function decodeBikeUpdates(bytes: Uint8Array): BikeUpdate[] {
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let offset = 0;
 
-  // Read bike count (uint16 BE)
-  const count = dv.getUint16(offset, false); // Big endian
-  offset += 2;
+  const decoder = new TextDecoder();
+
+  const readU8 = () => dv.getUint8(offset++);
+  const readU16BE = () => {
+    const v = dv.getUint16(offset, false);
+    offset += 2;
+    return v;
+  };
+  const readI32BE = () => {
+    const v = dv.getInt32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readF32BE = () => {
+    const v = dv.getFloat32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readBool = () => readU8() === 1;
+  const readLenString = () => {
+    const len = readU8();
+    const s = decoder.decode(bytes.subarray(offset, offset + len));
+    offset += len;
+    return s;
+  };
+
+  // 0) Bike count (uint16 BE)
+  const count = readU16BE();
+
+  const usageStateMap: BikeStatus[] = [
+    BikeStatus.IDLE,     // 0
+    BikeStatus.RESERVED, // 1
+    BikeStatus.INUSED,   // 2
+  ];
 
   const bikes: BikeUpdate[] = [];
 
   for (let i = 0; i < count; i++) {
-    // 1) ID length
-    const idLen = dv.getUint8(offset);
-    offset += 1;
+    // 1-2) ID (u8 len + bytes)
+    const id = readLenString();
 
-    // 2) ID bytes
-    const idBytes = bytes.slice(offset, offset + idLen);
-    const id = new TextDecoder().decode(idBytes);
-    offset += idLen;
-
-    // 3) BatteryStatus (int32 BE)
-    const battery_status = dv.getInt32(offset, false);
-    offset += 4;
+    // 3) Battery_Status (int32 BE)
+    const battery_status = readI32BE();
 
     // 4) Longitude (float32 BE)
-    const longitude = dv.getFloat32(offset, false);
-    offset += 4;
+    const longitude = readF32BE();
 
     // 5) Latitude (float32 BE)
-    const latitude = dv.getFloat32(offset, false);
-    offset += 4;
+    const latitude = readF32BE();
 
-    // 6) Operation State  (uint8)
-    const operationStateInt = dv.getUint8(offset);
-    offset += 1;
+    // 6) BatteryIsLow (u8)
+    const batteryIsLow = readBool();
 
-    // 7) Usage State  (uint8)
-    const usageStateInt = dv.getUint8(offset);
-    offset += 1;
+    // 7) IsToppled (u8)
+    const isToppled = readBool();
 
-    const usageStateMap: BikeStatus[] = [
-      BikeStatus.IDLE,
-      BikeStatus.RESERVED,
-      BikeStatus.INUSED
-    ];
+    // 8) IsCrashed (u8)
+    const isCrashed = readBool();
 
+    // 9) IsOutOfBound (u8)
+    const isOutOfBound = readBool();
 
-    const operationStateMap: OperationStatus[] = [
-      OperationStatus.NORMAL,
-      OperationStatus.OUT_OF_BOUND,
-      OperationStatus.LOW_BATTERY
-    ];
-
-    const operationStatus: OperationStatus =
-      operationStateMap[operationStateInt] ?? OperationStatus.NORMAL;
-
-    const usageStatus: BikeStatus =
-      usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
-
+    // 10) UsageStatus (u8)
+    const usageStateInt = readU8();
+    const usageStatus: BikeStatus = usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
 
     bikes.push({
       id,
       battery_status,
       longitude,
       latitude,
-      operationStatus,
-      usageStatus
+      batteryIsLow,
+      isToppled,
+      isCrashed,
+      isOutOfBound,
+      usageStatus,
+      currentHub: null, // not present in binary payload
     });
   }
 
   return bikes;
 }
 
-export function decodeAlertBinary(bytes: Uint8Array): Alert {
-  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+export function decodeAlertBinary(payload: Uint8Array): Alert {
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  const decoder = new TextDecoder();
   let offset = 0;
 
-  // ---- helper: read uint8-length-prefixed string ----
-  const readString = (): string => {
-    const len = dv.getUint8(offset);
-    offset += 1;
+  const ensure = (n: number) => {
+    if (offset + n > dv.byteLength) {
+      throw new RangeError(
+        `decodeAlertBinary: need ${n} bytes but only ${dv.byteLength - offset} left (offset=${offset}, len=${dv.byteLength})`
+      );
+    }
+  };
 
-    const strBytes = bytes.slice(offset, offset + len);
+  const readU8 = () => {
+    ensure(1);
+    return dv.getUint8(offset++);
+  };
+
+  const readString = () => {
+    const len = readU8();
+    ensure(len);
+    const s = decoder.decode(payload.subarray(offset, offset + len));
     offset += len;
-
-    return new TextDecoder().decode(strBytes);
+    return s;
   };
 
-  const alert: Alert = {
-    id: "",
-    bike_id: "",
-    content: "",
-    type: "",
-    longitude: 0,
-    latitude: 0,
-    time: 0,
-  };
+  const id = readString();
+  const bike_id = readString();
+  const content = readString();
+  const type = readString();
 
-  // 1. ID
-  alert.id = readString();
-
-  // 2. Bike_Id
-  alert.bike_id = readString();
-
-  // 3. Content
-  alert.content = readString();
-
-  // 4. Type
-  alert.type = readString();
-
-  // 5. Longitude (float32 little-endian)
-  alert.longitude = dv.getFloat32(offset, true);
+  ensure(4);
+  const longitude = dv.getFloat32(offset, true); // ✅ little-endian (matches Go)
   offset += 4;
 
-  // 6. Latitude (float32 little-endian)
-  alert.latitude = dv.getFloat32(offset, true);
+  ensure(4);
+  const latitude = dv.getFloat32(offset, true); // ✅ little-endian
   offset += 4;
 
-  // 7. Time (uint64 / uint32*2)
-  // JS does not support uint64 directly → read as BigUint64 and convert
-  const timeBig = dv.getBigUint64(offset, true);
+  ensure(8);
+  const time = Number(dv.getBigInt64(offset, true)); // ✅ little-endian
   offset += 8;
-  alert.time = Number(timeBig);
 
-  return alert;
+  return { id, bike_id, content, type, longitude, latitude, time };
+}
+
+export function decodeSingleBikeFromBinary(payload: Uint8Array): BikeUpdate {
+  const dv = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  let offset = 0;
+
+  const decoder = new TextDecoder();
+  const readU8 = () => dv.getUint8(offset++);
+  const readU16BE = () => {
+    const v = dv.getUint16(offset, false);
+    offset += 2;
+    return v;
+  };
+  const readI32BE = () => {
+    const v = dv.getInt32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readF32BE = () => {
+    const v = dv.getFloat32(offset, false);
+    offset += 4;
+    return v;
+  };
+  const readBool = () => readU8() === 1;
+  const readLenString = () => {
+    const len = readU8();
+    const s = decoder.decode(payload.subarray(offset, offset + len));
+    offset += len;
+    return s;
+  };
+
+  // payload starts from COUNT now (uint16)
+  const count = readU16BE();
+  if (count !== 1) throw new Error(`Expected 1 bike, got ${count}`);
+
+  const usageStateMap: BikeStatus[] = [
+    BikeStatus.IDLE,
+    BikeStatus.RESERVED,
+    BikeStatus.INUSED,
+  ];
+
+  const id = readLenString();
+  const battery_status = readI32BE();
+  const longitude = readF32BE();
+  const latitude = readF32BE();
+  const batteryIsLow = readBool();
+  const isToppled = readBool();
+  const isCrashed = readBool();
+  const isOutOfBound = readBool();
+  const usageStateInt = readU8();
+  const usageStatus = usageStateMap[usageStateInt] ?? BikeStatus.IDLE;
+
+  return {
+    id,
+    battery_status,
+    longitude,
+    latitude,
+    batteryIsLow,
+    isToppled,
+    isCrashed,
+    isOutOfBound,
+    usageStatus,
+    currentHub: null,
+  };
 }

@@ -1,4 +1,4 @@
-const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN || "";
+const MAPBOX_TOKEN = (import.meta as any).env.VITE_MAPBOX_TOKEN
 
 export const convertLocationName = async (
   longitude: number,

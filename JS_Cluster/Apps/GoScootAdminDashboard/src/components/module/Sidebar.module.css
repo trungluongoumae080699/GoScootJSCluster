@@ -1,0 +1,80 @@
+.sidebar {
+  width: 15vw;
+  height: 100vh;
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  z-index: 0;
+  position: fixed;
+  left: 0;
+  top: 0;
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 14vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  width: 6.5vw;
+  height: auto;
+  object-fit: contain;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.3rem 1.5rem;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  transition: background 0.2s;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-family: inherit;
+}
+
+.nav-item:hover {
+  background: #e0e0e0;
+}
+
+.nav-item.active {
+  background: #c85a28;
+  color: white;
+}
+
+.nav-item.sub-item {
+  padding-left: 3rem;
+  font-size: 1rem;
+    background: #c85a28;
+}
+
+.nav-item.logout {
+  margin-top: auto;
+  color: #d32f2f;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+}
+
+.nav-item.active .nav-icon {
+  color: white;
+}

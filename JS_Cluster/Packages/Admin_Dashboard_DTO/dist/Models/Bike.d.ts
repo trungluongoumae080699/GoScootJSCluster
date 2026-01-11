@@ -6,7 +6,7 @@ export declare enum BikeStatus {
 export interface Bike {
     id: string;
     name: string;
-    isAvailable: boolean;
+    status: BikeStatus;
     maximum_speed: number;
     maximum_functional_distance: number;
     purchase_date: number;
@@ -15,4 +15,19 @@ export interface Bike {
     deleted: boolean;
     created_at: Date;
     battery_status?: number | null;
+    longitude?: number;
+    latitude?: number;
+    batteryIsLow: boolean;
+    isToppled: boolean;
+    isCrashed: boolean;
+    isOutOfBound: boolean;
 }
+export type Hub = {
+    id: string;
+    longitude: number;
+    latitude: number;
+    address: string;
+    deleted: boolean;
+    last_modification_date: number;
+    created_at: Date;
+};

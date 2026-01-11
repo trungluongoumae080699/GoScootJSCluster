@@ -1,0 +1,89 @@
+.snackbar {
+  position: absolute; /* ✅ absolute as requested */
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%) translateY(0);
+  z-index: 999999;
+  display: flex; /* ✅ horizontally aligned */
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(520px, calc(100vw - 2rem));
+  min-width: 500px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 1;
+  transition: transform 220ms ease, opacity 220ms ease;
+  pointer-events: none; /* disabled when off */
+}
+
+/* ✅ ON: 2rem from bottom */
+.on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* ✅ OFF: beneath viewport */
+.off {
+  opacity: 0;
+  transform: translateX(-50%) translateY(200%);
+  pointer-events: none;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.message {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  margin-left: 0.5rem;
+  opacity: 0.9;
+}
+
+.closeBtn:hover {
+  opacity: 1;
+}
+
+/* Types */
+.success {
+  background: #4caf50;
+}
+
+.warning {
+  background: #ff9800;
+}
+
+.info {
+  background: #2196f3;
+}
+
+.error {
+  background: #f44336;
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .snackbar {
+    transition: none;
+  }
+}

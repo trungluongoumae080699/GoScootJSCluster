@@ -4,12 +4,13 @@
  * Sends viewport updates when map moves and receives bike telemetry
  */
 
-import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { decodeBikeUpdates } from '../utlities/BindaryDecoder';
-import { getSessionId } from './apiClient';
+import { BikeTelemetry, BikeUpdate } from '@trungthao/admin_dashboard_dto';
+import { decodeAlertBinary, decodeBikeUpdates, decodeBinaryPayload, decodeSingleBikeFromBinary, decodeTelemetry } from '../utlities/BindaryDecoder';
+import { getSessionId } from './ApiClient/apiClient';
+import { Alert } from '../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts';
 
 /** WebSocket base URL from environment variables */
-const WS_BASE_URL = (import.meta as any).env.VITE_WS_BASE_URL || 'ws://still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws';
+const WS_BASE_URL = (import.meta as any).env.VITE_WS_BASE_URL || 'wss://still-simply-katydid.ngrok.app/GoScoot/WebSocket/ws';
 
 /** Map viewport bounds */
 export interface ViewportBounds {
@@ -21,8 +22,10 @@ export interface ViewportBounds {
 
 /** WebSocket message types */
 export enum WSMessageType {
+  BIKE_TELEMETRY = 2,
   VIEWPORT_UPDATE = 0,
-  BIKE_REQUEST = 1
+  BIKE_REQUEST = 1,
+  CLEAN_UP = 3
 }
 
 /** Error message from server */
@@ -35,6 +38,12 @@ export type BikeUpdateCallback = (bikes: BikeUpdate[]) => void;
 
 /** Callback for receiving error messages */
 export type ErrorCallback = (error: string) => void;
+
+export type AlertCallback = (alert: Alert) => void;
+
+export type BikeTelemetryCallback = (telemetry: BikeTelemetry) => void;
+
+export type SingleBikeRequestCallback = (bike: BikeUpdate) => void
 
 /**
  * WebSocket Manager Class
@@ -52,25 +61,36 @@ export type ErrorCallback = (error: string) => void;
 export class WebSocketManager {
   /** WebSocket connection instance */
   private ws: WebSocket | null = null;
-  
+
   /** Number of reconnection attempts made */
   private reconnectAttempts = 0;
-  
+
   /** Maximum number of reconnection attempts before giving up */
   private maxReconnectAttempts = 5;
-  
+
   /** Base delay between reconnection attempts (increases with each attempt) */
   private reconnectDelay = 3000; // 3 seconds
-  
+
   /** Timer for scheduled reconnection */
   private reconnectTimer: NodeJS.Timeout | null = null;
-  
+
   /** Callback function to handle bike updates */
   private onBikeUpdate: BikeUpdateCallback | null = null;
-  
+
+  /** Callback function to handle alerts */
+  private onAlert: AlertCallback | null = null;
+
+  private onSecondaryAlertHandler: AlertCallback | null = null;
+
   /** Callback function to handle error messages */
   private onError: ErrorCallback | null = null;
-  
+
+  /** Callback function to handle bike telemetry */
+  private onBikeTelemetry: BikeTelemetryCallback | null = null;
+
+  private onSingleBikeRequest: SingleBikeRequestCallback | null = null;
+
+
   /** Flag to prevent reconnection when user intentionally closes connection */
   private isIntentionallyClosed = false;
 
@@ -83,11 +103,35 @@ export class WebSocketManager {
    * @param onBikeUpdate - Callback function to handle bike updates
    * @param onError - Callback function to handle error messages
    */
-  connect(onBikeUpdate: BikeUpdateCallback, onError?: ErrorCallback): void {
-    this.onBikeUpdate = onBikeUpdate;
-    this.onError = onError || null;
+
+  connect(): void {
     this.isIntentionallyClosed = false;
     this.createConnection();
+  }
+
+  // ✅ Setters (allow null to clear)
+  public setOnBikeUpdate(cb: BikeUpdateCallback | null): void {
+    this.onBikeUpdate = cb;
+  }
+
+  public setOnAlert(cb: AlertCallback | null): void {
+    this.onAlert = cb;
+  }
+
+  public setSecondaryAlertHandler(cb: AlertCallback | null): void {
+    this.onSecondaryAlertHandler = cb;
+  }
+
+  public setOnError(cb: ErrorCallback | null): void {
+    this.onError = cb;
+  }
+
+  public setOnBikeTelemetry(cb: BikeTelemetryCallback | null): void {
+    this.onBikeTelemetry = cb;
+  }
+
+  public setSingleBikeRequest(cb: SingleBikeRequestCallback | null): void {
+    this.onSingleBikeRequest = cb;
   }
 
   /**
@@ -102,23 +146,26 @@ export class WebSocketManager {
    */
   private createConnection(): void {
     // Get session ID for authentication
-    const sessionId = getSessionId();
-    
+    //const sessionId = getSessionId();
+
+    /*
     if (!sessionId) {
       console.error('❌ No session ID found. Cannot connect to WebSocket.');
       return;
     }
+      */
 
     // Build WebSocket URL with authorization query parameter
     // Server validates this session ID before accepting connection
-    const wsUrl = `${WS_BASE_URL}?authorization=${encodeURIComponent(sessionId)}`;
-    
+    const wsUrl = `${WS_BASE_URL}`;
+
     console.log('🔌 Connecting to WebSocket:', wsUrl);
 
     try {
       // Create new WebSocket connection
       this.ws = new WebSocket(wsUrl);
-      this.setupEventHandlers(wsUrl, sessionId);
+
+      this.setupEventHandlers(wsUrl);
     } catch (error) {
       console.error('❌ Failed to create WebSocket:', error);
       this.scheduleReconnect();
@@ -134,7 +181,7 @@ export class WebSocketManager {
    * - onerror: Connection error occurred
    * - onclose: Connection closed (intentionally or due to error)
    */
-  private setupEventHandlers(wsUrl: string, sessionId: string): void {
+  private setupEventHandlers(wsUrl: string): void {
     if (!this.ws) return;
 
     // Event: Connection opened successfully
@@ -152,14 +199,14 @@ export class WebSocketManager {
     this.ws.onerror = (error) => {
       console.error('❌ WebSocket error:', error);
       console.error('❌ WebSocket URL was:', wsUrl);
-      console.error('❌ Session ID:', sessionId);
+      //console.error('❌ Session ID:', sessionId);
     };
 
     // Event: Connection closed
     this.ws.onclose = (event) => {
       console.log('🔌 WebSocket closed:', event.code, event.reason, 'clean?', event.wasClean);
       console.log('🔌 Close codes: 1000=Normal, 1006=Abnormal, 1008=Policy, 1011=Server error');
-      
+
       // Only attempt reconnect if not intentionally closed by user
       if (!this.isIntentionallyClosed) {
         this.scheduleReconnect();
@@ -182,6 +229,40 @@ export class WebSocketManager {
     // Case 1: Binary message (ArrayBuffer) - Bike updates
     if (event.data instanceof ArrayBuffer) {
       const bytes = new Uint8Array(event.data);
+      const { protocol, payload } = decodeBinaryPayload(bytes);
+      if (protocol == 1) {
+        const bikeUpdates: BikeUpdate[] = decodeBikeUpdates(payload);
+        console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
+        if (this.onBikeUpdate) {
+          this.onBikeUpdate(bikeUpdates);
+        }
+      }
+      else if (protocol === 0) {
+        const alertData = decodeAlertBinary(payload);
+        if (this.onAlert) {
+          this.onAlert(alertData);
+        }
+        if (this.onSecondaryAlertHandler) {
+          this.onSecondaryAlertHandler(alertData)
+        }
+      }
+
+      else if (protocol === 2) {
+        const telemetry = decodeTelemetry(payload);
+        if (this.onBikeTelemetry) {
+          this.onBikeTelemetry(telemetry);
+        }
+      }
+      else if (protocol === 4) {
+        const bikeUpdate = decodeSingleBikeFromBinary(payload)
+        if (this.onSingleBikeRequest) {
+          this.onSingleBikeRequest(bikeUpdate)
+        }
+      }
+      /*
+      else if (protocol == 0){
+        const alertData = new TextDecoder().decode(payload);
+      }
       const updates = decodeBikeUpdates(bytes); // Decode binary format
       console.log('🔄 Received bike updates:', updates.length, 'bikes');
       
@@ -189,17 +270,45 @@ export class WebSocketManager {
         this.onBikeUpdate(updates);
       }
       return;
+      */
     }
 
     // Case 2: Blob message - Convert to ArrayBuffer then decode
     if (event.data instanceof Blob) {
       event.data.arrayBuffer().then((buf) => {
         const bytes = new Uint8Array(buf);
-        const updates = decodeBikeUpdates(bytes);
-        console.log('🔄 Received bike updates:', updates.length, 'bikes');
-        
-        if (this.onBikeUpdate) {
-          this.onBikeUpdate(updates);
+        const { protocol, payload } = decodeBinaryPayload(bytes);
+
+        if (protocol === 1) {
+          const bikeUpdates = decodeBikeUpdates(payload);
+          //console.log('🔄 Received bike updates:', bikeUpdates.length, 'bikes');
+          console.log(bikeUpdates);
+          if (this.onBikeUpdate) {
+            this.onBikeUpdate(bikeUpdates);
+          }
+        } else if (protocol === 0) {
+          const { protocol, payload } = decodeBinaryPayload(bytes);
+          const alertData = decodeAlertBinary(payload);
+          if (this.onAlert) {
+            this.onAlert(alertData);
+          }
+          if (this.onSecondaryAlertHandler) {
+            this.onSecondaryAlertHandler(alertData)
+          }
+        }
+        else if (protocol === 2) {
+          console.log('🚨 Received telemetry:');
+          const telemetry = decodeTelemetry(payload);
+          if (this.onBikeTelemetry) {
+            this.onBikeTelemetry(telemetry);
+          }
+        }
+        else if (protocol === 4) {
+          console.log("Single Bike response received!!!")
+          const bikeUpdate = decodeSingleBikeFromBinary(payload)
+          if (this.onSingleBikeRequest) {
+            this.onSingleBikeRequest(bikeUpdate)
+          }
         }
       });
       return;
@@ -208,7 +317,7 @@ export class WebSocketManager {
     // Case 3: Text message - Server notifications or error messages
     if (typeof event.data === 'string') {
       console.log('📄 Text message from server:', event.data);
-      
+
       try {
         const parsed = JSON.parse(event.data);
         if (parsed.message && this.onError) {
@@ -257,7 +366,7 @@ export class WebSocketManager {
 
     // Send as JSON string
     this.ws.send(JSON.stringify(message));
-    console.log('📤 Sent viewport:', message);
+    //console.log('📤 Sent viewport:', message);
   }
 
   /**
@@ -280,10 +389,10 @@ export class WebSocketManager {
 
     // Increment attempt counter
     this.reconnectAttempts++;
-    
+
     // Calculate delay with exponential backoff
     const delay = this.reconnectDelay * this.reconnectAttempts;
-    
+
     console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     // Schedule reconnection
@@ -308,7 +417,7 @@ export class WebSocketManager {
   disconnect(): void {
     // Mark as intentionally closed to prevent reconnection
     this.isIntentionallyClosed = true;
-    
+
     // Cancel any pending reconnection
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -349,6 +458,43 @@ export class WebSocketManager {
     this.ws.send(JSON.stringify(message));
     console.log('📤 Requested bike:', bikeId);
   }
+
+  requestBikeTelemetry(bikeIds: string[]): void {
+    // Guard: Only send if connection is open
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket not open, cannot request bike telemetry');
+      return;
+    }
+
+    // Build bike telemetry request message
+    const message = {
+      msgType: WSMessageType.BIKE_TELEMETRY,
+      bike_id: bikeIds
+    };
+
+    // Send as JSON string
+    this.ws.send(JSON.stringify(message));
+    console.log('📤 Requested bike telemetry:', bikeIds);
+  }
+
+  cleanTilesAndBikesSubscription(): void {
+    // Guard: Only send if connection is open
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket not open, cannot request bike telemetry');
+      return;
+    }
+
+    // Build bike telemetry request message
+    const message = {
+      msgType: WSMessageType.CLEAN_UP,
+
+    };
+
+    // Send as JSON string
+    this.ws.send(JSON.stringify(message));
+
+  }
+
 
   /**
    * Check if WebSocket is connected

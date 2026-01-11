@@ -1,0 +1,195 @@
+/* Overall main content alignment */
+.trip-detail-content {
+  width: 100%;
+  padding: 24px;
+}
+
+/* --- Detail Header Card (Map Icon + VIN/Text) --- */
+.detail-header-card {
+  display: flex;
+  align-items: left;
+  gap: 40px;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  min-width: 50rem;
+}
+
+.map-icon-container {
+  /* Placeholder for the large map icon on the left */
+  width: 150px;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.map-icon {
+  /* This simulates the look of the map icon in the image */
+  min-width: 50%;
+  height: 100%; /* Orange/brown color */
+  border-radius: 15px;
+  /* Add an inner detail to simulate the road/map lines */
+  position: relative;
+  overflow: hidden;
+}
+
+.map-icon::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    width: 80%;
+    height: 60%;
+    background-color: #8bc34a; /* Green for the land */
+    border-radius: 5px;
+}
+
+.trip-info .vin {
+  font-size: 60px;
+  color: #e09873; /* Match the orange/brown accent color */
+  font-weight: 900;
+  margin: 0 0 10px 0;
+}
+
+.trip-info p {
+  font-size: 20px;
+  line-height: 1.5;
+  color: #555;
+  margin: 5px 0;
+}
+
+.trip-info strong {
+    font-weight: bold; /* Make the key details stand out */
+}
+
+/* --- Trip Statistics Section (Statistic Card + Map Image) --- */
+.trip-statistics-section {
+  display: flex;
+  gap: 30px;
+  align-items: stretch; /* Ensure cards stretch to the same height */
+}
+
+.trip-statistic-card {
+  flex: 1; /* Takes up space next to the map */
+  background-color: #e09873; /* Orange/brown background */
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: #fff;
+  min-width: 50%; /* Limit the width similar to the image */
+}
+
+.statistic-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.statistic-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  font-size: 18px;
+}
+
+/* Location Stats Specifics */
+.location-stats {
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* Icons | Text | Distance */
+  align-items: center;
+  gap: 20px;
+}
+
+.location-icon-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 90px; /* Space out the icons */
+}
+
+.location-icon {
+    /* Placeholder for the location pin icon */
+    width: 20px;
+    height: 27px;
+    border-radius: 10%;
+    position: relative;
+}
+
+.location-icon:first-child::after {
+    /* Connecting line for location icons */
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 11px;
+    width: 3px;
+    min-height: 7vh;
+    background-color: #fff;
+}
+
+.location-text-group p {
+    margin: 15px 0;
+    font-weight: 500;
+    justify-content: space-between;
+}
+
+.distance {
+    font-size: 24px;
+    font-weight: bold;
+    align-self: flex-start; /* Align distance to the top right */
+    margin-top: 50%;
+}
+
+
+/* Duration Stats Specifics */
+.duration-stats {
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.duration-icon {
+    /* Placeholder for the hourglass icon */
+    width: 30px;
+    height: 30px;
+}
+
+/* Map Image Styling */
+.map-image-container {
+    flex: 2; /* Takes up more space than the statistics card */
+    max-width: 700px;
+    border-radius: 8px;
+    overflow: hidden; /* Ensure the image respects border radius */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.route-map-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Media Queries for Responsiveness (Basic Example) --- */
+@media (max-width: 900px) {
+    .trip-statistics-section {
+        flex-direction: column; /* Stack the statistics and map vertically */
+    }
+
+    .trip-statistic-card,
+    .map-image-container {
+        max-width: 100%; /* Use full width */
+    }
+
+    .detail-header-card {
+        flex-direction: column;
+        text-align: center;
+    }
+}

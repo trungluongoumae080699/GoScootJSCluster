@@ -2,50 +2,37 @@ import { BikeTelemetry } from "@trungthao/admin_dashboard_dto";
 import { clickhouse } from "../../ClickHouseConfig.js";
 import { GetBikeTelemetryOptions, GetBikeTelemetryResult } from "../../Controllers/DashboardController.js";
 
+
 export async function getBikeTelemetry(
   options: GetBikeTelemetryOptions
 ): Promise<GetBikeTelemetryResult> {
-  const {
-    bikeId,
-    from,
-    to,
-    page = 1,
-    pageSize = 50,
-    sortDirection = "desc",
-  } = options;
+  const { bikeId, from, to, page, pageSize, sortDirection = "desc" } = options;
 
-  if (!bikeId) {
-    throw new Error("bikeId is required");
-  }
+  if (!bikeId) throw new Error("bikeId is required");
 
   const safePage = Math.max(Number(page) || 1, 1);
-  const safePageSize = Math.max(Number(pageSize) || 1, 1);
+  const safePageSize = Math.max(Number(pageSize) || 100, 1); // ✅ allow smaller than 100
   const offset = (safePage - 1) * safePageSize;
 
   const whereClauses: string[] = ["bike_id = {bike_id:String}"];
-  const queryParams: Record<string, string | number> = {
-    bike_id: bikeId,
-  };
+  const queryParams: Record<string, string | number> = { bike_id: bikeId };
 
   if (typeof from === "number") {
     whereClauses.push("time >= {from:UInt64}");
     queryParams.from = from;
   }
-
   if (typeof to === "number") {
     whereClauses.push("time <= {to:UInt64}");
     queryParams.to = to;
   }
 
-  const whereSql =
-    whereClauses.length > 0 ? "WHERE " + whereClauses.join(" AND ") : "";
-
+  const whereSql = "WHERE " + whereClauses.join(" AND ");
   const orderDir = sortDirection.toLowerCase() === "asc" ? "ASC" : "DESC";
 
-  // ---------- 1) COUNT query ----------
+  // ---------- 1) COUNT ----------
   const countQuery = `
     SELECT count() AS total
-    FROM telemetry
+    FROM bikerental.telemetry
     ${whereSql}
   `;
 
@@ -60,16 +47,10 @@ export async function getBikeTelemetry(
   const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
 
   if (total === 0) {
-    return {
-      data: [],
-      page: safePage,
-      pageSize: safePageSize,
-      total,
-      totalPages,
-    };
+    return { data: [], page: safePage, pageSize: safePageSize, total, totalPages };
   }
 
-  // ---------- 2) DATA query ----------
+  // ---------- 2) DATA ----------
   const dataQuery = `
     SELECT
       id,
@@ -81,9 +62,12 @@ export async function getBikeTelemetry(
       last_gps_long,
       last_gps_lat,
       last_gps_contact_time,
-      operationStatus,
-      usageStatus
-    FROM telemetry
+      battery_is_low,
+      is_out_of_bound,
+      is_crashed,
+      is_toppled,
+      usage_status
+    FROM bikerental.telemetry
     ${whereSql}
     ORDER BY time ${orderDir}
     LIMIT {limit:UInt32} OFFSET {offset:UInt64}
@@ -92,26 +76,33 @@ export async function getBikeTelemetry(
   const dataResult = await clickhouse.query({
     query: dataQuery,
     format: "JSONEachRow",
-    query_params: {
-      ...queryParams,
-      limit: safePageSize,
-      offset,
-    },
+    query_params: { ...queryParams, limit: safePageSize, offset },
   });
 
   const rows = (await dataResult.json()) as {
     id: string;
     bike_id: string;
-    battery_status: number;
-    longitude: number;
-    latitude: number;
+    battery_status: number | string;
+    longitude: number | string;
+    latitude: number | string;
     time: number | string;
-    last_gps_long: number;
-    last_gps_lat: number;
+    last_gps_long: number | string;
+    last_gps_lat: number | string;
     last_gps_contact_time: number | string;
-    operation_status: string;
-    usage_status: string;
+
+    battery_is_low: number | string | boolean;
+    is_out_of_bound: number | string | boolean;
+    is_crashed: number | string | boolean;
+    is_toppled: number | string | boolean;
+
+    usage_status: string; // Enum8 comes back as string label in JSON
   }[];
+
+  const toBool01 = (v: any) => {
+    if (typeof v === "boolean") return v;
+    const s = String(v).trim().toLowerCase();
+    return s === "1" || s === "true";
+  };
 
   const data: BikeTelemetry[] = rows.map((row) => ({
     id: row.id,
@@ -123,8 +114,13 @@ export async function getBikeTelemetry(
     last_gps_long: Number(row.last_gps_long),
     last_gps_lat: Number(row.last_gps_lat),
     last_gps_contact_time: Number(row.last_gps_contact_time),
-    operationStatus: row.operation_status as BikeTelemetry['operationStatus'],
-    usageStatus: row.usage_status as BikeTelemetry['usageStatus'],
+
+    batteryIsLow: toBool01(row.battery_is_low),
+    isOutOfBound: toBool01(row.is_out_of_bound),
+    isCrashed: toBool01(row.is_crashed),
+    isToppled: toBool01(row.is_toppled),
+
+    usageStatus: row.usage_status as BikeTelemetry["usageStatus"],
   }));
 
   return {

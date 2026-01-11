@@ -1,0 +1,118 @@
+/* Layout */
+.page-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+
+}
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  opacity: 0.5;
+}
+
+.loadingWhiteBackground {
+  width: 150;
+  height: 150;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading {
+  position: fixed;
+  /* Make it relative to the viewport */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* Center exactly */
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.8);
+  /* Optional: semi-transparent background */
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  z-index: 1000;
+  /* Ensure it sits on top of other content */
+  text-align: center;
+}
+
+/* Wrapper */
+.alerts-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+
+}
+
+.alerts-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+
+}
+
+.btn {
+  width: 600px;
+  height: 50px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Apply */
+.apply-btn {
+  background: #C85A28;
+  color: #000;
+  border-color: #C85A28;
+}
+
+.apply-btn:hover:not(:disabled),
+.apply-btn:focus-visible {
+  background: #f5f5f5;
+  border-color: #C85A28;
+}
+
+/* Clear */
+.clear-btn {
+
+  color: #000;
+  background: #4D9DE0;
+  border-color: #4D9DE0;
+}
+
+.clear-btn:hover:not(:disabled),
+.clear-btn:focus-visible {
+  background: #f5f5f5;
+  border-color: #C85A28;
+}
+
+.alerts-container {
+  margin-block: 1rem;
+}
+
+.active-alert {
+  background-color: #c49d7e;
+ 
+}

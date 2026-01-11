@@ -101,28 +101,17 @@ const BatteryFilter: React.FC<BatteryFilterProps> = ({
   const handleBikeItemClick = useCallback((bike: Bike) => {
     // Check if bike is already fetched
     const existingBike = getBikeById(bike.id);
-    
-    if (!existingBike) {
-      // Bike not fetched, request it via WebSocket
-      console.log(`🔍 Requesting bike ${bike.id} via WebSocket...`);
-      websocketManager.requestBike(bike.id);
+
+    if (mapRef.current && bike.longitude && bike.latitude) {
+      mapRef.current.flyTo({
+        center: [bike.longitude, bike.latitude],
+        zoom: 15, // Zoom in to see the bike clearly
+        duration: 2000 // 2 second smooth animation
+      });
     } else {
-      // Bike already fetched, navigate to it and show details
-      console.log(`🎯 Navigating to bike ${bike.id} at [${existingBike.longitude}, ${existingBike.latitude}]`);
-      
-      // Navigate map to bike location
-      if (mapRef.current) {
-        mapRef.current.flyTo({
-          center: [existingBike.longitude, existingBike.latitude],
-          zoom: 16, // Zoom in to see the bike clearly
-          duration: 2000 // 2 second smooth animation
-        });
-      }
-      
-      // Show bike details popup
-      onBikeClick(existingBike);
+      websocketManager.requestBike(bike.id)
     }
-    
+
     // Hide the filter results panel
     setShowResults(false);
   }, [onBikeClick, getBikeById, mapRef]);

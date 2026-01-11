@@ -12,29 +12,21 @@ import type {
   Response_DashboardLogInDTO,
   DashboardStaff,
 } from '@trungthao/admin_dashboard_dto';
+import { UnauthenticatedException } from '../models/Exceptions/ApiExceptions';
 
 /** Storage keys */
 const SESSION_KEY = 'goscoot_session_id';
 const STAFF_PROFILE_KEY = 'goscoot_staff_profile';
 
-/** 
- * Get the API base URL - in development, use relative path for Vite proxy
- * The proxy in vite.config.ts handles forwarding to the actual ngrok server
- */
+
 export function getApiBaseUrl(): string {
-  const envUrl = (import.meta as any).env.VITE_API_BASE_URL || 'https://still-simply-katydid.ngrok.app/GoScoot/Server';
-  
-  // In development, extract just the path for the Vite proxy to work
-  if ((import.meta as any).env.DEV) {
-    try {
-      const url = new URL(envUrl);
-      return url.pathname; // Returns '/GoScoot/Server'
-    } catch {
-      return envUrl;
-    }
+  const url = (import.meta as any).VITE_API_BASE_URL;
+
+  if (!url) {
+    throw new Error("Missing VITE_API_BASE_URL");
   }
-  
-  return envUrl;
+
+  return url;
 }
 
 const API_BASE_URL = getApiBaseUrl();
@@ -62,12 +54,6 @@ export function getSessionId(): string | null {
   return sessionStorage.getItem(SESSION_KEY);
 }
 
-/**
- * Store session ID in session storage
- */
-export function setSessionId(sessionId: string): void {
-  sessionStorage.setItem(SESSION_KEY, sessionId);
-}
 
 /**
  * Get the MQTT password (stored in memory only)
@@ -76,12 +62,7 @@ export function getMqttPassword(): string | null {
   return mqttPassword;
 }
 
-/**
- * Store MQTT password in memory (not persisted for security)
- */
-export function setMqttPassword(password: string | null): void {
-  mqttPassword = password;
-}
+
 
 /**
  * Get stored staff profile
@@ -130,13 +111,18 @@ export function getAuthState(): AuthState {
 /**
  * Store all credentials from login response
  */
+
 function storeCredentials(response: Response_DashboardLogInDTO): void {
-  setSessionId(response.sessionId);
+  //setSessionId(response.sessionId);
   setStaffProfile(response.staffProfile);
+  /*
   if (response.mqtt_password) {
     setMqttPassword(response.mqtt_password);
   }
+    */
+
 }
+  
 
 /**
  * Sign in with email and password
@@ -145,6 +131,7 @@ function storeCredentials(response: Response_DashboardLogInDTO): void {
 export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Response_DashboardLogInDTO> {
   const response = await fetch(`${API_BASE_URL}/dashboard/auth/signIn`, {
     method: 'POST',
+    credentials: "include",
     headers: {
       'Content-Type': 'application/json',
       'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
@@ -160,7 +147,7 @@ export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Re
   const data: Response_DashboardLogInDTO = await response.json();
   
   // Store credentials securely
-  storeCredentials(data);
+  //storeCredentials(data);
   return data;
 }
 
@@ -171,17 +158,12 @@ export async function signIn(credentials: Request_DashboardLogInDTO): Promise<Re
  * This should be called on app load to check if the user has a valid session
  */
 export async function formlessSignIn(): Promise<Response_DashboardLogInDTO | null> {
-  const sessionId = getSessionId();
-  
-  if (!sessionId) {
-    return null;
-  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/dashboard/auth/signIn/session`, {
       method: 'GET',
+      credentials: "include",
       headers: {
-        'authorization': sessionId,
         'ngrok-skip-browser-warning': 'true', // Required for ngrok tunnels
       },
     });
@@ -189,9 +171,7 @@ export async function formlessSignIn(): Promise<Response_DashboardLogInDTO | nul
     if (!response.ok) {
       // Session is invalid or expired
       if (response.status === 401) {
-        console.log('⚠️ Session expired, clearing stored credentials');
-        clearAuth();
-        return null;
+        throw new UnauthenticatedException("Session expired. Please log in again.");
       }
       throw new Error(`Formless sign in failed: ${response.status}`);
     }
