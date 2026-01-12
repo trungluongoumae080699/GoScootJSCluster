@@ -44,6 +44,23 @@
   color: white;
 }
 
+.popup-title h3:hover {
+  color: #1e1b4b;;
+}
+
+.bikeLink {
+  cursor: pointer;
+  color: white;              /* indigo / link-like */
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.bikeLink:hover {
+  color: #1e1b4b;
+}
+
 .close-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;

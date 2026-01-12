@@ -1,0 +1,165 @@
+.trips-table-container {
+    background: #f5f5f5;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding-block: 1rem;
+}
+
+.trips-table-container h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.trips-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-inline: 1rem;
+}
+
+.trips-filters {
+    display: flex;
+    gap: 1rem;
+    margin-block: 1rem;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-inline: 1rem;
+
+
+}
+
+.trip-btn {
+    width: 300px;
+    height: 50px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+
+/* Apply */
+.trip-apply-btn {
+    background: #C85A28;
+    color: #000;
+    border-color: #C85A28;
+}
+
+.trip-apply-btn:hover:not(:disabled),
+.trip-apply-btn:focus-visible {
+    background: #f5f5f5;
+    border-color: #C85A28;
+}
+
+/* Clear */
+.trip-clear-btn {
+    color: #000;
+    background: #4D9DE0;
+    border-color: #4D9DE0;
+}
+
+.trip-clear-btn:hover:not(:disabled),
+.tripp-clear-btn:focus-visible {
+    background: #f5f5f5;
+    border-color: #C85A28;
+}
+
+.trip-table-wrapper {
+    max-height: 420px;
+    /* chiều cao bạn muốn */
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+/* Chrome / Edge / Safari */
+.trip-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.trip-table-wrapper::-webkit-scrollbar-track {
+  background: #f5f5f5;   /* màu nền */
+  border-radius: 8px;
+}
+
+.trip-table-wrapper::-webkit-scrollbar-thumb {
+  background-color: #C4C4C4;
+  border-radius: 8px;
+}
+
+
+
+/* Quan trọng: tách header & body */
+.trip-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.trips-table thead th {
+    position: sticky;
+    top: 0;
+    background: #E8A87C;;
+    /* bắt buộc để không bị trong suốt */
+    z-index: 2;
+    border-bottom: 1px solid #ddd;
+}
+
+
+
+
+.trips-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.trips-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.trips-table tbody tr:hover {
+    background: #FFF0E8;
+    box-shadow: inset 0 0 0 1px #C85A28;
+}
+
+.trips-table tbody tr.selected {
+    background: #FFE4D6;
+    box-shadow: inset 3px 0 0 #C85A28;
+}
+
+.trips-table td {
+    padding: 1rem;
+}
+
+.trip-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.trip-status.completed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.trip-status.inprogress,
+.trip-status.in_progress {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.trip-status.cancelled {
+    background: #ffebee;
+    color: #c62828;
+}

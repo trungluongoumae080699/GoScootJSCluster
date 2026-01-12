@@ -28,6 +28,9 @@ export function useMqttClient(
     c.on("connect", () => console.log("✅ MQTT connected"));
     c.on("error", (err) => console.warn("⚠️ MQTT error:", err.message));
     c.on("close", () => console.log("MQTT disconnected"));
+    c.on("message", (topic, message) => {
+      console.log(`📩 MQTT message on ${topic}:`, message.toString());
+    });
 
     return () => {
       console.log("MQTT connection closed");

@@ -13,8 +13,13 @@
  */
 
 import { BikeUpdate } from '@trungthao/admin_dashboard_dto';
-import { MdBatteryFull, MdClose, MdDirectionsBike, MdInfo, MdSettings, MdPerson } from 'react-icons/md';
+import { MdBatteryFull, MdClose, MdDirectionsBike, MdInfo, MdSettings, MdPerson, MdWarning } from 'react-icons/md';
 import './BikeDetailPopup.css';
+import WarningBang from '../ui/WarningBang';
+import { getStatusText } from '../../utlities/methods';
+import { useGlobalContext } from '../../context/GlobalContext';
+import { useBikeManagementContext } from '../../context/BikeManagementContext';
+import { useNavigate } from 'react-router-dom';
 
 interface BikeDetailPopupProps {
   /** Bike data to display */
@@ -26,18 +31,21 @@ interface BikeDetailPopupProps {
 function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
   // Determine battery color: Green if > 20%, Red if low
   const batteryColor = bike.battery_status > 20 ? '#4CAF50' : '#F44336';
-  
   // Choose icon based on battery level
   const batteryIcon = bike.battery_status > 20 ? '🔋' : '⚠️';
 
+  const globalContext = useGlobalContext()
+  const bikeManagementContext = useBikeManagementContext()
+  const navigate = useNavigate()
+
   // Get operation status color (original preferred colors)
-  const getOperationStatusColor = (status: string) => {
-    switch (status) {
-      case 'Normal': return '#4CAF50';
-      case 'Out of bound': return '#FF9800';
-      case 'Low battery': return '#F44336';
-      default: return '#757575';
+  const getOperationStatusColor = () => {
+    if (bike.isCrashed || bike.batteryIsLow || bike.isOutOfBound || bike.isToppled) {
+      return '#4CAF50';
+    } else {
+      return '#F44336'
     }
+
   };
 
   // Get usage status color (original preferred colors)
@@ -60,13 +68,23 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            background: `linear-gradient(90deg, ${getOperationStatusColor(bike.operationStatus)} 50%, ${getUsageStatusColor(bike.usageStatus)} 50%)`,
+            background: `linear-gradient(90deg, ${getOperationStatusColor()} 50%, ${getUsageStatusColor(bike.usageStatus)} 50%)`,
             border: '2px solid white',
             boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             marginRight: '4px'
           }} />
           <MdDirectionsBike size={24} color="white" />
-          <h3>Bike {bike.id}</h3>
+          <a
+            className='bikeLink'
+            onClick={() => {
+              bikeManagementContext.setCurrentBike(null);
+              bikeManagementContext.setCurrentBikeId(bike.id);
+              navigate("/bike");
+            }}
+          >
+            <h3>Bike {bike.id}</h3>
+          </a>
+
         </div>
         <button className="close-btn" onClick={onClose} title="Close">
           <MdClose size={20} />
@@ -102,17 +120,54 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
         </div>
 
         {/* Row 3: Operation Status */}
+
         <div className="detail-row">
           <div className="detail-icon">
-            <MdSettings size={20} style={{ color: getOperationStatusColor(bike.operationStatus) }} />
+            <MdWarning size={20} />
           </div>
+
           <div className="detail-info">
-            <span className="detail-label">Operation</span>
-            <span className="detail-value" style={{ color: getOperationStatusColor(bike.operationStatus), fontWeight: 'bold' }}>
-              {bike.operationStatus}
-            </span>
+            <span className="detail-label">Cảnh Báo Pin</span>
+            <WarningBang on={bike.batteryIsLow}></WarningBang>
           </div>
         </div>
+
+
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+          <div className="detail-info">
+            <span className="detail-label">Cảnh Báo Va Chạm</span>
+            <WarningBang on={bike.isCrashed}></WarningBang>
+          </div>
+        </div>
+
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+
+          <div className="detail-info">
+            <span className="detail-label">Cảnh Báo Ngoài Phạm Vi</span>
+            <WarningBang on={bike.isOutOfBound}></WarningBang>
+          </div>
+        </div>
+
+
+        <div className="detail-row">
+          <div className="detail-icon">
+            <MdWarning size={20} />
+          </div>
+
+          <div className="detail-info">
+            <span className="detail-label">Cảnh Báo Đổ Ngã</span>
+            <WarningBang on={bike.isToppled}></WarningBang>
+          </div>
+        </div>
+
+
+
 
         {/* Row 4: Usage Status */}
         <div className="detail-row">
@@ -122,7 +177,7 @@ function BikeDetailPopup({ bike, onClose }: BikeDetailPopupProps) {
           <div className="detail-info">
             <span className="detail-label">Usage</span>
             <span className="detail-value" style={{ color: getUsageStatusColor(bike.usageStatus), fontWeight: 'bold' }}>
-              {bike.usageStatus}
+              {getStatusText(bike.usageStatus)}
             </span>
           </div>
         </div>

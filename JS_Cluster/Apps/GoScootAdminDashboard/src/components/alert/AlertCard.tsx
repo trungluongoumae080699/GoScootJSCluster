@@ -1,36 +1,51 @@
 import { MdWarning as AlertTriangle } from "react-icons/md";
-import "./AlertCard.css";
+import styles from "./AlertCard.module.css"
+import { Alert } from "../../../../../Packages/Admin_Dashboard_DTO/dist/Models/Alerts";
 
 interface AlertCardProps {
-  title: string;
-  description: string;
-  onAcknowledge: () => void;
-  onDismiss: () => void;
+  alert: Alert
+  onResolve: () => void;
+  onViewDetail: () => void;
+  className?: string
 }
 
 export default function AlertCard({
-  title,
-  description,
-  onAcknowledge,
-  onDismiss,
+  alert,
+  onResolve,
+  onViewDetail,
+  className,
 }: AlertCardProps) {
   return (
-    <div className="alert-item">
-      <div className="alert-left">
-        <div className="alert-icon">
+    <div className={`${styles["alert-item"]} ${className ?? ""}`}>
+      <div className={styles["alert-left"]}>
+        <div className={styles["alert-icon"]}>
           <AlertTriangle size={70} />
         </div>
         <div>
-          <h2 className="alert-title">{title}</h2>
-          <p className="alert-desc">{description}</p>
+          <div className={styles.alertHeaderContainer}>
+            <h2 className={styles["alert-title"]}>{alert.bike_id}</h2>
+
+            <span className={styles.dot} />
+
+            <span className={styles.alertMeta}>{alert.id}</span>
+
+            <span className={styles.dot} />
+
+            <span className={styles.alertMeta}>
+              {new Date(alert.time).toLocaleString("vi-VN")}
+            </span>
+          </div>
+
+          <p className={styles["alert-desc"]}>{alert.content}</p>
         </div>
       </div>
-      <div className="alert-actions">
-        <button className="btn-ack" onClick={onAcknowledge}>
-          Acknowledge
+
+      <div className={styles["alert-actions"]}>
+        <button className={styles["btn-ack"]} onClick={onResolve}>
+          Giải Quyết
         </button>
-        <button className="btn-dismiss" onClick={onDismiss}>
-          Dismiss
+        <button className={styles["btn-dismiss"]} onClick={onViewDetail}>
+          Chi Tiết
         </button>
       </div>
     </div>

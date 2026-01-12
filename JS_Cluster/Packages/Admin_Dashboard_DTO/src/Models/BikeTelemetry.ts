@@ -1,9 +1,9 @@
 import { BikeStatus } from "./Bike.js"
 
 export enum OperationStatus {
-    NORMAL = "Normal",
-    OUT_OF_BOUND = "Out of bound",
-    LOW_BATTERY = "Low battery",
+    NORMAL = "Normal", //0
+    OUT_OF_BOUND = "Out of bound", //1
+    LOW_BATTERY = "Low battery", // 2
 }
 
 export type BikeTelemetry = {
@@ -16,6 +16,9 @@ export type BikeTelemetry = {
     latitude: number
     time: number,
     last_gps_contact_time: number,
-    operationStatus: OperationStatus
+    batteryIsLow: boolean,
+    isToppled: boolean,
+    isCrashed: boolean,
+    isOutOfBound: boolean,
     usageStatus: BikeStatus
 }

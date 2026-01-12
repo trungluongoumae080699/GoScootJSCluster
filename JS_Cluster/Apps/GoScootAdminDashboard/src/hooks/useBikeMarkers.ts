@@ -39,13 +39,13 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
    * @param operationStatus - Current operational status of the bike
    * @returns Hex color code for the marker
    */
-  const getOperationStatusColor = (operationStatus: string) => {
-    switch (operationStatus) {
-      case 'Normal': return '#4CAF50';        // Green - operational
-      case 'Out of bound': return '#FF9800';  // Orange - location issue
-      case 'Low battery': return '#F44336';   // Red - needs charging
-      default: return '#757575';              // Gray - unknown status
+  const getOperationStatusColor = (bike: BikeUpdate) => {
+    if (bike.isCrashed || bike.batteryIsLow || bike.isOutOfBound || bike.isToppled){
+      return '#F44336'; 
+    } else {
+      return '#4CAF50';
     }
+    
   };
 
   /**
@@ -78,7 +78,8 @@ export function useBikeMarkers(onBikeClick: (bike: BikeUpdate) => void) {
     dot.className = 'bike-dot-marker';
     
     // Get colors for both states
-    const operationColor = getOperationStatusColor(bike.operationStatus || 'Normal');
+    const operationColor = getOperationStatusColor(bike);
+
     const usageColor = getUsageStatusColor(bike.usageStatus || 'Idle');
     
     // Create gradient background with both colors (split vertically)

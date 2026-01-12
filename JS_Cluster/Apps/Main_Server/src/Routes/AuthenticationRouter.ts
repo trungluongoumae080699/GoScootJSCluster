@@ -2,7 +2,7 @@
 import express, { Router, Request, Response } from "express";
 
 import { NextFunction } from "express-serve-static-core";
-import { authenticateAdmin, formlessAuthenticateDashboard, authenticateCustomer, formlessAuthenticateCustomer, registerCustomer } from "../Controllers/AuthenticationController.js";
+import {formlessAuthenticateDashboard, authenticateCustomer, formlessAuthenticateCustomer, registerCustomer, authenticateAdminSecured } from "../Controllers/AuthenticationController.js";
 import { CustomRequest } from "../Middlewares/Authorization.js";
 
 
@@ -11,7 +11,7 @@ export const authenticationRouter: Router = express.Router();
 
 authenticationRouter.post("/dashboard/signIn", (request: Request, response: Response, next: NextFunction) => {
     const customerRequest: CustomRequest = request as CustomRequest
-    authenticateAdmin(customerRequest, response, next).catch(next)
+    authenticateAdminSecured(customerRequest, response, next).catch(next)
 });
 
 authenticationRouter.get("/dashboard/signIn/session", (request: Request, response: Response, next: NextFunction) => {

@@ -5,28 +5,52 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+    background-color: gainsboro;
 }
 
 #root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+
 }
 
 /* App Container */
 .app-container {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   position: relative;
-  overflow: hidden;
+  min-height: 0;
+  
 }
+
+.main-content-container{
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+
+
+}
+
+.main-content-container-post-auth {
+  padding-top: 14vh;
+  padding-left: 15vw;
+}
+
+.main-content-container-post-auth-dashboard {
+  padding-top: 0;
+  padding-left: 15vw;
+}
+
+
 
 .map {
   width: 100%;

@@ -1,5 +1,6 @@
+import { Hub } from '@trungthao/admin_dashboard_dto';
 import React from 'react';
-import { Hub } from '../../services/apiClient'; // Type definition for hub data
+
 
 /**
  * Props for HubDetailCard component
@@ -81,7 +82,7 @@ const HubDetailCard: React.FC<HubDetailCardProps> = ({
         <div>
           {/* Hub name with fallback to ID if name not available */}
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
-            {hub?.name || `Hub ${hub?.id}`}
+            {hub?.id || `Hub ${hub?.id}`}
           </h3>
           {/* Hub address with fallback message */}
           <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#666' }}>
@@ -216,7 +217,7 @@ const HubDetailCard: React.FC<HubDetailCardProps> = ({
                     </div>
                     {/* Battery level with fallback to 0% */}
                     <div style={{ fontSize: '12px', color: '#666' }}>
-                      Battery: {bike.batteryLevel || bike.battery || 0}%
+                      Battery: {bike.battery_status || 0}%
                     </div>
                   </div>
                   
